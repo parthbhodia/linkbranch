@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProfileHub } from "@/components/profile-hub";
+import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { createClient } from "@/lib/supabase/server";
 import type { CreatorProfile } from "@/lib/types";
 
@@ -13,9 +14,14 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+  const example = exampleProfileBySlug.get(username.toLowerCase());
   return {
-    title: `@${username} | Linkbranch`,
-    description: `Links, resources, and referral offers from @${username}.`,
+    title: example
+      ? `${example.profile.displayName} | Linkbranch example`
+      : `@${username} | Linkbranch`,
+    description: example
+      ? example.profile.bio
+      : `Links, resources, and referral offers from @${username}.`,
   };
 }
 
@@ -28,6 +34,17 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
   const { published } = await searchParams;
+  const example = exampleProfileBySlug.get(username.toLowerCase());
+
+  if (example) {
+    return (
+      <ProfileHub
+        profile={example.profile}
+        template={example.template}
+      />
+    );
+  }
+
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")

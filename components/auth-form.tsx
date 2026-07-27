@@ -31,7 +31,9 @@ export function AuthForm() {
   const initialError = searchParams.get("error");
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(
+    searchParams.get("username")?.trim().toLowerCase() ?? "",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -159,7 +161,7 @@ export function AuthForm() {
                     setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
                   }
                   required
-                  helperText="Your public address will be linkbranch.com/u/username"
+                  helperText={`Your public address will be linkbranch.com/u/${username || "username"}`}
                   autoComplete="username"
                   slotProps={{ inputLabel: { shrink: true } }}
                 />

@@ -78,6 +78,13 @@ export type DashboardSocial = {
   position: number;
 };
 
+export type DashboardEvent = {
+  event_type: "link_open" | "referral_open" | "referral_copy";
+  link_id: number | null;
+  referral_id: number | null;
+  occurred_at: string;
+};
+
 type WorkspaceSection =
   | "profile"
   | "content"
@@ -155,7 +162,7 @@ function StatCard({
   note,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   note: string;
 }) {
   return (
@@ -175,14 +182,14 @@ export function Dashboard({
   links,
   referrals,
   socials,
-  interactionCount,
+  events,
 }: {
   profile: DashboardProfile;
   email: string;
   links: DashboardLink[];
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
-  interactionCount: number;
+  events: DashboardEvent[];
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(profile);
@@ -201,6 +208,83 @@ export function Dashboard({
     () => referrals.filter((item) => item.is_active),
     [referrals],
   );
+  const analytics = useMemo(() => {
+    const linkOpens = events.filter((event) => event.event_type === "link_open").length;
+    const referralOpens = events.filter(
+      (event) => event.event_type === "referral_open",
+    ).length;
+    const referralCopies = events.filter(
+      (event) => event.event_type === "referral_copy",
+    ).length;
+
+    const content = new Map<
+      string,
+      { label: string; type: "Link" | "Referral"; opens: number; copies: number }
+    >();
+
+    links.forEach((link) => {
+      content.set(`link-${link.id}`, {
+        label: link.title,
+        type: "Link",
+        opens: 0,
+        copies: 0,
+      });
+    });
+    referrals.forEach((referral) => {
+      content.set(`referral-${referral.id}`, {
+        label: referral.provider,
+        type: "Referral",
+        opens: 0,
+        copies: 0,
+      });
+    });
+
+    events.forEach((event) => {
+      const key = event.link_id
+        ? `link-${event.link_id}`
+        : event.referral_id
+          ? `referral-${event.referral_id}`
+          : "";
+      const item = content.get(key);
+      if (!item) return;
+      if (event.event_type === "referral_copy") item.copies += 1;
+      else item.opens += 1;
+    });
+
+    const topContent = [...content.values()]
+      .filter((item) => item.opens > 0 || item.copies > 0)
+      .sort((a, b) => b.opens + b.copies - (a.opens + a.copies))
+      .slice(0, 5);
+
+    const days = Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - offset));
+      return {
+        key: date.toISOString().slice(0, 10),
+        label: date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1),
+        value: 0,
+      };
+    });
+    const dayMap = new Map(days.map((day) => [day.key, day]));
+    events.forEach((event) => {
+      const day = dayMap.get(event.occurred_at.slice(0, 10));
+      if (day) day.value += 1;
+    });
+
+    return {
+      total: events.length,
+      linkOpens,
+      referralOpens,
+      referralCopies,
+      copyRate:
+        referralOpens > 0
+          ? Math.min(100, Math.round((referralCopies / referralOpens) * 100))
+          : 0,
+      days,
+      topContent,
+    };
+  }, [events, links, referrals]);
   const sectionDetails = sectionCopy[section];
   const initials =
     draft.display_name
@@ -548,26 +632,87 @@ export function Dashboard({
 
           {section === "analytics" && (
             <div className="workspace-analytics">
-              <StatCard label="LINKS" value={links.length} note="Saved destinations" />
               <StatCard
-                label="REFERRALS"
-                value={referrals.length}
-                note="Active offers and codes"
+                label="TOTAL ACTIONS"
+                value={analytics.total}
+                note="Across links and referral offers"
               />
               <StatCard
-                label="INTERACTIONS"
-                value={interactionCount}
-                note="Link opens, offer opens, and copies"
+                label="LINK OPENS"
+                value={analytics.linkOpens}
+                note="Visitors sent to your destinations"
               />
-              <Paper className="workspace-analytics__note" variant="outlined">
-                <AnalyticsOutlined />
-                <Box>
-                  <Typography variant="h3">More detail is coming</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    The event model is already stored in Supabase. The next analytics
-                    view can add date ranges, top links, and referral conversion.
-                  </Typography>
-                </Box>
+              <StatCard
+                label="OFFER OPENS"
+                value={analytics.referralOpens}
+                note="Referral destinations explored"
+              />
+              <StatCard
+                label="CODE COPIES"
+                value={analytics.referralCopies}
+                note={`${analytics.copyRate}% of offer opens`}
+              />
+
+              <Paper className="workspace-analytics__chart-card" variant="outlined">
+                <div className="workspace-analytics__card-heading">
+                  <Box>
+                    <Typography variant="h3">Activity</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      All tracked actions from the last seven days
+                    </Typography>
+                  </Box>
+                  <Chip label="7 DAYS" size="small" variant="outlined" />
+                </div>
+                <div className="workspace-analytics__bars" aria-label="Seven day activity chart">
+                  {analytics.days.map((day) => {
+                    const maximum = Math.max(
+                      1,
+                      ...analytics.days.map((item) => item.value),
+                    );
+                    return (
+                      <div key={day.key}>
+                        <span>{day.value}</span>
+                        <i
+                          style={{
+                            height: `${Math.max(4, (day.value / maximum) * 100)}%`,
+                          }}
+                        />
+                        <small>{day.label}</small>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Paper>
+
+              <Paper className="workspace-analytics__ranking" variant="outlined">
+                <div className="workspace-analytics__card-heading">
+                  <Box>
+                    <Typography variant="h3">Top content</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Ranked by opens and code copies
+                    </Typography>
+                  </Box>
+                </div>
+                {analytics.topContent.length > 0 ? (
+                  <ol>
+                    {analytics.topContent.map((item, index) => (
+                      <li key={`${item.type}-${item.label}`}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span><b>{item.label}</b><small>{item.type}</small></span>
+                        <strong>{item.opens + item.copies}</strong>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="workspace-analytics__empty">
+                    <AnalyticsOutlined />
+                    <Typography variant="h3">No activity yet</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Share your public page. Link opens, referral opens, and code
+                      copies will appear here automatically.
+                    </Typography>
+                  </div>
+                )}
               </Paper>
             </div>
           )}

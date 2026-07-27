@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import {
   Dashboard,
   type DashboardLink,
+  type DashboardEvent,
   type DashboardProfile,
   type DashboardReferral,
   type DashboardSocial,
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
     { data: links },
     { data: referrals },
     { data: socials },
-    { count: interactionCount },
+    { data: events },
   ] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -51,8 +52,10 @@ export default async function DashboardPage() {
         .order("position"),
       supabase
         .from("click_events")
-        .select("id", { count: "exact", head: true })
-        .eq("profile_id", user.id),
+        .select("event_type,link_id,referral_id,occurred_at")
+        .eq("profile_id", user.id)
+        .order("occurred_at", { ascending: false })
+        .limit(5000),
     ]);
 
   if (!profile) {
@@ -66,7 +69,7 @@ export default async function DashboardPage() {
       links={(links ?? []) as DashboardLink[]}
       referrals={(referrals ?? []) as DashboardReferral[]}
       socials={(socials ?? []) as DashboardSocial[]}
-      interactionCount={interactionCount ?? 0}
+      events={(events ?? []) as DashboardEvent[]}
     />
   );
 }
