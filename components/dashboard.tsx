@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
+import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import ColorLensOutlined from "@mui/icons-material/ColorLensOutlined";
 import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
@@ -380,6 +381,30 @@ export function Dashboard({
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
+            {/* The shareable address was previously only discoverable as a chip
+                further down the page, which people missed. Surface copy next to
+                open, where you look when you want to send someone your page. */}
+            <Tooltip title={`Copy ${publicProfileAddress(draft.username || "username")}`} arrow>
+              <IconButton
+                onClick={async () => {
+                  const address = publicProfileAddress(draft.username || "username");
+                  try {
+                    await navigator.clipboard.writeText(`https://${address}`);
+                    setNotice({ severity: "success", message: `Copied ${address}` });
+                  } catch {
+                    // Clipboard needs a secure context and can be blocked, so
+                    // show the address itself as the fallback.
+                    setNotice({
+                      severity: "error",
+                      message: `Couldn't copy — your page is at ${address}`,
+                    });
+                  }
+                }}
+                aria-label="Copy public page link"
+              >
+                <ContentCopyRounded />
+              </IconButton>
+            </Tooltip>
             {draft.is_published && (
               <Tooltip title="Open public page" arrow>
                 <IconButton
@@ -439,7 +464,7 @@ export function Dashboard({
                   )
                 }
                 required
-                helperText={`Public URL: /u/${draft.username || "username"}`}
+                helperText={`Public URL: ${publicProfileAddress(draft.username || "username")}`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <div className="workspace-form-pair">

@@ -98,9 +98,16 @@ export default async function PublicProfilePage({
       .slice(0, 2)
       .toUpperCase() || "LB";
 
+  // avatar_path stores the object key in the public `avatars` bucket; without
+  // resolving it here the page can only ever render initials.
+  const avatarUrl = profile.avatar_path
+    ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+    : null;
+
   const creatorProfile: CreatorProfile = {
     username: profile.username,
     initials,
+    avatarUrl,
     displayName: profile.display_name,
     greeting: profile.greeting,
     headline: profile.headline,

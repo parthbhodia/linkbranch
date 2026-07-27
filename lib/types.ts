@@ -28,6 +28,8 @@ export type SocialLink = {
 export type CreatorProfile = {
   username: string;
   initials: string;
+  /** Public URL of the uploaded avatar. Falls back to initials when absent. */
+  avatarUrl?: string | null;
   displayName: string;
   greeting: string;
   headline: string;

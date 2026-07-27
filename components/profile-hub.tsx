@@ -233,11 +233,23 @@ export function ProfileHub({
           </div>
 
           <Box className="profile-copy">
-            <Box className="avatar" aria-label={`${profile.displayName} initials`}>
-              <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
-                {profile.initials}
-              </Typography>
-            </Box>
+            {profile.avatarUrl ? (
+              <Box
+                component="img"
+                className="avatar avatar--image"
+                src={profile.avatarUrl}
+                alt={`${profile.displayName}'s profile photo`}
+                loading="eager"
+                width={96}
+                height={96}
+              />
+            ) : (
+              <Box className="avatar" aria-label={`${profile.displayName} initials`}>
+                <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
+                  {profile.initials}
+                </Typography>
+              </Box>
+            )}
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1">
               {profile.greeting} {profile.displayName}.

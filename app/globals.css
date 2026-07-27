@@ -1396,19 +1396,36 @@ a {
   margin: 0 0 16px;
 }
 
+/* Hero type has to survive two things the design didn't account for: long
+   display names, and iOS Dynamic Type, where a rem-based clamp floor scales
+   up with the user's text-size setting and can exceed the viewport. Lower
+   floors give headroom; break-word stops a single long name overflowing. */
 .public-template .profile-copy h1 {
   margin: 0;
-  font-size: clamp(2.6rem, 8vw, 5rem);
-  line-height: 0.92;
-  letter-spacing: -0.075em;
+  font-size: clamp(1.9rem, 8vw, 5rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 .profile-headline {
   margin-top: 8px !important;
-  font-size: clamp(2.1rem, 6vw, 4rem) !important;
+  font-size: clamp(1.55rem, 6vw, 4rem) !important;
   font-weight: 800 !important;
-  line-height: 0.96 !important;
-  letter-spacing: -0.065em !important;
+  line-height: 1 !important;
+  letter-spacing: -0.05em !important;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* The initials avatar is a grid container; an uploaded photo needs object-fit
+   so a non-square image is cropped rather than squashed. */
+.avatar--image {
+  display: block;
+  object-fit: cover;
+  background: var(--ink);
 }
 
 .public-template .headline-accent::after {
