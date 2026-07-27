@@ -5,6 +5,8 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
+import EditRounded from "@mui/icons-material/EditRounded";
+import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
 import {
@@ -173,9 +175,44 @@ export function ProfileHub({
       : null,
   );
 
+  const [isOwner, setIsOwner] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    if (!databaseProfileId) return;
+    let active = true;
+    void createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (active) setIsOwner(data.user?.id === databaseProfileId);
+      });
+    return () => {
+      active = false;
+    };
+  }, [databaseProfileId]);
+
+  const sharePage = useCallback(async () => {
+    const url = window.location.href;
+    // Native sheet on mobile (where this page is mostly opened); clipboard
+    // everywhere else. Ignore AbortError -- that is the user cancelling.
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: profile.displayName, url });
+        return;
+      } catch (error) {
+        if ((error as Error)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice({ message: "Link copied", severity: "success" });
+    } catch {
+      setNotice({ message: url, severity: "info" });
+    }
+  }, [profile.displayName]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -229,7 +266,28 @@ export function ProfileHub({
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
           <BrandMark />
-            <span className="profile-handle">@{profile.username}</span>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <span className="profile-handle">@{profile.username}</span>
+              <Tooltip title="Share this page" arrow>
+                <IconButton size="small" onClick={sharePage} aria-label="Share this page">
+                  <IosShareRounded fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              {/* Owner-only: visiting your own public page is the most natural
+                  moment to want to change it, and there was no route back. */}
+              {isOwner && (
+                <Tooltip title="Edit your page" arrow>
+                  <IconButton
+                    size="small"
+                    component={Link}
+                    href="/dashboard"
+                    aria-label="Edit your page"
+                  >
+                    <EditRounded fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
           </div>
 
           <Box className="profile-copy">
