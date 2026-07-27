@@ -80,6 +80,7 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
       <div className="username-claim__field">
         <span aria-hidden="true">linkbranch.com/u/</span>
         <TextField
+          name="username"
           value={username}
           onChange={(event) => {
             const nextUsername = event.target.value
@@ -103,6 +104,9 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
             maxLength: 30,
             autoCapitalize: "none",
             autoCorrect: "off",
+            autoComplete: "username",
+            spellCheck: false,
+            inputMode: "text",
           }}
           InputProps={{
             disableUnderline: true,
@@ -126,6 +130,7 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
       <Typography
         className={`username-claim__helper username-claim__helper--${availability}`}
         component="p"
+        aria-live="polite"
       >
         {helperText}
       </Typography>
