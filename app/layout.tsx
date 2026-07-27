@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     "coupon code tracking",
   ],
   category: "technology",
+  // Verifies a Search Console *URL-prefix* property (https://cueful.bio).
+  // A Domain property still needs the equivalent DNS TXT record, since that
+  // one covers www and every protocol and can only be proven at the zone.
+  verification: {
+    google: "melmRrR7HPqhynyB7vEYN35VjeAxem7OR_hmUBq_l5E",
+  },
   creator: BRAND_NAME,
   publisher: BRAND_NAME,
   formatDetection: {
