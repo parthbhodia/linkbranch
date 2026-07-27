@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const alt =
-  "Cueful, a focused creator page for links, referral offers, and analytics";
+  "Cueful — one useful page for links, referral offers, and analytics";
 export const size = {
   width: 1200,
   height: 630,
@@ -29,20 +29,36 @@ export default function OpenGraphImage() {
         <div style={{ display: "flex", fontSize: 44, fontWeight: 800 }}>
           cueful<span style={{ color: "#b84420" }}>.</span>
         </div>
-        <div
-          style={{
-            maxWidth: 980,
-            display: "flex",
-            flexDirection: "column",
-            fontSize: 86,
-            fontWeight: 800,
-            letterSpacing: "-5px",
-            lineHeight: 0.92,
-          }}
-        >
-          Make every
-          <br />
-          click useful.
+        <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
+          <div
+            style={{
+              maxWidth: 980,
+              display: "flex",
+              flexDirection: "column",
+              fontSize: 82,
+              fontWeight: 800,
+              letterSpacing: "-5px",
+              lineHeight: 0.94,
+            }}
+          >
+            One page.
+            <br />
+            Better clicks.
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignSelf: "flex-start",
+              padding: "15px 24px",
+              borderRadius: 999,
+              background: "#c9ef69",
+              border: "2px solid #20221c",
+              fontSize: 24,
+              fontWeight: 750,
+            }}
+          >
+            Build yours free →
+          </div>
         </div>
         <div
           style={{

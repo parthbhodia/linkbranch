@@ -3,16 +3,16 @@ import { MarketingHome } from "@/components/marketing-home";
 import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Cueful | Links, referrals, and analytics for creators",
+  title: "Cueful | One useful page for every click",
   description:
-    "Build a focused creator page for your links, referral offers, and the insights that matter.",
+    "Build a free creator page for your links, referral offers, coupon codes, and audience insights.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Cueful | Make every click useful",
+    title: "Cueful | One page. Better clicks.",
     description:
-      "Build a focused creator page for links, referral offers, and the audience signals that matter.",
+      "Share links, referral offers, and coupon codes—then see what gets attention.",
     url: "/",
     siteName: BRAND_NAME,
     type: "website",

@@ -7,9 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND_URL),
   applicationName: BRAND_NAME,
-  title: "Cueful | Creator links, referrals, and analytics",
+  title: "Cueful | One useful page for every click",
   description:
-    "Build a focused creator page for your links, referral offers, and audience insights.",
+    "Build a free creator page for your links, referral offers, coupon codes, and audience insights.",
   keywords: [
     "link in bio",
     "creator profile",
@@ -26,18 +26,18 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Cueful | Make every click useful",
+    title: "Cueful | One page. Better clicks.",
     description:
-      "Build a focused creator page for your links, referral offers, and audience insights.",
+      "Share links, referral offers, and coupon codes—then see what gets attention.",
     siteName: BRAND_NAME,
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cueful | Make every click useful",
+    title: "Cueful | One page. Better clicks.",
     description:
-      "A focused creator page for links, referral offers, and useful audience signals.",
+      "Share links, referral offers, and coupon codes—then see what gets attention.",
   },
   robots: {
     index: true,
