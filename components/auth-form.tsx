@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -24,7 +25,11 @@ type AuthMode = "login" | "signup";
 export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<AuthMode>("signup");
+  const initialMode: AuthMode =
+    searchParams.get("mode") === "login" ? "login" : "signup";
+  const initialNotice = searchParams.get("notice");
+  const initialError = searchParams.get("error");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -33,11 +38,23 @@ export function AuthForm() {
   const [message, setMessage] = useState<{
     severity: "success" | "error";
     text: string;
-  } | null>(
-    searchParams.get("error")
-      ? { severity: "error", text: "That confirmation link could not be completed." }
-      : null,
-  );
+  } | null>(() => {
+    if (initialNotice === "confirmed_sign_in") {
+      return {
+        severity: "success",
+        text: "Your email is confirmed. Sign in with the password you created.",
+      };
+    }
+
+    if (initialError === "confirmation_invalid") {
+      return {
+        severity: "error",
+        text: "This confirmation link is invalid or has already been used. If you already confirmed your email, sign in below.",
+      };
+    }
+
+    return null;
+  });
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,17 +91,25 @@ export function AuthForm() {
         router.push("/templates");
         router.refresh();
       } else {
-        setMessage({
-          severity: "success",
-          text: "Account created. Check your email to confirm your address.",
-        });
+        router.push("/auth/check-email?type=confirmation");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setMessage({ severity: "error", text: "Email or password is incorrect." });
+        if (error.code === "email_not_confirmed") {
+          router.push("/auth/check-email?type=confirmation");
+          return;
+        }
+        setMessage({
+          severity: "error",
+          text: "Email or password is incorrect.",
+        });
       } else {
-        router.push("/dashboard");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .single();
+        router.push(profile?.onboarding_completed ? "/dashboard" : "/templates");
         router.refresh();
       }
     }
@@ -93,28 +118,7 @@ export function AuthForm() {
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-story">
-        <Link className="brand" href="/" aria-label="Linkbranch home">
-          link<span>branch</span><i>.</i>
-        </Link>
-        <Box className="auth-story__copy">
-          <p className="section-label">YOUR CORNER OF THE INTERNET</p>
-          <Typography component="h1" variant="h1">
-            One profile.<br />
-            Every useful <span className="headline-accent">branch.</span>
-          </Typography>
-          <Typography sx={{ mt: 2.5, maxWidth: 470 }} color="text.secondary">
-            Publish your work, referral offers, and favorite resources without
-            handing your audience to an algorithm.
-          </Typography>
-        </Box>
-        <Typography variant="caption" color="text.secondary">
-          Your data stays attached to your account.
-        </Typography>
-      </section>
-
-      <section className="auth-panel">
+    <AuthFrame>
         <Paper className="auth-card" variant="outlined">
           <Typography component="h2" variant="h2">
             {mode === "signup" ? "Create your account" : "Welcome back"}
@@ -146,6 +150,7 @@ export function AuthForm() {
                   onChange={(event) => setDisplayName(event.target.value)}
                   required
                   autoComplete="name"
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
                 <TextField
                   label="Username"
@@ -156,6 +161,7 @@ export function AuthForm() {
                   required
                   helperText="Your public address will be linkbranch.com/u/username"
                   autoComplete="username"
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
               </>
             )}
@@ -166,6 +172,7 @@ export function AuthForm() {
               onChange={(event) => setEmail(event.target.value)}
               required
               autoComplete="email"
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               label="Password"
@@ -176,7 +183,13 @@ export function AuthForm() {
               inputProps={{ minLength: 8 }}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               helperText={mode === "signup" ? "Use at least 8 characters." : undefined}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
+            {mode === "login" && (
+              <Box className="auth-form__forgot">
+                <Link href="/auth/forgot-password">Forgot password?</Link>
+              </Box>
+            )}
             {message && (
               <Alert
                 severity={message.severity}
@@ -204,7 +217,6 @@ export function AuthForm() {
             </Button>
           </Stack>
         </Paper>
-      </section>
-    </main>
+    </AuthFrame>
   );
 }

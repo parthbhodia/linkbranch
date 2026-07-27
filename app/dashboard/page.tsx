@@ -1,11 +1,18 @@
 import { redirect } from "next/navigation";
-import { Dashboard, type DashboardProfile } from "@/components/dashboard";
+import {
+  Dashboard,
+  type DashboardLink,
+  type DashboardProfile,
+  type DashboardReferral,
+} from "@/components/dashboard";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Dashboard | Linkbranch",
   description: "Manage your Linkbranch profile.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -19,15 +26,26 @@ export default async function DashboardPage() {
 
   const [
     { data: profile },
-    { count: linkCount },
-    { count: referralCount },
+    { data: links },
+    { data: referrals },
     { count: interactionCount },
   ] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("links").select("id", { count: "exact", head: true }),
-      supabase.from("referrals").select("id", { count: "exact", head: true }),
-      supabase.from("click_events").select("id", { count: "exact", head: true }),
+      supabase
+        .from("links")
+        .select("id,title,subtitle,url,position,is_active,is_featured")
+        .eq("user_id", user.id)
+        .order("position"),
+      supabase
+        .from("referrals")
+        .select("id,provider,offer,url,code,color,position,is_active")
+        .eq("user_id", user.id)
+        .order("position"),
+      supabase
+        .from("click_events")
+        .select("id", { count: "exact", head: true })
+        .eq("profile_id", user.id),
     ]);
 
   if (!profile) {
@@ -38,8 +56,8 @@ export default async function DashboardPage() {
     <Dashboard
       profile={profile as DashboardProfile}
       email={user.email ?? ""}
-      linkCount={linkCount ?? 0}
-      referralCount={referralCount ?? 0}
+      links={(links ?? []) as DashboardLink[]}
+      referrals={(referrals ?? []) as DashboardReferral[]}
       interactionCount={interactionCount ?? 0}
     />
   );

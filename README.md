@@ -45,3 +45,21 @@ environment variable.
 Deploy the Next.js app to Vercel and keep Supabase as the backend. GitHub Pages
 is not suitable for the authenticated server-rendered routes and session
 middleware used by this project. Railway is not required for this architecture.
+
+In the Vercel project, add these variables for Production, Preview, and
+Development:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+```
+
+The authenticated pages are explicitly server-rendered, so a missing Vercel
+variable no longer crashes static-page generation during `pnpm run build`.
+Those variables are still required at runtime for sign-up, sign-in, account
+recovery, the dashboard, onboarding, and public profile data.
+
+Add the deployed URL to the Supabase Auth redirect allow list. The app handles
+confirmation, expired links, cross-browser recovery failures, forgot-password
+requests, password updates, and successful verification on dedicated routes
+under `/auth`.

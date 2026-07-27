@@ -10,6 +10,8 @@ export const metadata = {
   description: "Add your profile details and links.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function OnboardingPage({
   searchParams,
 }: {
@@ -31,12 +33,18 @@ export default async function OnboardingPage({
       supabase
         .from("links")
         .select("id,title,url,is_active,is_featured")
+        .eq("user_id", user.id)
         .order("position"),
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,is_active")
+        .eq("user_id", user.id)
         .order("position"),
-      supabase.from("social_links").select("platform,url").order("position"),
+      supabase
+        .from("social_links")
+        .select("platform,url")
+        .eq("user_id", user.id)
+        .order("position"),
     ]);
 
   if (!profile) {

@@ -5,6 +5,8 @@ import type { CreatorProfile } from "@/lib/types";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

@@ -21,6 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { CreatorProfile, LinkItem, Referral } from "@/lib/types";
+import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 
 type TrackTarget = {
@@ -265,6 +266,7 @@ export function ProfileHub({
                 rel="noreferrer"
                 variant="outlined"
                 size="small"
+                startIcon={getSocialPlatformIcon(social.platform)}
                 endIcon={<ArrowOutwardRounded />}
                 onClick={() => track(`Opened ${social.platform}`)}
               >

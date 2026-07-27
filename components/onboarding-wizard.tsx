@@ -21,6 +21,7 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -34,6 +35,11 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  getSocialPlatformIcon,
+  getSocialPlatformOption,
+  socialPlatformOptions,
+} from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 
 type LinkDraft = {
@@ -51,6 +57,12 @@ type ReferralDraft = {
   url: string;
   code: string;
   is_active: boolean;
+};
+
+type SocialDraft = {
+  id: number;
+  platform: string;
+  url: string;
 };
 
 export type OnboardingInitialData = {
@@ -88,6 +100,30 @@ const templateNames: Record<string, string> = {
   "soft-studio": "Soft Studio",
 };
 
+function normalizeHttpUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const candidate = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(candidate);
+    if (
+      !["http:", "https:"].includes(parsed.protocol) ||
+      !parsed.hostname
+    ) {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function OnboardingWizard({
   initialTemplate,
   initialData,
@@ -109,11 +145,12 @@ export function OnboardingWizard({
   const [showLocation, setShowLocation] = useState(
     initialData.profile.show_location,
   );
-  const [instagram, setInstagram] = useState(
-    initialData.socials.find((item) => item.platform === "Instagram")?.url ?? "",
-  );
-  const [xProfile, setXProfile] = useState(
-    initialData.socials.find((item) => item.platform === "X / Twitter")?.url ?? "",
+  const [socials, setSocials] = useState<SocialDraft[]>(
+    initialData.socials.map((item, index) => ({
+      id: index + 1,
+      platform: item.platform,
+      url: item.url,
+    })),
   );
   const [links, setLinks] = useState<LinkDraft[]>(
     initialData.links.length
@@ -146,6 +183,13 @@ export function OnboardingWizard({
         .slice(0, 2)
         .toUpperCase() || "PB",
     [displayName],
+  );
+  const unusedSocialPlatforms = useMemo(
+    () =>
+      socialPlatformOptions.filter(
+        (option) => !socials.some((item) => item.platform === option.label),
+      ),
+    [socials],
   );
 
   useEffect(() => {
@@ -240,6 +284,46 @@ export function OnboardingWizard({
     });
   }
 
+  function addSocial(platform?: string) {
+    const nextPlatform = platform ?? unusedSocialPlatforms[0]?.label;
+    if (!nextPlatform) {
+      setNotice({
+        message: "All supported social profiles are already added.",
+        severity: "info",
+      });
+      return;
+    }
+
+    setSocials((current) => [
+      ...current,
+      {
+        id: Math.max(0, ...current.map((item) => item.id)) + 1,
+        platform: nextPlatform,
+        url: "",
+      },
+    ]);
+    setNotice({ message: `${nextPlatform} added`, severity: "success" });
+  }
+
+  function updateSocial(
+    id: number,
+    field: "platform" | "url",
+    value: string,
+  ) {
+    setSocials((current) =>
+      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    );
+  }
+
+  function removeSocial(id: number) {
+    const removed = socials.find((item) => item.id === id);
+    setSocials((current) => current.filter((item) => item.id !== id));
+    setNotice({
+      message: `${removed?.platform || "Social profile"} removed`,
+      severity: "warning",
+    });
+  }
+
   async function next() {
     if (activeStep === 1) {
       setActiveStep(2);
@@ -250,10 +334,27 @@ export function OnboardingWizard({
     const completedReferrals = referrals.filter(
       (item) => item.provider.trim() && item.offer.trim() && item.url.trim(),
     );
+    const completedSocials = socials.filter(
+      (item) => item.platform.trim() && item.url.trim(),
+    );
 
     if (completedLinks.length === 0) {
       setNotice({
         message: "Add at least one link with a title and URL.",
+        severity: "error",
+      });
+      return;
+    }
+
+    if (
+      links.some(
+        (item) =>
+          (item.title || item.url) &&
+          (!item.title.trim() || !item.url.trim()),
+      )
+    ) {
+      setNotice({
+        message: "Complete both the title and URL for every link.",
         severity: "error",
       });
       return;
@@ -273,16 +374,67 @@ export function OnboardingWizard({
       return;
     }
 
+    if (
+      socials.some(
+        (item) =>
+          (item.platform || item.url) &&
+          (!item.platform.trim() || !item.url.trim()),
+      )
+    ) {
+      setNotice({
+        message: "Add the full URL for every selected social profile.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const normalizedLinks = completedLinks.map((item) => ({
+      ...item,
+      url: normalizeHttpUrl(item.url),
+    }));
+    if (normalizedLinks.some((item) => !item.url)) {
+      setNotice({
+        message: "Enter a valid link URL, such as https://example.com.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const normalizedReferrals = completedReferrals.map((item) => ({
+      ...item,
+      url: normalizeHttpUrl(item.url),
+    }));
+    if (normalizedReferrals.some((item) => !item.url)) {
+      setNotice({
+        message: "Enter a valid URL for every referral offer.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const normalizedSocials = completedSocials.map((item) => ({
+      ...item,
+      url: normalizeHttpUrl(item.url),
+    }));
+    if (normalizedSocials.some((item) => !item.url)) {
+      setNotice({
+        message: "Enter a valid URL for every social profile.",
+        severity: "error",
+      });
+      return;
+    }
+
+    const socialPlatforms = completedSocials.map((item) => item.platform);
+    if (new Set(socialPlatforms).size !== socialPlatforms.length) {
+      setNotice({
+        message: "Each social platform can only be added once.",
+        severity: "error",
+      });
+      return;
+    }
+
     setSaving(true);
     const supabase = createClient();
-    const socials = [
-      instagram.trim()
-        ? { platform: "Instagram", url: instagram.trim() }
-        : null,
-      xProfile.trim()
-        ? { platform: "X / Twitter", url: xProfile.trim() }
-        : null,
-    ].filter((item): item is { platform: string; url: string } => Boolean(item));
     const referralColors = ["#e8347d", "#20221f", "#3659d9", "#a33b20"];
 
     const { error } = await supabase.rpc("save_profile_bundle", {
@@ -298,12 +450,15 @@ export function OnboardingWizard({
         template: initialTemplate,
         is_published: true,
       },
-      links_data: completedLinks,
-      referrals_data: completedReferrals.map((item, index) => ({
+      links_data: normalizedLinks,
+      referrals_data: normalizedReferrals.map((item, index) => ({
         ...item,
         color: referralColors[index % referralColors.length],
       })),
-      socials_data: socials,
+      socials_data: normalizedSocials.map((item) => ({
+        platform: item.platform.trim(),
+        url: item.url,
+      })),
     });
     setSaving(false);
 
@@ -465,26 +620,141 @@ export function OnboardingWizard({
               </Paper>
 
               <Paper variant="outlined" className="form-section">
-                <Typography component="h2" variant="h3">Social profiles</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, mb: 2 }}>
-                  Optional. Add the full profile URL.
-                </Typography>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Instagram"
-                    placeholder="https://instagram.com/username"
-                    value={instagram}
-                    onChange={(event) => setInstagram(event.target.value)}
-                    fullWidth
-                  />
-                  <TextField
-                    label="X / Twitter"
-                    placeholder="https://x.com/username"
-                    value={xProfile}
-                    onChange={(event) => setXProfile(event.target.value)}
-                    fullWidth
-                  />
+                <Stack
+                  direction="row"
+                  alignItems="flex-start"
+                  justifyContent="space-between"
+                  spacing={2}
+                >
+                  <Box>
+                    <Typography component="h2" variant="h3">
+                      Social profiles
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 0.75 }}
+                    >
+                      Optional. Add the full URL for every profile you want to show.
+                    </Typography>
+                  </Box>
+                  <Button
+                    startIcon={<AddRounded />}
+                    onClick={() => addSocial()}
+                    disabled={unusedSocialPlatforms.length === 0}
+                  >
+                    Add social
+                  </Button>
                 </Stack>
+
+                <Stack spacing={1.5} sx={{ mt: 2.5 }}>
+                  {socials.map((item) => {
+                    const option = getSocialPlatformOption(item.platform);
+                    return (
+                      <Box className="social-profile-editor" key={item.id}>
+                        <TextField
+                          select
+                          label="Platform"
+                          value={item.platform}
+                          onChange={(event) =>
+                            updateSocial(item.id, "platform", event.target.value)
+                          }
+                          slotProps={{ inputLabel: { shrink: true } }}
+                        >
+                          {!option && (
+                            <MenuItem value={item.platform}>
+                              {item.platform}
+                            </MenuItem>
+                          )}
+                          {socialPlatformOptions.map((platform) => (
+                            <MenuItem
+                              value={platform.label}
+                              disabled={socials.some(
+                                (social) =>
+                                  social.id !== item.id &&
+                                  social.platform === platform.label,
+                              )}
+                              key={platform.label}
+                            >
+                              <span className="social-platform-option">
+                                {platform.icon}
+                                {platform.label}
+                              </span>
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          label={`${item.platform} profile URL`}
+                          type="url"
+                          placeholder={
+                            option?.placeholder ?? "https://example.com/profile"
+                          }
+                          value={item.url}
+                          onChange={(event) =>
+                            updateSocial(item.id, "url", event.target.value)
+                          }
+                          onBlur={() => {
+                            const normalized = normalizeHttpUrl(item.url);
+                            if (normalized) {
+                              updateSocial(item.id, "url", normalized);
+                            }
+                          }}
+                          fullWidth
+                          slotProps={{
+                            inputLabel: { shrink: true },
+                            input: {
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  {getSocialPlatformIcon(item.platform)}
+                                </InputAdornment>
+                              ),
+                            },
+                          }}
+                        />
+                        <Tooltip title={`Remove ${item.platform}`} arrow>
+                          <IconButton
+                            aria-label={`Remove ${item.platform}`}
+                            onClick={() => removeSocial(item.id)}
+                          >
+                            <DeleteOutlineRounded />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    );
+                  })}
+
+                  {socials.length === 0 && (
+                    <Box className="social-profile-empty">
+                      <Typography fontWeight={800}>
+                        No social profiles added
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Choose the networks that are actually useful to your audience.
+                      </Typography>
+                    </Box>
+                  )}
+                </Stack>
+
+                {unusedSocialPlatforms.length > 0 && (
+                  <div className="social-platform-picker">
+                    <Typography variant="caption" color="text.secondary">
+                      QUICK ADD
+                    </Typography>
+                    <div>
+                      {unusedSocialPlatforms.map((platform) => (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={platform.icon}
+                          onClick={() => addSocial(platform.label)}
+                          key={platform.label}
+                        >
+                          {platform.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Paper>
             </Stack>
           ) : (
@@ -512,8 +782,16 @@ export function OnboardingWizard({
                       />
                       <TextField
                         label="URL"
+                        type="url"
+                        placeholder="https://example.com"
                         value={item.url}
                         onChange={(event) => updateLink(item.id, "url", event.target.value)}
+                        onBlur={() => {
+                          const normalized = normalizeHttpUrl(item.url);
+                          if (normalized) {
+                            updateLink(item.id, "url", normalized);
+                          }
+                        }}
                         fullWidth
                         size="small"
                         slotProps={{
@@ -628,11 +906,18 @@ export function OnboardingWizard({
                         />
                         <TextField
                           label="Referral URL"
+                          type="url"
                           placeholder="https://example.com/ref/your-name"
                           value={item.url}
                           onChange={(event) =>
                             updateReferral(item.id, "url", event.target.value)
                           }
+                          onBlur={() => {
+                            const normalized = normalizeHttpUrl(item.url);
+                            if (normalized) {
+                              updateReferral(item.id, "url", normalized);
+                            }
+                          }}
                           fullWidth
                           size="small"
                           required
@@ -744,6 +1029,18 @@ export function OnboardingWizard({
             </Typography>
             {showLocation && location && (
               <Typography variant="caption" sx={{ mt: 1, opacity: 0.62 }}>{location}</Typography>
+            )}
+            {socials.some((item) => item.url.trim()) && (
+              <div className="setup-phone__socials" aria-label="Social profile preview">
+                {socials
+                  .filter((item) => item.url.trim())
+                  .slice(0, 6)
+                  .map((item) => (
+                    <span title={item.platform} key={item.id}>
+                      {getSocialPlatformIcon(item.platform)}
+                    </span>
+                  ))}
+              </div>
             )}
             <div className="setup-phone__links">
               {links
