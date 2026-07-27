@@ -6,6 +6,10 @@ import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
 import "./globals.css";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-MWDHV6S4";
+// Loaded directly rather than as a tag inside the GTM container. If a Google
+// tag with this same id is ever added to GTM as well, pageviews will be
+// counted twice — configure it in one place or the other, not both.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-D641JQ9E35";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND_URL),
@@ -76,6 +80,16 @@ new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
+        </Script>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
         </Script>
         <AppRouterCacheProvider>
           <ThemeProvider>{children}</ThemeProvider>
