@@ -67,7 +67,7 @@ function MiniProfile({ template }: { template: Template }) {
         <span>•••</span>
       </div>
       <div className="mini-profile__avatar">PB</div>
-      <div className="mini-profile__name">@parth</div>
+      <div className="mini-profile__name">@yourname</div>
       <div className="mini-profile__bio">Making useful things for the web.</div>
       <div className="mini-profile__socials">
         <i />

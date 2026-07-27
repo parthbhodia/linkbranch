@@ -186,13 +186,13 @@ export function MarketingHome() {
             <span className="builder-demo__live">● LIVE PREVIEW</span>
             <div className="builder-phone">
               <div className="builder-phone__avatar">PB</div>
-              <small>@parth</small>
+              <small>@avery-makes</small>
               <h2>Useful things,<br /><em>thoughtfully arranged.</em></h2>
               <p>Projects, field notes, favorite tools, and a few worthwhile perks.</p>
               <div className="builder-phone__offer">
                 <span>NOTION / REFERRAL</span>
                 <b>Templates for your next idea</b>
-                <small>COPY · PARTH20</small>
+                <small>COPY · AVERY20</small>
               </div>
               <div className="builder-phone__link">
                 <span><b>Latest side-project</b><small>An open-source experiment</small></span>
@@ -207,16 +207,6 @@ export function MarketingHome() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="marketing-proof" aria-label="Product highlights">
-        <span>PUBLIC PAGES AT /U/YOURNAME</span>
-        <i />
-        <span>REFERRAL-FIRST</span>
-        <i />
-        <span>LIVE EDITOR</span>
-        <i />
-        <span>SUPABASE-POWERED ANALYTICS</span>
       </section>
 
       <section className="marketing-positioning" id="features">
@@ -312,7 +302,7 @@ export function MarketingHome() {
           <div className="referral-proof__offer">
             <LocalOfferOutlined />
             <span><b>Notion templates</b><small>31 code copies · top offer</small></span>
-            <strong>PARTH20</strong>
+            <strong>AVERY20</strong>
           </div>
         </div>
       </section>
