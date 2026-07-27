@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
@@ -94,6 +95,7 @@ gtag('config', '${GA_ID}');`}
         <AppRouterCacheProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </AppRouterCacheProvider>
+        <Analytics />
       </body>
     </html>
   );
