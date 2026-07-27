@@ -15,7 +15,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-D641JQ9E35";
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND_URL),
   applicationName: BRAND_NAME,
-  title: "Cueful | One useful page for every click",
+  title: "Cueful — free link in bio for creators",
   description:
     "Build a free creator page for your links, referral offers, coupon codes, and audience insights.",
   keywords: [
@@ -40,18 +40,18 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Cueful | One page. Better clicks.",
+    title: "Cueful — one link in bio for everything you share",
     description:
-      "Share links, referral offers, and coupon codes—then see what gets attention.",
+      "A free link-in-bio page for your links, shop, and referral codes — and the only one that shows you which codes people actually copy.",
     siteName: BRAND_NAME,
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cueful | One page. Better clicks.",
+    title: "Cueful — one link in bio for everything you share",
     description:
-      "Share links, referral offers, and coupon codes—then see what gets attention.",
+      "A free link-in-bio page for your links, shop, and referral codes — and the only one that shows you which codes people actually copy.",
   },
   robots: {
     index: true,
