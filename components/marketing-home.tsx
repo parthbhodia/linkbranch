@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
@@ -13,6 +13,7 @@ import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { UsernameClaim } from "@/components/username-claim";
+import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
 
@@ -42,7 +43,20 @@ const demoLinks = [
 ];
 
 export function MarketingHome() {
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [builderStep, setBuilderStep] = useState<BuilderStep>("profile");
+
+  useEffect(() => {
+    let active = true;
+    void createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (active) setIsSignedIn(Boolean(data.user));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [demoName, setDemoName] = useState("Avery");
   const [demoHeadline, setDemoHeadline] = useState(
     "Useful things, thoughtfully arranged.",
@@ -139,8 +153,15 @@ export function MarketingHome() {
           <Button component="a" href="#examples" color="inherit">
             Examples
           </Button>
-          <Button component={Link} href="/auth?mode=login" color="inherit">
-            Sign in
+          {/* Nothing else in the app links to the editor, so a signed-in user
+              landing here had no route back to it — the button said "Sign in"
+              even though /auth redirects them straight to the dashboard. */}
+          <Button
+            component={Link}
+            href={isSignedIn ? "/dashboard" : "/auth?mode=login"}
+            color="inherit"
+          >
+            {isSignedIn ? "Dashboard" : "Sign in"}
           </Button>
           <Button
             component={Link}
