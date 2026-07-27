@@ -22,6 +22,19 @@ export async function generateMetadata({
     description: example
       ? example.profile.bio
       : `Links, resources, and referral offers from @${username}.`,
+    alternates: {
+      canonical: `/u/${username.toLowerCase()}`,
+    },
+    openGraph: {
+      title: example
+        ? `${example.profile.displayName}'s creator profile`
+        : `@${username} on Cueful`,
+      description: example
+        ? example.profile.bio
+        : `Links, resources, and referral offers from @${username}.`,
+      url: `/u/${username.toLowerCase()}`,
+      type: "profile" as const,
+    },
   };
 }
 

@@ -1,0 +1,28 @@
+# Cueful
+
+> Cueful is a web-based creator profile builder for focused links, referral offers, coupon codes, and audience analytics.
+
+## Product
+
+- Homepage: https://cueful.bio/
+- Templates: https://cueful.bio/templates
+- Live demo: https://cueful.bio/demo
+- Public profiles use the format: https://cueful.bio/u/username
+
+## Core capabilities
+
+- Build a responsive public creator profile.
+- Organize standard links and featured links.
+- Present referral offers with benefits and coupon codes.
+- Track link opens, referral opens, and coupon-code copies.
+- Choose from creator, freelancer, and referral-curator templates.
+
+## Example profiles
+
+- Creator: https://cueful.bio/u/maya-makes
+- Freelancer: https://cueful.bio/u/sam-builds
+- Referral curator: https://cueful.bio/u/dani-deals
+
+## Access
+
+Cueful is free to start. Account creation and profile management are available from the homepage.

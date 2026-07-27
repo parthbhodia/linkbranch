@@ -4206,14 +4206,76 @@ a {
   color: #74786d;
 }
 
-.example-profile-grid {
+.example-carousel {
   margin-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+}
+
+.example-carousel__toolbar {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.example-carousel__pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6d7166;
+  font: 750 0.55rem var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+}
+
+.example-carousel__pagination i {
+  width: clamp(64px, 10vw, 130px);
+  height: 1px;
+  background: #b8bbb0;
+}
+
+.example-carousel__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.example-carousel__controls .MuiIconButton-root {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #c7c9bf;
+  color: #20221c;
+  background: #faf9f1;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.example-carousel__controls .MuiIconButton-root:hover,
+.example-carousel__controls .MuiIconButton-root:focus-visible {
+  border-color: #7c826f;
+  background: #e9eddd;
+  transform: translateY(-2px);
+}
+
+.example-profile-grid {
+  display: flex;
   gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 8px 2px 28px;
+  scroll-behavior: smooth;
+  scroll-padding-inline: 2px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.example-profile-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .example-profile {
+  flex: 0 0 clamp(360px, 42vw, 540px);
   min-height: 660px;
   padding: 20px;
   display: grid;
@@ -4223,7 +4285,17 @@ a {
   color: #20221c;
   text-decoration: none;
   background: #eeeee7;
-  transition: transform 220ms ease, box-shadow 220ms ease;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.example-profile.is-active {
+  border-color: #8b927f;
+  box-shadow: 0 18px 48px rgba(35, 38, 31, 0.1);
 }
 
 .example-profile:hover,
@@ -4350,6 +4422,45 @@ a {
 
 .example-profile--after-dark .example-profile__phone > span {
   border-color: #3d4437;
+}
+
+.example-carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.example-carousel__dots button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  position: relative;
+  background: transparent;
+  cursor: pointer;
+}
+
+.example-carousel__dots button::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  position: absolute;
+  inset: 50% auto auto 50%;
+  background: #b8bbb0;
+  transform: translate(-50%, -50%);
+  transition: width 180ms ease, background-color 180ms ease;
+}
+
+.example-carousel__dots button.is-active::after {
+  width: 22px;
+  background: #59633f;
+}
+
+.example-carousel__dots button:focus-visible {
+  outline: 3px solid #91b435;
+  outline-offset: 3px;
 }
 
 .marketing-referrals {
@@ -4795,10 +4906,6 @@ a {
 
   .marketing-examples__heading {
     display: grid;
-  }
-
-  .example-profile-grid {
-    grid-template-columns: 1fr;
   }
 
   .example-profile {
@@ -5451,7 +5558,23 @@ a {
   }
 
   .example-profile {
+    flex-basis: calc(100% - 26px);
     min-height: 500px;
+  }
+
+  .example-carousel__toolbar {
+    margin-bottom: 8px;
+  }
+
+  .example-carousel__controls .MuiIconButton-root {
+    width: 42px;
+    height: 42px;
+  }
+
+  .example-profile-grid {
+    gap: 12px;
+    margin-right: -16px;
+    padding-right: 16px;
   }
 
   .marketing-evidence {

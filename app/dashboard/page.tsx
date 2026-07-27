@@ -12,6 +12,10 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata = {
   title: "Dashboard | Cueful",
   description: "Manage your Cueful profile.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export const dynamic = "force-dynamic";

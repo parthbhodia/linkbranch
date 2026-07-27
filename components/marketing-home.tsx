@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import BarChartRounded from "@mui/icons-material/BarChartRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
-import { Button, Chip, Typography } from "@mui/material";
+import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { UsernameClaim } from "@/components/username-claim";
@@ -52,6 +54,8 @@ export function MarketingHome() {
   const [codeCopies, setCodeCopies] = useState(67);
   const [copied, setCopied] = useState(false);
   const [demoStatus, setDemoStatus] = useState("Demo ready");
+  const [activeExample, setActiveExample] = useState(0);
+  const examplesRailRef = useRef<HTMLDivElement>(null);
 
   const initials = useMemo(
     () =>
@@ -85,6 +89,42 @@ export function MarketingHome() {
     setCopied(true);
     setDemoStatus(`${demoCode || "Referral"} copied`);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  function showExample(index: number) {
+    const nextIndex =
+      (index + exampleProfiles.length) % exampleProfiles.length;
+    const rail = examplesRailRef.current;
+    const card = rail?.children.item(nextIndex);
+
+    setActiveExample(nextIndex);
+    card?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "nearest",
+      inline: "start",
+    });
+  }
+
+  function updateActiveExample() {
+    const rail = examplesRailRef.current;
+    if (!rail) return;
+
+    const railStart = rail.getBoundingClientRect().left;
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    Array.from(rail.children).forEach((card, index) => {
+      const bounds = card.getBoundingClientRect();
+      const distance = Math.abs(bounds.left - railStart);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveExample(nearestIndex);
   }
 
   return (
@@ -325,30 +365,82 @@ export function MarketingHome() {
           </div>
           <Typography>Creator, freelancer, or referral curator.</Typography>
         </div>
-        <div className="example-profile-grid">
-          {exampleProfiles.map((example, index) => (
-            <Link
-              className={`example-profile example-profile--${example.template}`}
-              href={`/u/${example.slug}`}
-              key={example.slug}
+        <div className="example-carousel">
+          <div className="example-carousel__toolbar">
+            <div
+              className="example-carousel__pagination"
+              aria-label={`Example ${activeExample + 1} of ${exampleProfiles.length}`}
+              aria-live="polite"
             >
-              <div className="example-profile__meta">
-                <span>0{index + 1} / {example.role.toUpperCase()}</span>
-                <ArrowOutwardRounded aria-hidden="true" />
-              </div>
-              <div className="example-profile__phone">
-                <i>{example.profile.initials}</i>
-                <small>@{example.profile.username}</small>
-                <b>{example.profile.headline}<em> {example.profile.headlineAccent}</em></b>
-                <span />
-                <span />
-              </div>
-              <div>
-                <Typography component="h3">{example.profile.displayName}</Typography>
-                <Typography>{example.profile.bio}</Typography>
-              </div>
-            </Link>
-          ))}
+              <span>0{activeExample + 1}</span>
+              <i aria-hidden="true" />
+              <span>0{exampleProfiles.length}</span>
+            </div>
+            <div className="example-carousel__controls">
+              <Tooltip title="Previous example">
+                <IconButton
+                  aria-label="Previous example"
+                  onClick={() => showExample(activeExample - 1)}
+                >
+                  <ChevronLeftRounded aria-hidden="true" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Next example">
+                <IconButton
+                  aria-label="Next example"
+                  onClick={() => showExample(activeExample + 1)}
+                >
+                  <ChevronRightRounded aria-hidden="true" />
+                </IconButton>
+              </Tooltip>
+            </div>
+          </div>
+          <div
+            className="example-profile-grid"
+            ref={examplesRailRef}
+            onScroll={updateActiveExample}
+            aria-label="Example Cueful profiles"
+          >
+            {exampleProfiles.map((example, index) => (
+              <Link
+                className={`example-profile example-profile--${example.template}${
+                  activeExample === index ? " is-active" : ""
+                }`}
+                href={`/u/${example.slug}`}
+                aria-label={`Open ${example.profile.displayName}'s ${example.role} profile`}
+                aria-current={activeExample === index ? "true" : undefined}
+                key={example.slug}
+              >
+                <div className="example-profile__meta">
+                  <span>0{index + 1} / {example.role.toUpperCase()}</span>
+                  <ArrowOutwardRounded aria-hidden="true" />
+                </div>
+                <div className="example-profile__phone">
+                  <i>{example.profile.initials}</i>
+                  <small>@{example.profile.username}</small>
+                  <b>{example.profile.headline}<em> {example.profile.headlineAccent}</em></b>
+                  <span />
+                  <span />
+                </div>
+                <div>
+                  <Typography component="h3">{example.profile.displayName}</Typography>
+                  <Typography>{example.profile.bio}</Typography>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="example-carousel__dots" aria-label="Choose an example">
+            {exampleProfiles.map((example, index) => (
+              <button
+                type="button"
+                className={activeExample === index ? "is-active" : ""}
+                aria-label={`Show ${example.role} example`}
+                aria-pressed={activeExample === index}
+                onClick={() => showExample(index)}
+                key={example.slug}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
