@@ -17,8 +17,8 @@ export async function generateMetadata({
   const example = exampleProfileBySlug.get(username.toLowerCase());
   return {
     title: example
-      ? `${example.profile.displayName} | Linkbranch example`
-      : `@${username} | Linkbranch`,
+      ? `${example.profile.displayName} | Cueful example`
+      : `@${username} | Cueful`,
     description: example
       ? example.profile.bio
       : `Links, resources, and referral offers from @${username}.`,
@@ -105,7 +105,7 @@ export default async function PublicProfilePage({
       id: String(item.id),
       index: String(index + 1).padStart(2, "0"),
       title: item.title,
-      subtitle: item.subtitle || "Shared from my Linkbranch",
+      subtitle: item.subtitle || "Shared from my Cueful",
       url: item.url,
       tags: [item.title, item.subtitle],
       visits: 0,

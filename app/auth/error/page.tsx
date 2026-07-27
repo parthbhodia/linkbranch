@@ -2,8 +2,8 @@ import LinkOffRounded from "@mui/icons-material/LinkOffRounded";
 import { AuthStateCard } from "@/components/auth-state-card";
 
 export const metadata = {
-  title: "Authentication link problem | Linkbranch",
-  description: "Recover from an expired or invalid Linkbranch authentication link.",
+  title: "Authentication link problem | Cueful",
+  description: "Recover from an expired or invalid Cueful authentication link.",
 };
 
 const states = {

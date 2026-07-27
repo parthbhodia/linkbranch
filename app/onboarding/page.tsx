@@ -6,7 +6,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Set up your profile | Linkbranch",
+  title: "Set up your profile | Cueful",
   description: "Add your profile details and links.",
 };
 

@@ -1,7 +1,7 @@
-# Linkbranch
+# Cueful
 
-A creator link hub built with Next.js, React, TypeScript, Material UI, and
-Supabase.
+A focused creator page for links, referral offers, and useful audience signals.
+Built with Next.js, React, TypeScript, Material UI, and Supabase.
 
 Creators can:
 
@@ -11,6 +11,8 @@ Creators can:
 - hide content without deleting it and spotlight one primary link;
 - publish a public page at `/u/[username]`;
 - track link opens, referral opens, and coupon copies.
+
+Production domain: [cueful.bio](https://cueful.bio).
 
 Supabase Auth owns sessions. Postgres stores account content and interaction
 events. Row Level Security limits private reads and all creator mutations to

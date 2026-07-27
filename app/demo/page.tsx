@@ -3,8 +3,8 @@ import { ProfileHub } from "@/components/profile-hub";
 import { demoProfile } from "@/lib/demo-data";
 
 export const metadata: Metadata = {
-  title: "Live profile demo | Linkbranch",
-  description: "Explore an example Linkbranch creator profile.",
+  title: "Live profile demo | Cueful",
+  description: "Explore an example Cueful creator profile.",
 };
 
 export default function DemoProfilePage() {

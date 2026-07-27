@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 
 type TemplateId = "field-notes" | "after-dark" | "soft-studio";
 
@@ -63,7 +64,7 @@ function MiniProfile({ template }: { template: Template }) {
   return (
     <div className={`template-preview ${template.previewClass}`}>
       <div className="mini-profile__bar">
-        <span>linkbranch</span>
+        <span>cueful</span>
         <span>•••</span>
       </div>
       <div className="mini-profile__avatar">PB</div>
@@ -98,9 +99,7 @@ export function TemplatePicker() {
   return (
     <main className="template-shell">
       <header className="template-topbar">
-        <Link className="brand" href="/" aria-label="Linkbranch home">
-          link<span>branch</span><i>.</i>
-        </Link>
+        <BrandMark />
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary" className="template-step-copy">
             PROFILE SETUP

@@ -2,8 +2,8 @@ import TaskAltRounded from "@mui/icons-material/TaskAltRounded";
 import { AuthStateCard } from "@/components/auth-state-card";
 
 export const metadata = {
-  title: "Password updated | Linkbranch",
-  description: "Your Linkbranch password has been updated.",
+  title: "Password updated | Cueful",
+  description: "Your Cueful password has been updated.",
 };
 
 export default function PasswordUpdatedPage() {

@@ -2,8 +2,8 @@ import VerifiedRounded from "@mui/icons-material/VerifiedRounded";
 import { AuthStateCard } from "@/components/auth-state-card";
 
 export const metadata = {
-  title: "Email confirmed | Linkbranch",
-  description: "Your Linkbranch email address is confirmed.",
+  title: "Email confirmed | Cueful",
+  description: "Your Cueful email address is confirmed.",
 };
 
 export default function ConfirmedPage() {

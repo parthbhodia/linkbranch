@@ -4,8 +4,8 @@ import { AuthStateCard } from "@/components/auth-state-card";
 import { ResendConfirmationForm } from "@/components/resend-confirmation-form";
 
 export const metadata = {
-  title: "Check your email | Linkbranch",
-  description: "Continue your Linkbranch account setup from your inbox.",
+  title: "Check your email | Cueful",
+  description: "Continue your Cueful account setup from your inbox.",
 };
 
 export default async function CheckEmailPage({

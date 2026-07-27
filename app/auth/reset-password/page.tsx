@@ -3,8 +3,8 @@ import { ResetPasswordForm } from "@/components/reset-password-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Choose a new password | Linkbranch",
-  description: "Set a new password for your Linkbranch account.",
+  title: "Choose a new password | Cueful",
+  description: "Set a new password for your Cueful account.",
 };
 
 export const dynamic = "force-dynamic";

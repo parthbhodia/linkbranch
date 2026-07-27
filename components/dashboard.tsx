@@ -31,6 +31,8 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
+import { publicProfileAddress } from "@/lib/brand";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
@@ -340,9 +342,7 @@ export function Dashboard({
   return (
     <main className="workspace-shell">
       <aside className="workspace-rail" aria-label="Creator workspace">
-        <Link className="workspace-rail__brand" href="/" aria-label="Linkbranch home">
-          lb<span>.</span>
-        </Link>
+        <BrandMark className="workspace-rail__brand" compact />
         <Avatar className="workspace-rail__avatar">{initials}</Avatar>
         <nav className="workspace-rail__nav" aria-label="Editor sections">
           {workspaceSections.map((item) => (
@@ -770,7 +770,7 @@ export function Dashboard({
       >
         <header className="workspace-preview__topbar">
           <Chip
-            label={`linkbranch.com/u/${draft.username || "username"}`}
+            label={publicProfileAddress(draft.username || "username")}
             variant="outlined"
           />
           <Typography variant="caption">LIVE PREVIEW</Typography>

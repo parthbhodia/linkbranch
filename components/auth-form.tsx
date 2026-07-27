@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
+import { publicProfileAddress } from "@/lib/brand";
 
 type AuthMode = "login" | "signup";
 
@@ -161,7 +162,7 @@ export function AuthForm() {
                     setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
                   }
                   required
-                  helperText={`Your public address will be linkbranch.com/u/${username || "username"}`}
+                  helperText={`Your public address will be ${publicProfileAddress(username || "username")}`}
                   autoComplete="username"
                   slotProps={{ inputLabel: { shrink: true } }}
                 />

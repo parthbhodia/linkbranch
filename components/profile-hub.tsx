@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
@@ -227,9 +228,7 @@ export function ProfileHub({
       <article className="creator-card">
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
-          <Link className="brand" href="/" aria-label="Linkbranch home">
-            link<span>branch</span><i>.</i>
-          </Link>
+          <BrandMark />
             <span className="profile-handle">@{profile.username}</span>
           </div>
 
@@ -355,7 +354,7 @@ export function ProfileHub({
 
         {totalResults === 0 && (
           <Box className="empty-state">
-            <Typography variant="h3">No branch found.</Typography>
+            <Typography variant="h3">Nothing matches yet.</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ my: 1.5 }}>
               Try another keyword or clear the search to see everything.
             </Typography>
@@ -366,7 +365,7 @@ export function ProfileHub({
         <footer className="hub-footer">
           <Typography variant="caption" color="text.secondary">
             Make your own{" "}
-            <Link href="/auth"><strong>linkbranch ↗</strong></Link>
+            <Link href="/auth"><strong>cueful ↗</strong></Link>
           </Typography>
         </footer>
         </section>

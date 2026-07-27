@@ -1,8 +1,8 @@
 import { TemplatePicker } from "@/components/template-picker";
 
 export const metadata = {
-  title: "Choose a template | Linkbranch",
-  description: "Choose a starting style for your Linkbranch profile.",
+  title: "Choose a template | Cueful",
+  description: "Choose a starting style for your Cueful profile.",
 };
 
 export default function TemplatesPage() {

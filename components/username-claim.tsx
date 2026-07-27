@@ -6,6 +6,7 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import { Button, CircularProgress, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BRAND_NAME, PUBLIC_PROFILE_PREFIX, publicProfileAddress } from "@/lib/brand";
 
 type Availability = "idle" | "checking" | "available" | "taken" | "invalid" | "unknown";
 
@@ -69,7 +70,7 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
           : availability === "unknown"
             ? "We’ll confirm availability when you create your account."
             : compact
-              ? "Your public page: linkbranch.com/u/username"
+              ? `Your public page: ${publicProfileAddress()}`
               : "Choose the address you’ll share everywhere.";
 
   return (
@@ -78,7 +79,7 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
       onSubmit={claim}
     >
       <div className="username-claim__field">
-        <span aria-hidden="true">linkbranch.com/u/</span>
+        <span aria-hidden="true">{PUBLIC_PROFILE_PREFIX}</span>
         <TextField
           name="username"
           value={username}
@@ -100,7 +101,7 @@ export function UsernameClaim({ compact = false }: { compact?: boolean }) {
           variant="standard"
           error={availability === "taken" || availability === "invalid"}
           inputProps={{
-            "aria-label": "Claim your Linkbranch username",
+            "aria-label": `Claim your ${BRAND_NAME} username`,
             maxLength: 30,
             autoCapitalize: "none",
             autoCorrect: "off",

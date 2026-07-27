@@ -8,6 +8,7 @@ import BarChartRounded from "@mui/icons-material/BarChartRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { Button, Chip, Typography } from "@mui/material";
+import { BrandMark } from "@/components/brand-mark";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { UsernameClaim } from "@/components/username-claim";
 
@@ -60,7 +61,7 @@ export function MarketingHome() {
         .map((part) => part[0])
         .join("")
         .slice(0, 2)
-        .toUpperCase() || "LB",
+        .toUpperCase() || "CF",
     [demoName],
   );
   const headlineWords = demoHeadline.trim().split(/\s+/);
@@ -93,9 +94,7 @@ export function MarketingHome() {
       </a>
 
       <nav className="marketing-nav" aria-label="Primary navigation">
-        <Link className="brand marketing-nav__brand" href="/" aria-label="Linkbranch home">
-          link<span>branch</span><i>.</i>
-        </Link>
+        <BrandMark className="brand marketing-nav__brand" />
         <div className="marketing-nav__links">
           <Button component="a" href="#examples" color="inherit">
             Examples
@@ -140,7 +139,7 @@ export function MarketingHome() {
 
         <div
           className={`builder-demo builder-demo--${builderStep}`}
-          aria-label="Interactive Linkbranch builder demo"
+          aria-label="Interactive Cueful builder demo"
         >
           <div className="builder-demo__editor">
             <div className="builder-demo__window">
@@ -382,9 +381,7 @@ export function MarketingHome() {
       </section>
 
       <footer className="marketing-footer">
-        <Link className="brand" href="/">
-          link<span>branch</span><i>.</i>
-        </Link>
+        <BrandMark />
         <Typography>Clear links. Useful signals.</Typography>
         <div>
           <Link href="/templates">Templates</Link>

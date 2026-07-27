@@ -34,6 +34,8 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
+import { PUBLIC_PROFILE_PREFIX } from "@/lib/brand";
 import { useRouter } from "next/navigation";
 import {
   getSocialPlatformIcon,
@@ -474,9 +476,7 @@ export function OnboardingWizard({
   return (
     <main className="setup-shell">
       <header className="setup-topbar">
-        <Link className="brand" href="/" aria-label="Linkbranch home">
-          link<span>branch</span><i>.</i>
-        </Link>
+        <BrandMark />
         <Button color="inherit" size="small">Save and exit</Button>
       </header>
 
@@ -562,7 +562,9 @@ export function OnboardingWizard({
                     required
                     slotProps={{
                       input: {
-                        startAdornment: <InputAdornment position="start">linkbranch.com/</InputAdornment>,
+                        startAdornment: (
+                          <InputAdornment position="start">{PUBLIC_PROFILE_PREFIX}</InputAdornment>
+                        ),
                       },
                     }}
                     helperText="Letters, numbers, hyphens, and underscores."

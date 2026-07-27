@@ -3,8 +3,8 @@ import { AuthForm } from "@/components/auth-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Sign in or create an account | Linkbranch",
-  description: "Create and manage your Linkbranch profile.",
+  title: "Sign in or create an account | Cueful",
+  description: "Create and manage your Cueful profile.",
 };
 
 export const dynamic = "force-dynamic";

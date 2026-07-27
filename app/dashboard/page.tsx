@@ -10,8 +10,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Dashboard | Linkbranch",
-  description: "Manage your Linkbranch profile.",
+  title: "Dashboard | Cueful",
+  description: "Manage your Cueful profile.",
 };
 
 export const dynamic = "force-dynamic";
