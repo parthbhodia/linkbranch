@@ -3,7 +3,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import BoltRounded from "@mui/icons-material/BoltRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
@@ -74,12 +73,9 @@ const LinkCard = memo(function LinkCard({
           {link.subtitle}
         </Typography>
       </span>
-      <Stack alignItems="flex-end" spacing={0.5}>
-        <Typography variant="caption" color="text.secondary">
-          {link.visits} visits
-        </Typography>
+      <span className="link-card__arrow" aria-hidden="true">
         <ArrowOutwardRounded fontSize="small" />
-      </Stack>
+      </span>
     </Box>
   );
 });
@@ -167,7 +163,6 @@ export function ProfileHub({
   published?: boolean;
 }) {
   const [query, setQuery] = useState("");
-  const [interactions, setInteractions] = useState(0);
   const [notice, setNotice] = useState<{
     message: string;
     severity: "success" | "info" | "warning" | "error";
@@ -194,7 +189,6 @@ export function ProfileHub({
   }, [profile, query]);
 
   const track = useCallback((label: string, target?: TrackTarget) => {
-    setInteractions((current) => current + 1);
     setNotice({ message: label, severity: "info" });
     if (databaseProfileId && target) {
       const supabase = createClient();
@@ -230,66 +224,66 @@ export function ProfileHub({
 
   return (
     <main className={`app-shell public-template public-template--${template}`}>
-      <aside className="profile-panel" aria-label="Creator profile">
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <article className="creator-card">
+        <header className="profile-panel" aria-label="Creator profile">
+          <div className="profile-brand-row">
           <Link className="brand" href="/" aria-label="Linkbranch home">
             link<span>branch</span><i>.</i>
           </Link>
-          <Chip icon={<BoltRounded />} label="Online" size="small" variant="outlined" />
-        </Stack>
+            <span className="profile-handle">@{profile.username}</span>
+          </div>
 
-        <Box className="profile-copy">
-          <Box className="avatar" aria-label={`${profile.displayName} initials`}>
-            <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
-              {profile.initials}
+          <Box className="profile-copy">
+            <Box className="avatar" aria-label={`${profile.displayName} initials`}>
+              <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
+                {profile.initials}
+              </Typography>
+            </Box>
+            <p className="eyebrow">{profile.eyebrow}</p>
+            <Typography component="h1" variant="h1">
+              {profile.greeting} {profile.displayName}.
+            </Typography>
+            <Typography component="h2" className="profile-headline">
+              {profile.headline}{" "}
+              <span className="headline-accent">{profile.headlineAccent}</span>
+            </Typography>
+            <Typography className="profile-bio" color="text.secondary">
+              {profile.bio}
             </Typography>
           </Box>
-          <p className="eyebrow">{profile.eyebrow}</p>
-          <Typography component="h1" variant="h1">
-            {profile.greeting} {profile.displayName}.<br />
-            {profile.headline}{" "}
-            <span className="headline-accent">{profile.headlineAccent}</span>
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 2.5, maxWidth: 450 }}>
-            {profile.bio}
-          </Typography>
-        </Box>
 
-        <Box>
-          <nav className="social-rail" aria-label="Social profiles">
+          {profile.socials.length > 0 && (
+            <nav className="social-rail" aria-label="Social profiles">
             {profile.socials.map((social) => (
-              <Button
+                <Tooltip title={social.platform} arrow key={social.platform}>
+                  <IconButton
                 key={social.platform}
                 component="a"
                 href={social.url}
                 target="_blank"
                 rel="noreferrer"
-                variant="outlined"
-                size="small"
-                startIcon={getSocialPlatformIcon(social.platform)}
-                endIcon={<ArrowOutwardRounded />}
+                    aria-label={`Open ${social.platform}`}
                 onClick={() => track(`Opened ${social.platform}`)}
               >
-                {social.platform}
-              </Button>
+                    {getSocialPlatformIcon(social.platform)}
+                  </IconButton>
+                </Tooltip>
             ))}
           </nav>
-        </Box>
-      </aside>
+          )}
+        </header>
 
-      <section className="hub-panel">
-        <header className="hub-header">
-          <Box>
-            <p className="section-label">01 / THE GOOD STUFF</p>
-            <Typography component="h2" variant="h2">Pick a branch.</Typography>
-          </Box>
+        <section className="hub-panel">
+          <div className="profile-search">
           <TextField
             className="search-field"
-            label="Search the stack"
+              placeholder="Search links, coupons, or keywords…"
             type="search"
             size="small"
+              fullWidth
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+              inputProps={{ "aria-label": "Search links, coupons, or keywords" }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -300,13 +294,34 @@ export function ProfileHub({
               },
             }}
           />
-        </header>
+          </div>
+
+          {filtered.referrals.length > 0 && (
+            <section className="content-section content-section--perks" aria-labelledby="pocket-perks">
+              <div className="section-heading">
+                <Typography id="pocket-perks" component="h2" className="section-label">
+                  Perks & referrals
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Swipe →</Typography>
+              </div>
+              <div className="perk-rail">
+                {filtered.referrals.map((referral) => (
+                  <ReferralCard
+                    key={referral.id}
+                    referral={referral}
+                    onCopy={copyCode}
+                    onOpen={track}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
         {spotlightLinks.length > 0 && (
           <section className="content-section" aria-labelledby="featured-links">
             <div className="section-heading">
-              <Typography id="featured-links" component="h3" variant="h3">
-                Spotlight
+                <Typography id="featured-links" component="h2" className="section-label">
+                  Featured
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {query ? `${totalResults} results` : "Curated, not crowded"}
@@ -323,8 +338,8 @@ export function ProfileHub({
         {standardLinks.length > 0 && (
           <section className="content-section" aria-labelledby="all-links">
             <div className="section-heading">
-              <Typography id="all-links" component="h3" variant="h3">
-                Links
+                <Typography id="all-links" component="h2" className="section-label">
+                  My links
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {query ? `${totalResults} results` : `${standardLinks.length} destinations`}
@@ -333,27 +348,6 @@ export function ProfileHub({
             <div className="link-list">
               {standardLinks.map((link) => (
                 <LinkCard key={link.id} link={link} onOpen={track} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {filtered.referrals.length > 0 && (
-          <section className="content-section" aria-labelledby="pocket-perks">
-            <div className="section-heading">
-              <Typography id="pocket-perks" component="h3" variant="h3">
-                Pocket perks
-              </Typography>
-              <Typography variant="caption" color="text.secondary">Swipe to explore →</Typography>
-            </div>
-            <div className="perk-rail">
-              {filtered.referrals.map((referral) => (
-                <ReferralCard
-                  key={referral.id}
-                  referral={referral}
-                  onCopy={copyCode}
-                  onOpen={track}
-                />
               ))}
             </div>
           </section>
@@ -374,14 +368,9 @@ export function ProfileHub({
             Make your own{" "}
             <Link href="/auth"><strong>linkbranch ↗</strong></Link>
           </Typography>
-          <Chip
-            size="small"
-            variant="outlined"
-            color="primary"
-            label={`${interactions} interactions this visit`}
-          />
         </footer>
-      </section>
+        </section>
+      </article>
 
       <Snackbar
         open={Boolean(notice)}

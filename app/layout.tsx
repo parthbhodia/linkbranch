@@ -4,9 +4,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Linkbranch | Parth's corner of the internet",
+  title: "Linkbranch | Creator links, referrals, and analytics",
   description:
-    "A curated collection of Parth's projects, notes, tools, and favorite offers.",
+    "Build a focused creator page for your links, referral offers, and audience insights.",
 };
 
 export default function RootLayout({

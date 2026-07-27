@@ -4,6 +4,7 @@ import {
   type DashboardLink,
   type DashboardProfile,
   type DashboardReferral,
+  type DashboardSocial,
 } from "@/components/dashboard";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     { data: profile },
     { data: links },
     { data: referrals },
+    { data: socials },
     { count: interactionCount },
   ] =
     await Promise.all([
@@ -40,6 +42,11 @@ export default async function DashboardPage() {
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,color,position,is_active")
+        .eq("user_id", user.id)
+        .order("position"),
+      supabase
+        .from("social_links")
+        .select("platform,url,position")
         .eq("user_id", user.id)
         .order("position"),
       supabase
@@ -58,6 +65,7 @@ export default async function DashboardPage() {
       email={user.email ?? ""}
       links={(links ?? []) as DashboardLink[]}
       referrals={(referrals ?? []) as DashboardReferral[]}
+      socials={(socials ?? []) as DashboardSocial[]}
       interactionCount={interactionCount ?? 0}
     />
   );

@@ -9,6 +9,7 @@ import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import {
   Alert,
@@ -31,6 +32,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 
 export type DashboardProfile = {
@@ -68,6 +70,12 @@ export type DashboardReferral = {
   color: string;
   position: number;
   is_active: boolean;
+};
+
+export type DashboardSocial = {
+  platform: string;
+  url: string;
+  position: number;
 };
 
 type WorkspaceSection =
@@ -166,12 +174,14 @@ export function Dashboard({
   email,
   links,
   referrals,
+  socials,
   interactionCount,
 }: {
   profile: DashboardProfile;
   email: string;
   links: DashboardLink[];
   referrals: DashboardReferral[];
+  socials: DashboardSocial[];
   interactionCount: number;
 }) {
   const router = useRouter();
@@ -621,18 +631,13 @@ export function Dashboard({
           <Typography variant="caption">LIVE PREVIEW</Typography>
         </header>
         <div className={`workspace-phone workspace-phone--${draft.template}`}>
-          <div className="workspace-phone__cover" />
           <div className="workspace-phone__body">
             <Avatar className="workspace-phone__avatar">{initials}</Avatar>
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">
-              {draft.greeting} {draft.display_name}.
-            </Typography>
-            <Typography component="h3">
-              {draft.headline} <em>{draft.headline_accent}</em>
-            </Typography>
+            <Typography component="h2">{draft.greeting} {draft.display_name}.</Typography>
+            <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>
             )}
@@ -642,43 +647,70 @@ export function Dashboard({
               </Typography>
             )}
 
+            {socials.length > 0 && (
+              <div className="workspace-phone__socials" aria-label="Social profile preview">
+                {socials.slice(0, 5).map((social) => (
+                  <span title={social.platform} key={social.platform}>
+                    {getSocialPlatformIcon(social.platform)}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="workspace-phone__search">
+              <SearchRounded />
+              <span>Search links and offers…</span>
+            </div>
+
+            {activeReferrals.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">PERKS & REFERRALS</Typography>
+                  <small>SWIPE →</small>
+                </div>
+                <div className="workspace-phone__offer-rail">
+                  {activeReferrals.slice(0, 2).map((item) => (
+                    <div
+                      className="workspace-phone__offer"
+                      style={{ background: item.color }}
+                      key={item.id}
+                    >
+                      <b>{item.provider}</b>
+                      <span>{item.offer}</span>
+                      <small>{item.code ? `COPY · ${item.code}` : "OPEN OFFER"}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+              <Typography className="section-label">MY LINKS</Typography>
+              <small>{activeLinks.length || 2} DESTINATIONS</small>
+            </div>
             <div className="workspace-phone__links">
               {activeLinks.slice(0, 4).map((item) => (
                 <div className="workspace-phone__link" key={item.id}>
-                  <span>{item.title}</span>
+                  <span>
+                    <b>{item.title}</b>
+                    {item.subtitle && <small>{item.subtitle}</small>}
+                  </span>
                   <ArrowOutwardRounded />
                 </div>
               ))}
               {activeLinks.length === 0 && (
                 <>
                   <div className="workspace-phone__link">
-                    <span>Your first project</span>
+                    <span><b>Your first project</b><small>Share something worth opening</small></span>
                     <ArrowOutwardRounded />
                   </div>
                   <div className="workspace-phone__link">
-                    <span>A useful resource</span>
+                    <span><b>A useful resource</b><small>Give it a little context</small></span>
                     <ArrowOutwardRounded />
                   </div>
                 </>
               )}
             </div>
-
-            {activeReferrals.length > 0 && (
-              <div className="workspace-phone__offers">
-                <Typography className="section-label">PERKS & REFERRALS</Typography>
-                {activeReferrals.slice(0, 2).map((item) => (
-                  <div
-                    className="workspace-phone__offer"
-                    style={{ background: item.color }}
-                    key={item.id}
-                  >
-                    <b>{item.provider}</b>
-                    <span>{item.offer}</span>
-                    {item.code && <small>{item.code}</small>}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </aside>
