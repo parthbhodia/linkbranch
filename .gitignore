@@ -6,3 +6,6 @@ out/
 .env*
 !.env.example
 work/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
