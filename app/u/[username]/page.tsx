@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { ProfileHub } from "@/components/profile-hub";
+import {
+  ProfileHub,
+  type PublicMediaEmbed,
+  type PublicProduct,
+} from "@/components/profile-hub";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
@@ -152,7 +156,13 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const [{ data: links }, { data: referrals }, { data: socials }] =
+  const [
+    { data: links },
+    { data: referrals },
+    { data: socials },
+    { data: products },
+    { data: mediaEmbeds },
+  ] =
     await Promise.all([
       supabase
         .from("links")
@@ -172,6 +182,20 @@ export default async function PublicProfilePage({
         .from("social_links")
         .select("platform,url,position")
         .eq("user_id", profile.id)
+        .order("position"),
+      supabase
+        .from("products")
+        .select(
+          "id,title,description,price_amount,currency,category,badge,image_path,destination_url,cta_label,is_featured,position",
+        )
+        .eq("user_id", profile.id)
+        .eq("is_active", true)
+        .order("position"),
+      supabase
+        .from("media_embeds")
+        .select("id,title,provider,url,layout,position")
+        .eq("user_id", profile.id)
+        .eq("is_active", true)
         .order("position"),
     ]);
 
@@ -254,6 +278,10 @@ export default async function PublicProfilePage({
         databaseProfileId={profile.id}
         published={published === "1"}
         showBadge={Boolean(profile.show_cueful_badge)}
+        themeConfig={profile.theme_config}
+        products={(products ?? []) as PublicProduct[]}
+        mediaEmbeds={(mediaEmbeds ?? []) as PublicMediaEmbed[]}
+        disclosureText={profile.disclosure_text}
       />
     </>
   );

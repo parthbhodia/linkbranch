@@ -8,6 +8,10 @@ import {
   type DashboardSocial,
   type DashboardView,
 } from "@/components/dashboard";
+import {
+  type DashboardMediaEmbed,
+  type DashboardProduct,
+} from "@/components/commerce-media-editor";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -38,6 +42,8 @@ export default async function DashboardPage() {
     { data: socials },
     { data: events },
     { data: views },
+    { data: products },
+    { data: mediaEmbeds },
     { count: referralCount },
   ] =
     await Promise.all([
@@ -60,7 +66,7 @@ export default async function DashboardPage() {
       supabase
         .from("click_events")
         .select(
-          "event_type,link_id,referral_id,occurred_at,device_type,country_code,referrer",
+          "event_type,link_id,referral_id,product_id,media_embed_id,occurred_at,device_type,country_code,referrer",
         )
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
@@ -71,6 +77,18 @@ export default async function DashboardPage() {
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
+      supabase
+        .from("products")
+        .select(
+          "id,title,description,price_amount,currency,category,badge,image_path,destination_url,cta_label,position,is_active,is_featured",
+        )
+        .eq("user_id", user.id)
+        .order("position"),
+      supabase
+        .from("media_embeds")
+        .select("id,title,provider,url,layout,position,is_active")
+        .eq("user_id", user.id)
+        .order("position"),
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
@@ -91,6 +109,8 @@ export default async function DashboardPage() {
       socials={(socials ?? []) as DashboardSocial[]}
       events={(events ?? []) as DashboardEvent[]}
       views={(views ?? []) as DashboardView[]}
+      products={(products ?? []) as DashboardProduct[]}
+      mediaEmbeds={(mediaEmbeds ?? []) as DashboardMediaEmbed[]}
       referralCount={referralCount ?? 0}
     />
   );

@@ -58,6 +58,13 @@ export function ImportStarter() {
 
   return (
     <div className="import-starter" id="import">
+      <div className="import-starter__intro">
+        <span>COMING FROM LINKTREE?</span>
+        <Typography component="p">
+          Paste your public page to carry over your profile, links, and social
+          accounts. You review everything before it goes live.
+        </Typography>
+      </div>
       <form onSubmit={importProfile}>
         <TextField
           value={url}
@@ -87,8 +94,7 @@ export function ImportStarter() {
       </form>
       {error && <Alert severity="error">{error}</Alert>}
       <Typography component="p">
-        We’ll bring over your profile and links.{" "}
-        <Link href="/auth">Or start fresh.</Link>
+        No Linktree page? <Link href="/auth">Start fresh instead.</Link>
       </Typography>
     </div>
   );

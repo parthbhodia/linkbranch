@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
@@ -8,12 +8,15 @@ import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import ColorLensOutlined from "@mui/icons-material/ColorLensOutlined";
 import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
+import HelpOutlineRounded from "@mui/icons-material/HelpOutlineRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
+import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import {
   Alert,
   Avatar,
@@ -24,7 +27,6 @@ import {
   CircularProgress,
   FormControlLabel,
   IconButton,
-  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -34,7 +36,13 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { AudienceMap } from "@/components/audience-map";
 import { BrandMark } from "@/components/brand-mark";
+import {
+  CommerceMediaEditor,
+  type DashboardMediaEmbed,
+  type DashboardProduct,
+} from "@/components/commerce-media-editor";
 import { ShareDialog } from "@/components/share-dialog";
 import { publicProfileAddress } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
@@ -47,6 +55,14 @@ import {
   validateImage,
 } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
+import {
+  defaultProfileTheme,
+  profileThemeClassName,
+  profileThemeStyle,
+  resolveProfileTheme,
+  themePalettes,
+  type ProfileThemeConfig,
+} from "@/lib/theme-config";
 
 export type DashboardProfile = {
   id: string;
@@ -67,6 +83,8 @@ export type DashboardProfile = {
   is_discoverable: boolean;
   is_published: boolean;
   onboarding_completed: boolean;
+  theme_config: unknown;
+  disclosure_text: string | null;
 };
 
 export type DashboardLink = {
@@ -98,9 +116,16 @@ export type DashboardSocial = {
 };
 
 export type DashboardEvent = {
-  event_type: "link_open" | "referral_open" | "referral_copy";
+  event_type:
+    | "link_open"
+    | "referral_open"
+    | "referral_copy"
+    | "product_open"
+    | "media_open";
   link_id: number | null;
   referral_id: number | null;
+  product_id: number | null;
+  media_embed_id: number | null;
   occurred_at: string;
   device_type: string | null;
   country_code: string | null;
@@ -117,6 +142,7 @@ export type DashboardView = {
 type WorkspaceSection =
   | "profile"
   | "content"
+  | "commerce"
   | "appearance"
   | "analytics"
   | "account";
@@ -128,6 +154,7 @@ const workspaceSections: Array<{
 }> = [
   { id: "profile", label: "Profile", icon: <PersonOutlineRounded /> },
   { id: "content", label: "Links & referrals", icon: <InsertLinkRounded /> },
+  { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "appearance", label: "Appearance", icon: <ColorLensOutlined /> },
   { id: "analytics", label: "Analytics", icon: <AnalyticsOutlined /> },
   { id: "account", label: "Account", icon: <SettingsOutlined /> },
@@ -147,15 +174,20 @@ const sectionCopy: Record<
     title: "Arrange every useful branch",
     body: "Keep projects, resources, and referral offers in one clear list.",
   },
+  commerce: {
+    eyebrow: "SHOP & MEDIA",
+    title: "Give every release a richer card",
+    body: "Add products with external checkout, music players, and a clear disclosure.",
+  },
   appearance: {
     eyebrow: "DESIGN",
-    title: "Choose how your page feels",
-    body: "Switch templates without changing any of your content.",
+    title: "Make the page unmistakably yours",
+    body: "Start with a direction, then tune color, type, buttons, and spacing.",
   },
   analytics: {
     eyebrow: "ACTIVITY",
-    title: "See what people explore",
-    body: "A simple view of the content already on your page and its activity.",
+    title: "See how attention turns into action",
+    body: "Understand visits, sources, countries, clicks, and referral intent.",
   },
   account: {
     eyebrow: "ACCOUNT",
@@ -182,6 +214,69 @@ const templateOptions = [
     name: "Soft Studio",
     color: "#f1d9ee",
     accent: "#9b3c78",
+  },
+];
+
+const themeFontOptions: Array<{
+  id: ProfileThemeConfig["font"];
+  name: string;
+  sample: string;
+}> = [
+  { id: "studio", name: "Studio", sample: "Useful things" },
+  { id: "editorial", name: "Editorial", sample: "Useful things" },
+  { id: "rounded", name: "Rounded", sample: "Useful things" },
+  { id: "mono", name: "Mono", sample: "USEFUL THINGS" },
+];
+
+const themeColorFields: Array<{
+  key: keyof ProfileThemeConfig["colors"];
+  label: string;
+}> = [
+  { key: "background", label: "Background" },
+  { key: "surface", label: "Cards" },
+  { key: "text", label: "Main text" },
+  { key: "muted", label: "Quiet text" },
+  { key: "accent", label: "Accent" },
+  { key: "button", label: "Buttons" },
+  { key: "buttonText", label: "Button text" },
+];
+
+const dashboardTour = [
+  {
+    section: "profile" as WorkspaceSection,
+    eyebrow: "01 · PROFILE",
+    title: "Start with the promise",
+    body: "Your name, headline, and photo tell visitors immediately whether this page is for them.",
+  },
+  {
+    section: "content" as WorkspaceSection,
+    eyebrow: "02 · CONTENT",
+    title: "Arrange the next actions",
+    body: "Links share destinations. Referral cards explain a benefit and track offer opens or code copies.",
+  },
+  {
+    section: "commerce" as WorkspaceSection,
+    eyebrow: "03 · SHOP & MEDIA",
+    title: "Sell or play without the bloat",
+    body: "Product cards send people to your existing checkout. Media blocks support trusted music and video providers without autoplay.",
+  },
+  {
+    section: "appearance" as WorkspaceSection,
+    eyebrow: "04 · APPEARANCE",
+    title: "Make it recognizable",
+    body: "Choose a direction, then tune colors, type, button shape, texture, and spacing.",
+  },
+  {
+    section: "analytics" as WorkspaceSection,
+    eyebrow: "05 · ANALYTICS",
+    title: "Learn from real intent",
+    body: "See visits, click-through rate, sources, countries, devices, and the content people act on.",
+  },
+  {
+    section: "account" as WorkspaceSection,
+    eyebrow: "06 · SHARE",
+    title: "Publish once, share everywhere",
+    body: "Copy your public URL or open the Share Kit for QR codes and ready-to-post assets.",
   },
 ];
 
@@ -213,6 +308,8 @@ export function Dashboard({
   socials,
   events,
   views,
+  products,
+  mediaEmbeds,
   referralCount,
 }: {
   profile: DashboardProfile;
@@ -222,19 +319,49 @@ export function Dashboard({
   socials: DashboardSocial[];
   events: DashboardEvent[];
   views: DashboardView[];
+  products: DashboardProduct[];
+  mediaEmbeds: DashboardMediaEmbed[];
   referralCount: number;
 }) {
   const router = useRouter();
-  const [draft, setDraft] = useState(profile);
+  const [draft, setDraft] = useState(() => ({
+    ...profile,
+    theme_config: resolveProfileTheme(profile.theme_config, profile.template),
+  }));
   const [section, setSection] = useState<WorkspaceSection>("profile");
+  const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
+    "30d",
+  );
+  const [analyticsNow] = useState(() => Date.now());
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [seoImageUploading, setSeoImageUploading] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const [sharePromptOpen, setSharePromptOpen] = useState(false);
   const [notice, setNotice] = useState<{
     severity: "success" | "error";
     message: string;
   } | null>(null);
+
+  useEffect(() => {
+    const tourKey = `cueful:dashboard-tour:${profile.id}`;
+    const shareKey = `cueful:share-prompt:${profile.id}`;
+    const timer = window.setTimeout(() => {
+      if (window.localStorage.getItem(tourKey) !== "done") {
+        setTourOpen(true);
+        return;
+      }
+      if (
+        profile.is_published &&
+        window.localStorage.getItem(shareKey) !== "dismissed"
+      ) {
+        setSharePromptOpen(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [profile.id, profile.is_published]);
 
   const activeLinks = useMemo(
     () => links.filter((item) => item.is_active),
@@ -244,19 +371,49 @@ export function Dashboard({
     () => referrals.filter((item) => item.is_active),
     [referrals],
   );
+  const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
   const analytics = useMemo(() => {
-    const linkOpens = events.filter((event) => event.event_type === "link_open").length;
-    const referralOpens = events.filter(
+    const knownDates = [...views, ...events]
+      .map((item) => new Date(item.occurred_at).getTime())
+      .filter(Number.isFinite);
+    const earliest = Math.min(analyticsNow, ...knownDates);
+    const cutoff =
+      analyticsRange === "7d"
+        ? analyticsNow - 7 * 86_400_000
+        : analyticsRange === "30d"
+          ? analyticsNow - 30 * 86_400_000
+          : earliest;
+    const filteredViews = views.filter(
+      (view) => new Date(view.occurred_at).getTime() >= cutoff,
+    );
+    const filteredEvents = events.filter(
+      (event) => new Date(event.occurred_at).getTime() >= cutoff,
+    );
+    const linkOpens = filteredEvents.filter(
+      (event) => event.event_type === "link_open",
+    ).length;
+    const referralOpens = filteredEvents.filter(
       (event) => event.event_type === "referral_open",
     ).length;
-    const referralCopies = events.filter(
+    const referralCopies = filteredEvents.filter(
       (event) => event.event_type === "referral_copy",
     ).length;
-    const outboundClicks = linkOpens + referralOpens;
+    const productOpens = filteredEvents.filter(
+      (event) => event.event_type === "product_open",
+    ).length;
+    const mediaOpens = filteredEvents.filter(
+      (event) => event.event_type === "media_open",
+    ).length;
+    const outboundClicks = linkOpens + referralOpens + productOpens + mediaOpens;
 
     const content = new Map<
       string,
-      { label: string; type: "Link" | "Referral"; opens: number; copies: number }
+      {
+        label: string;
+        type: "Link" | "Referral" | "Product" | "Media";
+        opens: number;
+        copies: number;
+      }
     >();
 
     links.forEach((link) => {
@@ -275,13 +432,33 @@ export function Dashboard({
         copies: 0,
       });
     });
+    products.forEach((product) => {
+      content.set(`product-${product.id}`, {
+        label: product.title,
+        type: "Product",
+        opens: 0,
+        copies: 0,
+      });
+    });
+    mediaEmbeds.forEach((embed) => {
+      content.set(`media-${embed.id}`, {
+        label: embed.title,
+        type: "Media",
+        opens: 0,
+        copies: 0,
+      });
+    });
 
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const key = event.link_id
         ? `link-${event.link_id}`
         : event.referral_id
           ? `referral-${event.referral_id}`
-          : "";
+          : event.product_id
+            ? `product-${event.product_id}`
+            : event.media_embed_id
+              ? `media-${event.media_embed_id}`
+              : "";
       const item = content.get(key);
       if (!item) return;
       if (event.event_type === "referral_copy") item.copies += 1;
@@ -293,32 +470,41 @@ export function Dashboard({
       .sort((a, b) => b.opens + b.copies - (a.opens + a.copies))
       .slice(0, 5);
 
-    const days = Array.from({ length: 7 }, (_, offset) => {
-      const date = new Date();
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() - (6 - offset));
+    const bucketCount = 7;
+    const bucketSpan = Math.max(86_400_000, (analyticsNow - cutoff) / bucketCount);
+    const days = Array.from({ length: bucketCount }, (_, offset) => {
+      const start = cutoff + bucketSpan * offset;
+      const end = offset === bucketCount - 1 ? analyticsNow + 1 : start + bucketSpan;
+      const date = new Date(start);
       return {
-        key: date.toISOString().slice(0, 10),
-        label: date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1),
-        value: 0,
+        key: String(offset),
+        label:
+          analyticsRange === "7d"
+            ? date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1)
+            : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        value: filteredViews.filter((view) => {
+          const timestamp = new Date(view.occurred_at).getTime();
+          return timestamp >= start && timestamp < end;
+        }).length,
       };
     });
-    const dayMap = new Map(days.map((day) => [day.key, day]));
-    views.forEach((view) => {
-      const day = dayMap.get(view.occurred_at.slice(0, 10));
-      if (day) day.value += 1;
-    });
 
-    function mostCommon(values: Array<string | null>) {
+    function countValues(values: Array<string | null>) {
       const counts = new Map<string, number>();
       values.filter(Boolean).forEach((value) => {
         counts.set(value as string, (counts.get(value as string) ?? 0) + 1);
       });
-      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, count]) => ({
+          label,
+          count,
+          share: values.length > 0 ? Math.round((count / values.length) * 100) : 0,
+        }));
     }
 
-    const topReferrer = mostCommon(
-      views.map((view) => {
+    const sources = countValues(
+      filteredViews.map((view) => {
         if (!view.referrer) return "Direct";
         try {
           return new URL(view.referrer).hostname.replace(/^www\./, "");
@@ -327,16 +513,33 @@ export function Dashboard({
         }
       }),
     );
+    const devices = countValues(
+      filteredViews.map((view) =>
+        view.device_type
+          ? view.device_type.charAt(0).toUpperCase() + view.device_type.slice(1)
+          : "Unknown",
+      ),
+    );
+    const countries = countValues(
+      filteredViews.map((view) => view.country_code?.toUpperCase() ?? "Unknown"),
+    ).filter((item) => item.label !== "Unknown");
+    const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+    const topCountry =
+      countries[0] && countries[0].label.length === 2
+        ? regionNames.of(countries[0].label) ?? countries[0].label
+        : countries[0]?.label ?? "—";
 
     return {
-      views: views.length,
+      views: filteredViews.length,
       outboundClicks,
       linkOpens,
       referralOpens,
       referralCopies,
+      productOpens,
+      mediaOpens,
       ctr:
-        views.length > 0
-          ? Math.min(100, Math.round((outboundClicks / views.length) * 100))
+        filteredViews.length > 0
+          ? Math.min(100, Math.round((outboundClicks / filteredViews.length) * 100))
           : 0,
       copyRate:
         referralOpens > 0
@@ -344,11 +547,37 @@ export function Dashboard({
           : 0,
       days,
       topContent,
-      topDevice: mostCommon(views.map((view) => view.device_type)),
-      topCountry: mostCommon(views.map((view) => view.country_code)),
-      topReferrer,
+      topDevice: devices[0]?.label ?? "—",
+      topCountry,
+      topReferrer: sources[0]?.label ?? "—",
+      sources,
+      devices,
+      countries: countries.map((item) => ({
+        code: item.label,
+        count: item.count,
+        share: item.share,
+        name:
+          item.label.length === 2
+            ? regionNames.of(item.label) ?? item.label
+            : item.label,
+      })),
+      rangeLabel:
+        analyticsRange === "7d"
+          ? "Last 7 days"
+          : analyticsRange === "30d"
+            ? "Last 30 days"
+            : "All time",
     };
-  }, [events, links, referrals, views]);
+  }, [
+    analyticsNow,
+    analyticsRange,
+    events,
+    links,
+    mediaEmbeds,
+    products,
+    referrals,
+    views,
+  ]);
   const sectionDetails = sectionCopy[section];
   const initials =
     draft.display_name
@@ -363,6 +592,58 @@ export function Dashboard({
     value: DashboardProfile[K],
   ) {
     setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateTheme(
+    updater: (current: ProfileThemeConfig) => ProfileThemeConfig,
+  ) {
+    setDraft((current) => ({
+      ...current,
+      theme_config: updater(
+        resolveProfileTheme(current.theme_config, current.template),
+      ),
+    }));
+  }
+
+  function selectTemplate(template: string) {
+    setDraft((current) => ({
+      ...current,
+      template,
+      theme_config: defaultProfileTheme(template),
+    }));
+  }
+
+  async function copyPublicPage() {
+    const address = publicProfileAddress(draft.username || "username");
+    try {
+      await navigator.clipboard.writeText(`https://${address}`);
+      setNotice({ severity: "success", message: `Copied ${address}` });
+    } catch {
+      setNotice({
+        severity: "error",
+        message: `Couldn't copy — your page is at ${address}`,
+      });
+    }
+  }
+
+  function showTourStep(index: number) {
+    const nextIndex = Math.max(0, Math.min(dashboardTour.length - 1, index));
+    setTourStep(nextIndex);
+    setSection(dashboardTour[nextIndex].section);
+  }
+
+  function finishTour() {
+    window.localStorage.setItem(`cueful:dashboard-tour:${profile.id}`, "done");
+    setTourOpen(false);
+    if (draft.is_published) setSharePromptOpen(true);
+  }
+
+  function dismissSharePrompt() {
+    window.localStorage.setItem(
+      `cueful:share-prompt:${profile.id}`,
+      "dismissed",
+    );
+    setSharePromptOpen(false);
   }
 
   async function saveProfile() {
@@ -380,11 +661,13 @@ export function Dashboard({
         location: draft.location.trim(),
         show_location: draft.show_location,
         template: draft.template,
+        theme_config: activeTheme,
         seo_title: draft.seo_title?.trim() || null,
         seo_description: draft.seo_description?.trim() || null,
         show_cueful_badge: draft.show_cueful_badge,
         is_discoverable: draft.is_discoverable,
         is_published: draft.is_published,
+        disclosure_text: draft.disclosure_text?.trim() || null,
       })
       .eq("id", profile.id);
 
@@ -574,6 +857,18 @@ export function Dashboard({
             </Tooltip>
           ))}
         </nav>
+        <Tooltip title="Show dashboard tour" placement="right" arrow>
+          <IconButton
+            className="workspace-rail__help"
+            aria-label="Show dashboard tour"
+            onClick={() => {
+              setTourOpen(true);
+              showTourStep(0);
+            }}
+          >
+            <HelpOutlineRounded />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Sign out" placement="right" arrow>
           <IconButton
             className="workspace-rail__logout"
@@ -601,20 +896,7 @@ export function Dashboard({
                 open, where you look when you want to send someone your page. */}
             <Tooltip title={`Copy ${publicProfileAddress(draft.username || "username")}`} arrow>
               <IconButton
-                onClick={async () => {
-                  const address = publicProfileAddress(draft.username || "username");
-                  try {
-                    await navigator.clipboard.writeText(`https://${address}`);
-                    setNotice({ severity: "success", message: `Copied ${address}` });
-                  } catch {
-                    // Clipboard needs a secure context and can be blocked, so
-                    // show the address itself as the fallback.
-                    setNotice({
-                      severity: "error",
-                      message: `Couldn't copy — your page is at ${address}`,
-                    });
-                  }
-                }}
+                onClick={copyPublicPage}
                 aria-label="Copy public page link"
               >
                 <ContentCopyRounded />
@@ -938,61 +1220,318 @@ export function Dashboard({
             </Stack>
           )}
 
+          {section === "commerce" && (
+            <Stack className="workspace-panel workspace-panel--commerce" spacing={3}>
+              <CommerceMediaEditor
+                profileId={profile.id}
+                initialProducts={products}
+                initialMedia={mediaEmbeds}
+              />
+              <Paper className="commerce-disclosure" variant="outlined">
+                <Box>
+                  <Typography className="section-label">TRUST & DISCLOSURE</Typography>
+                  <Typography variant="h3">Say when a link may earn money</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Keep this short and plain. It appears beneath your public content.
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {[
+                    {
+                      label: "Affiliate",
+                      text: "Some links on this page are affiliate links. I may earn a commission at no extra cost to you.",
+                    },
+                    {
+                      label: "Amazon",
+                      text: "As an Amazon Associate I earn from qualifying purchases.",
+                    },
+                    {
+                      label: "Sponsored",
+                      text: "This page contains paid partnerships or sponsored content.",
+                    },
+                  ].map((preset) => (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      key={preset.label}
+                      onClick={() => update("disclosure_text", preset.text)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  {draft.disclosure_text && (
+                    <Button
+                      size="small"
+                      color="inherit"
+                      onClick={() => update("disclosure_text", null)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Stack>
+                <TextField
+                  label="Disclosure"
+                  value={draft.disclosure_text ?? ""}
+                  onChange={(event) =>
+                    update("disclosure_text", event.target.value.slice(0, 320))
+                  }
+                  multiline
+                  minRows={3}
+                  helperText={`${draft.disclosure_text?.length ?? 0}/320 · Saved when you select Update`}
+                />
+              </Paper>
+            </Stack>
+          )}
+
           {section === "appearance" && (
             <Stack className="workspace-panel" spacing={3}>
-              <TextField
-                select
-                label="Template"
-                value={draft.template}
-                onChange={(event) => update("template", event.target.value)}
-                fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-              >
-                <MenuItem value="field-notes">Field Notes</MenuItem>
-                <MenuItem value="after-dark">After Dark</MenuItem>
-                <MenuItem value="soft-studio">Soft Studio</MenuItem>
-              </TextField>
-              <div className="workspace-template-grid">
-                {templateOptions.map((template) => (
-                  <ButtonBase
-                    className={`workspace-template-card ${
-                      draft.template === template.id ? "is-selected" : ""
-                    }`}
-                    onClick={() => update("template", template.id)}
-                    aria-label={`Use ${template.name} template`}
-                    key={template.id}
-                  >
-                    <span
-                      className="workspace-template-card__swatch"
-                      style={{
-                        background: template.color,
-                        color: template.accent,
-                      }}
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Start with a layout</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Choosing a layout resets the controls below to a matching direction.
+                    </Typography>
+                  </Box>
+                  <Chip label="LIVE PREVIEW" size="small" variant="outlined" />
+                </div>
+                <div className="workspace-template-grid">
+                  {templateOptions.map((template) => (
+                    <ButtonBase
+                      className={`workspace-template-card ${
+                        draft.template === template.id ? "is-selected" : ""
+                      }`}
+                      onClick={() => selectTemplate(template.id)}
+                      aria-label={`Use ${template.name} layout`}
+                      key={template.id}
                     >
-                      Aa
-                    </span>
-                    <span>
-                      <b>{template.name}</b>
-                      <small>
-                        {draft.template === template.id ? "Selected" : "Select template"}
-                      </small>
-                    </span>
-                    {draft.template === template.id && <CheckCircleRounded />}
-                  </ButtonBase>
-                ))}
+                      <span
+                        className="workspace-template-card__swatch"
+                        style={{
+                          background: template.color,
+                          color: template.accent,
+                        }}
+                      >
+                        Aa
+                      </span>
+                      <span>
+                        <b>{template.name}</b>
+                        <small>
+                          {draft.template === template.id ? "Selected" : "Use layout"}
+                        </small>
+                      </span>
+                      {draft.template === template.id && <CheckCircleRounded />}
+                    </ButtonBase>
+                  ))}
+                </div>
               </div>
+
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Color direction</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Curated combinations with accessible text contrast.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-palette-grid">
+                  {themePalettes.map((palette) => {
+                    const selected =
+                      palette.colors.background === activeTheme.colors.background &&
+                      palette.colors.accent === activeTheme.colors.accent &&
+                      palette.colors.button === activeTheme.colors.button;
+                    return (
+                      <ButtonBase
+                        className={`workspace-palette${selected ? " is-selected" : ""}`}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            colors: { ...palette.colors },
+                          }))
+                        }
+                        aria-label={`Use ${palette.name} colors`}
+                        key={palette.id}
+                      >
+                        <span className="workspace-palette__swatches">
+                          <i style={{ background: palette.colors.background }} />
+                          <i style={{ background: palette.colors.surface }} />
+                          <i style={{ background: palette.colors.accent }} />
+                          <i style={{ background: palette.colors.button }} />
+                        </span>
+                        <span>
+                          <b>{palette.name}</b>
+                          <small>{palette.note}</small>
+                        </span>
+                      </ButtonBase>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <details className="workspace-color-details">
+                <summary>Fine-tune individual colors</summary>
+                <div className="workspace-color-grid">
+                  {themeColorFields.map((field) => (
+                    <label className="workspace-color-control" key={field.key}>
+                      <span>{field.label}</span>
+                      <span>
+                        <input
+                          type="color"
+                          value={activeTheme.colors[field.key]}
+                          onChange={(event) =>
+                            updateTheme((current) => ({
+                              ...current,
+                              colors: {
+                                ...current.colors,
+                                [field.key]: event.target.value,
+                              },
+                            }))
+                          }
+                          aria-label={`${field.label} color`}
+                        />
+                        <code>{activeTheme.colors[field.key]}</code>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Type pairing</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Headline personality without sacrificing readable body copy.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-choice-grid workspace-choice-grid--fonts">
+                  {themeFontOptions.map((font) => (
+                    <ButtonBase
+                      className={`workspace-type-choice workspace-type-choice--${font.id} ${
+                        activeTheme.font === font.id ? "is-selected" : ""
+                      }`}
+                      onClick={() =>
+                        updateTheme((current) => ({ ...current, font: font.id }))
+                      }
+                      aria-label={`Use ${font.name} type pairing`}
+                      key={font.id}
+                    >
+                      <b>{font.sample}</b>
+                      <small>{font.name}</small>
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Button shape</Typography>
+                  <div className="workspace-segmented">
+                    {(["soft", "pill", "sharp"] as const).map((shape) => (
+                      <ButtonBase
+                        className={activeTheme.buttonShape === shape ? "is-selected" : ""}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            buttonShape: shape,
+                          }))
+                        }
+                        key={shape}
+                      >
+                        {shape}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Spacing</Typography>
+                  <div className="workspace-segmented">
+                    {(["relaxed", "compact"] as const).map((density) => (
+                      <ButtonBase
+                        className={activeTheme.density === density ? "is-selected" : ""}
+                        onClick={() =>
+                          updateTheme((current) => ({ ...current, density }))
+                        }
+                        key={density}
+                      >
+                        {density}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <Typography variant="h3">Background texture</Typography>
+                <div className="workspace-choice-grid">
+                  {(["solid", "grid", "dots", "bloom"] as const).map(
+                    (background) => (
+                      <ButtonBase
+                        className={`workspace-background-choice workspace-background-choice--${background} ${
+                          activeTheme.background === background ? "is-selected" : ""
+                        }`}
+                        onClick={() =>
+                          updateTheme((current) => ({ ...current, background }))
+                        }
+                        key={background}
+                      >
+                        <i
+                          style={
+                            {
+                              "--choice-bg": activeTheme.colors.background,
+                              "--choice-accent": activeTheme.colors.accent,
+                            } as React.CSSProperties
+                          }
+                        />
+                        <span>{background}</span>
+                      </ButtonBase>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <Alert severity="info" variant="outlined">
+                Every appearance control is included. Saving changes updates the
+                public page without changing its URL or content.
+              </Alert>
             </Stack>
           )}
 
           {section === "analytics" && (
             <div className="workspace-analytics">
+              <div className="workspace-analytics__toolbar">
+                <Box>
+                  <Typography variant="h3">Performance overview</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Visits are anonymous. Location is shown only at country level.
+                  </Typography>
+                </Box>
+                <div className="workspace-segmented" aria-label="Analytics date range">
+                  {([
+                    ["7d", "7 days"],
+                    ["30d", "30 days"],
+                    ["all", "All time"],
+                  ] as const).map(([range, label]) => (
+                    <ButtonBase
+                      className={analyticsRange === range ? "is-selected" : ""}
+                      onClick={() => setAnalyticsRange(range)}
+                      aria-pressed={analyticsRange === range}
+                      key={range}
+                    >
+                      {label}
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
               <StatCard
-                label="LIFETIME VIEWS"
+                label="PROFILE VIEWS"
                 value={analytics.views}
-                note="Public profile visits"
+                note={analytics.rangeLabel}
               />
               <StatCard
-                label="TOTAL CLICKS"
+                label="OUTBOUND CLICKS"
                 value={analytics.outboundClicks}
                 note={`${analytics.linkOpens} links · ${analytics.referralOpens} offers`}
               />
@@ -1012,12 +1551,16 @@ export function Dashboard({
                   <Box>
                     <Typography variant="h3">Profile views</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Visits recorded over the last seven days
+                      Visits recorded during {analytics.rangeLabel.toLowerCase()}
                     </Typography>
                   </Box>
-                  <Chip label="7 DAYS" size="small" variant="outlined" />
+                  <Chip
+                    label={`${analytics.views} VISIT${analytics.views === 1 ? "" : "S"}`}
+                    size="small"
+                    variant="outlined"
+                  />
                 </div>
-                <div className="workspace-analytics__bars" aria-label="Seven day activity chart">
+                <div className="workspace-analytics__bars" aria-label="Profile view trend">
                   {analytics.days.map((day) => {
                     const maximum = Math.max(
                       1,
@@ -1038,38 +1581,130 @@ export function Dashboard({
                 </div>
               </Paper>
 
-              <Paper className="workspace-analytics__insights" variant="outlined">
+              <Paper className="workspace-analytics__funnel" variant="outlined">
                 <div className="workspace-analytics__card-heading">
                   <Box>
-                    <Typography variant="h3">Audience signals</Typography>
+                    <Typography variant="h3">Attention funnel</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Your strongest traffic patterns
+                      Where visitors continue—and where they stop
                     </Typography>
                   </Box>
                 </div>
-                <div className="workspace-analytics__signal-grid">
-                  <span><small>TOP REFERRER</small><b>{analytics.topReferrer}</b></span>
-                  <span><small>TOP DEVICE</small><b>{analytics.topDevice}</b></span>
-                  <span><small>TOP COUNTRY</small><b>{analytics.topCountry}</b></span>
+                <div className="workspace-funnel">
+                  {[
+                    { label: "Profile views", value: analytics.views },
+                    { label: "Outbound clicks", value: analytics.outboundClicks },
+                    { label: "Referral opens", value: analytics.referralOpens },
+                    { label: "Code copies", value: analytics.referralCopies },
+                  ].map((stage) => {
+                    const share =
+                      analytics.views > 0
+                        ? Math.min(100, Math.round((stage.value / analytics.views) * 100))
+                        : 0;
+                    return (
+                      <div key={stage.label}>
+                        <span>
+                          <b>{stage.label}</b>
+                          <small>{stage.value} · {share}% of visits</small>
+                        </span>
+                        <i><em style={{ width: `${share}%` }} /></i>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Paper>
+
+              <Paper className="workspace-analytics__map-card" variant="outlined">
+                <div className="workspace-analytics__card-heading">
+                  <Box>
+                    <Typography variant="h3">Where visits come from</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Approximate country signals, never precise locations
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={analytics.topCountry === "—" ? "NO DATA YET" : analytics.topCountry}
+                    size="small"
+                    variant="outlined"
+                  />
+                </div>
+                <AudienceMap countries={analytics.countries} />
+                <div className="workspace-country-list">
+                  {analytics.countries.slice(0, 5).map((country) => (
+                    <div key={country.code}>
+                      <span><b>{country.name}</b><small>{country.count} visits</small></span>
+                      <i><em style={{ width: `${country.share}%` }} /></i>
+                      <strong>{country.share}%</strong>
+                    </div>
+                  ))}
+                  {analytics.countries.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      Country rankings will appear after your public page receives
+                      visits with an available country signal.
+                    </Typography>
+                  )}
+                </div>
+              </Paper>
+
+              <Paper className="workspace-analytics__traffic" variant="outlined">
+                <div className="workspace-analytics__card-heading">
+                  <Box>
+                    <Typography variant="h3">Traffic mix</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Sources and devices behind your visits
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-traffic-columns">
+                  <section>
+                    <Typography className="section-label">SOURCES</Typography>
+                    {(analytics.sources.length
+                      ? analytics.sources.slice(0, 5)
+                      : [{ label: "No source data", count: 0, share: 0 }]
+                    ).map((item) => (
+                      <div className="workspace-breakdown-row" key={item.label}>
+                        <span><b>{item.label}</b><small>{item.count} visits</small></span>
+                        <i><em style={{ width: `${item.share}%` }} /></i>
+                        <strong>{item.share}%</strong>
+                      </div>
+                    ))}
+                  </section>
+                  <section>
+                    <Typography className="section-label">DEVICES</Typography>
+                    {(analytics.devices.length
+                      ? analytics.devices.slice(0, 5)
+                      : [{ label: "No device data", count: 0, share: 0 }]
+                    ).map((item) => (
+                      <div className="workspace-breakdown-row" key={item.label}>
+                        <span><b>{item.label}</b><small>{item.count} visits</small></span>
+                        <i><em style={{ width: `${item.share}%` }} /></i>
+                        <strong>{item.share}%</strong>
+                      </div>
+                    ))}
+                  </section>
                 </div>
               </Paper>
 
               <Paper className="workspace-analytics__ranking" variant="outlined">
                 <div className="workspace-analytics__card-heading">
                   <Box>
-                    <Typography variant="h3">Top content</Typography>
+                    <Typography variant="h3">Content performance</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Ranked by opens and code copies
+                      Opens and high-intent referral code copies
                     </Typography>
                   </Box>
+                  <Chip label={analytics.topReferrer} size="small" variant="outlined" />
                 </div>
                 {analytics.topContent.length > 0 ? (
                   <ol>
                     {analytics.topContent.map((item, index) => (
                       <li key={`${item.type}-${item.label}`}>
                         <span>{String(index + 1).padStart(2, "0")}</span>
-                        <span><b>{item.label}</b><small>{item.type}</small></span>
-                        <strong>{item.opens + item.copies}</strong>
+                        <span>
+                          <b>{item.label}</b>
+                          <small>{item.type} · {item.opens} opens · {item.copies} copies</small>
+                        </span>
+                        <strong>{item.opens + item.copies} actions</strong>
                       </li>
                     ))}
                   </ol>
@@ -1203,7 +1838,8 @@ export function Dashboard({
       </section>
 
       <aside
-        className={`workspace-preview workspace-preview--${draft.template}`}
+        className={`workspace-preview workspace-preview--${draft.template} ${profileThemeClassName(activeTheme)}`}
+        style={profileThemeStyle(activeTheme) as React.CSSProperties}
         aria-label="Live page preview"
       >
         <header className="workspace-preview__topbar">
@@ -1213,7 +1849,10 @@ export function Dashboard({
           />
           <Typography variant="caption">LIVE PREVIEW</Typography>
         </header>
-        <div className={`workspace-phone workspace-phone--${draft.template}`}>
+        <div
+          className={`workspace-phone workspace-phone--${draft.template} ${profileThemeClassName(activeTheme)}`}
+          style={profileThemeStyle(activeTheme) as React.CSSProperties}
+        >
           <div className="workspace-phone__body">
             <Avatar
               className="workspace-phone__avatar"
@@ -1316,6 +1955,96 @@ export function Dashboard({
           </div>
         </div>
       </aside>
+
+      {tourOpen && (
+        <div className="dashboard-tour" role="dialog" aria-modal="true" aria-label="Dashboard tour">
+          <Paper className="dashboard-tour__card" elevation={8}>
+            <div className="dashboard-tour__top">
+              <Chip
+                label={`${tourStep + 1} OF ${dashboardTour.length}`}
+                size="small"
+                variant="outlined"
+              />
+              <IconButton aria-label="Close dashboard tour" onClick={finishTour}>
+                <CloseRounded />
+              </IconButton>
+            </div>
+            <Typography className="section-label">
+              {dashboardTour[tourStep].eyebrow}
+            </Typography>
+            <Typography variant="h2">{dashboardTour[tourStep].title}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {dashboardTour[tourStep].body}
+            </Typography>
+            <div className="dashboard-tour__progress" aria-hidden="true">
+              {dashboardTour.map((item, index) => (
+                <i
+                  className={index <= tourStep ? "is-active" : ""}
+                  key={item.eyebrow}
+                />
+              ))}
+            </div>
+            <div className="dashboard-tour__actions">
+              <Button color="inherit" onClick={finishTour}>
+                Skip
+              </Button>
+              <div>
+                {tourStep > 0 && (
+                  <Button color="inherit" onClick={() => showTourStep(tourStep - 1)}>
+                    Back
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  endIcon={
+                    tourStep === dashboardTour.length - 1
+                      ? <CheckCircleRounded />
+                      : <ArrowOutwardRounded />
+                  }
+                  onClick={() =>
+                    tourStep === dashboardTour.length - 1
+                      ? finishTour()
+                      : showTourStep(tourStep + 1)
+                  }
+                >
+                  {tourStep === dashboardTour.length - 1 ? "Finish" : "Next"}
+                </Button>
+              </div>
+            </div>
+          </Paper>
+        </div>
+      )}
+
+      {sharePromptOpen && !tourOpen && draft.is_published && (
+        <Paper className="dashboard-share-prompt" elevation={10}>
+          <div className="dashboard-share-prompt__top">
+            <Chip label="YOUR PAGE IS LIVE" size="small" color="success" />
+            <IconButton aria-label="Dismiss share reminder" onClick={dismissSharePrompt}>
+              <CloseRounded />
+            </IconButton>
+          </div>
+          <Typography variant="h3">Put Cueful in your bio</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {publicProfileAddress(draft.username)} is ready to share.
+          </Typography>
+          <div className="dashboard-share-prompt__actions">
+            <Button
+              variant="contained"
+              startIcon={<ContentCopyRounded />}
+              onClick={copyPublicPage}
+            >
+              Copy page link
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<IosShareRounded />}
+              onClick={() => setShareOpen(true)}
+            >
+              Share Kit
+            </Button>
+          </div>
+        </Paper>
+      )}
 
       <Snackbar
         open={Boolean(notice)}
