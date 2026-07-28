@@ -12,6 +12,8 @@ import {
   type DashboardMediaEmbed,
   type DashboardProduct,
 } from "@/components/commerce-media-editor";
+import { type DashboardFaq } from "@/components/faq-editor";
+import { type DashboardHighlight } from "@/components/highlights-editor";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -44,6 +46,8 @@ export default async function DashboardPage() {
     { data: views },
     { data: products },
     { data: mediaEmbeds },
+    { data: faqs },
+    { data: highlights },
     { count: referralCount },
   ] =
     await Promise.all([
@@ -90,6 +94,17 @@ export default async function DashboardPage() {
         .eq("user_id", user.id)
         .order("position"),
       supabase
+        .from("profile_faqs")
+        .select("id,question,answer,position,is_active")
+        .eq("user_id", user.id)
+        .order("position"),
+      supabase
+        .from("profile_highlights")
+        .select("id,image_path,title,destination_url,position,expires_at")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("position"),
+      supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .eq("referred_by", user.id)
@@ -111,6 +126,8 @@ export default async function DashboardPage() {
       views={(views ?? []) as DashboardView[]}
       products={(products ?? []) as DashboardProduct[]}
       mediaEmbeds={(mediaEmbeds ?? []) as DashboardMediaEmbed[]}
+      faqs={(faqs ?? []) as DashboardFaq[]}
+      highlights={(highlights ?? []) as DashboardHighlight[]}
       referralCount={referralCount ?? 0}
     />
   );

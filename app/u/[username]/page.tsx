@@ -3,6 +3,8 @@ import {
   ProfileHub,
   type PublicMediaEmbed,
   type PublicProduct,
+  type PublicFaq,
+  type PublicHighlight,
 } from "@/components/profile-hub";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
@@ -162,6 +164,8 @@ export default async function PublicProfilePage({
     { data: socials },
     { data: products },
     { data: mediaEmbeds },
+    { data: faqs },
+    { data: highlights },
   ] =
     await Promise.all([
       supabase
@@ -196,6 +200,18 @@ export default async function PublicProfilePage({
         .select("id,title,provider,url,layout,position")
         .eq("user_id", profile.id)
         .eq("is_active", true)
+        .order("position"),
+      supabase
+        .from("profile_faqs")
+        .select("id,question,answer,position")
+        .eq("user_id", profile.id)
+        .eq("is_active", true)
+        .order("position"),
+      supabase
+        .from("profile_highlights")
+        .select("id,image_path,title,destination_url,position,expires_at")
+        .eq("user_id", profile.id)
+        .gt("expires_at", new Date().toISOString())
         .order("position"),
     ]);
 
@@ -281,6 +297,8 @@ export default async function PublicProfilePage({
         themeConfig={profile.theme_config}
         products={(products ?? []) as PublicProduct[]}
         mediaEmbeds={(mediaEmbeds ?? []) as PublicMediaEmbed[]}
+        faqs={(faqs ?? []) as PublicFaq[]}
+        highlights={(highlights ?? []) as PublicHighlight[]}
         disclosureText={profile.disclosure_text}
       />
     </>
