@@ -1,6 +1,7 @@
 import { BRAND_URL } from "@/lib/brand";
 
-export const REFERRER_COOKIE = "cueful_referrer";
+export const REFERRER_STORAGE_KEY = "cueful:referrer";
+const REFERRER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function validReferralUsername(value: string | null | undefined) {
   const username = value?.trim().toLowerCase() ?? "";
@@ -13,22 +14,36 @@ export function captureReferralFromLocation() {
   );
   if (!username) return;
 
-  document.cookie = `${REFERRER_COOKIE}=${encodeURIComponent(username)}; Max-Age=604800; Path=/; SameSite=Lax; Secure`;
+  window.localStorage.setItem(
+    REFERRER_STORAGE_KEY,
+    JSON.stringify({
+      username,
+      expiresAt: Date.now() + REFERRER_TTL_MS,
+    }),
+  );
 }
 
-export function readReferralCookie() {
-  const prefix = `${REFERRER_COOKIE}=`;
-  const value = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix))
-    ?.slice(prefix.length);
-
-  return validReferralUsername(value ? decodeURIComponent(value) : null);
+export function readReferralAttribution() {
+  try {
+    const saved = window.localStorage.getItem(REFERRER_STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as {
+      username?: string;
+      expiresAt?: number;
+    };
+    if (!parsed.expiresAt || parsed.expiresAt <= Date.now()) {
+      clearReferralAttribution();
+      return null;
+    }
+    return validReferralUsername(parsed.username);
+  } catch {
+    clearReferralAttribution();
+    return null;
+  }
 }
 
-export function clearReferralCookie() {
-  document.cookie = `${REFERRER_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+export function clearReferralAttribution() {
+  window.localStorage.removeItem(REFERRER_STORAGE_KEY);
 }
 
 export function creatorInviteUrl(username: string) {

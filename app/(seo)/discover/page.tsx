@@ -46,6 +46,7 @@ export default async function DiscoverPage() {
       )
       .eq("is_published", true)
       .eq("is_discoverable", true)
+      .eq("onboarding_completed", true)
       .order("updated_at", { ascending: false })
       .limit(60),
     supabase

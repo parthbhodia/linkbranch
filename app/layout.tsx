@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
-import { CookieConsent } from "@/components/cookie-consent";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import "./globals.css";
@@ -76,21 +74,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Script id="google-consent-default" strategy="beforeInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('consent', 'default', {
-  ad_storage: 'denied',
-  ad_user_data: 'denied',
-  ad_personalization: 'denied',
-  analytics_storage: 'denied'
-});`}
-        </Script>
         <AppRouterCacheProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </AppRouterCacheProvider>
         <Analytics />
-        <CookieConsent />
       </body>
     </html>
   );
