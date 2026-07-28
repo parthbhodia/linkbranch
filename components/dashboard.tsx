@@ -13,12 +13,16 @@ import HelpOutlineRounded from "@mui/icons-material/HelpOutlineRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
+import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
+import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
+import FavoriteBorderRounded from "@mui/icons-material/FavoriteBorderRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import {
   Alert,
   Avatar,
@@ -45,6 +49,12 @@ import {
   type DashboardMediaEmbed,
   type DashboardProduct,
 } from "@/components/commerce-media-editor";
+import { FaqEditor, type DashboardFaq } from "@/components/faq-editor";
+import {
+  HighlightsEditor,
+  type DashboardHighlight,
+} from "@/components/highlights-editor";
+import { LinkHealthScanner } from "@/components/link-health-scanner";
 import { ShareDialog } from "@/components/share-dialog";
 import { publicProfileAddress } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
@@ -147,7 +157,10 @@ type WorkspaceSection =
   | "commerce"
   | "appearance"
   | "analytics"
-  | "account";
+  | "account"
+  | "more"
+  | "highlights"
+  | "health";
 
 const workspaceSections: Array<{
   id: WorkspaceSection;
@@ -195,6 +208,21 @@ const sectionCopy: Record<
     eyebrow: "ACCOUNT",
     title: "Publishing and sign-in",
     body: "Control page visibility and review the email attached to this account.",
+  },
+  more: {
+    eyebrow: "TOOLS",
+    title: "More",
+    body: "Shortcuts for timely updates, link checks, and account settings.",
+  },
+  highlights: {
+    eyebrow: "STORIES",
+    title: "Highlights",
+    body: "Post a temporary visual update that disappears after 24 hours.",
+  },
+  health: {
+    eyebrow: "LINK HEALTH",
+    title: "Check every destination",
+    body: "Scan the live links on your page and fix destinations that stop responding.",
   },
 };
 
@@ -312,6 +340,8 @@ export function Dashboard({
   views,
   products,
   mediaEmbeds,
+  faqs,
+  highlights,
   referralCount,
 }: {
   profile: DashboardProfile;
@@ -323,6 +353,8 @@ export function Dashboard({
   views: DashboardView[];
   products: DashboardProduct[];
   mediaEmbeds: DashboardMediaEmbed[];
+  faqs: DashboardFaq[];
+  highlights: DashboardHighlight[];
   referralCount: number;
 }) {
   const router = useRouter();
@@ -336,6 +368,7 @@ export function Dashboard({
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
     "30d",
   );
+  const [analyticsBucket, setAnalyticsBucket] = useState(6);
   const [analyticsNow] = useState(() => Date.now());
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -491,9 +524,24 @@ export function Dashboard({
           analyticsRange === "7d"
             ? date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1)
             : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        periodLabel: `${date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })} – ${new Date(Math.min(end - 1, analyticsNow)).toLocaleDateString(
+          "en-US",
+          { month: "short", day: "numeric" },
+        )}`,
         value: filteredViews.filter((view) => {
           const timestamp = new Date(view.occurred_at).getTime();
           return timestamp >= start && timestamp < end;
+        }).length,
+        clicks: filteredEvents.filter((event) => {
+          const timestamp = new Date(event.occurred_at).getTime();
+          return (
+            timestamp >= start &&
+            timestamp < end &&
+            event.event_type !== "referral_copy"
+          );
         }).length,
       };
     });
@@ -587,6 +635,8 @@ export function Dashboard({
     referrals,
     views,
   ]);
+  const selectedAnalyticsPeriod =
+    analytics.days[Math.min(analyticsBucket, analytics.days.length - 1)];
   const sectionDetails = sectionCopy[section];
   const initials =
     draft.display_name
@@ -868,6 +918,7 @@ export function Dashboard({
         </Button>
       </header>
 
+      {!["more", "highlights", "health", "account"].includes(section) && (
       <div className="workspace-mobile-tools">
         <div className="workspace-mobile-mode" aria-label="Dashboard mode">
           <ButtonBase
@@ -925,6 +976,7 @@ export function Dashboard({
           </Button>
         )}
       </div>
+      )}
 
       <aside className="workspace-rail" aria-label="Creator workspace">
         <BrandMark className="workspace-rail__brand" compact />
@@ -1332,6 +1384,8 @@ export function Dashboard({
                   </Box>
                 )}
               </div>
+
+              <FaqEditor profileId={profile.id} initialFaqs={faqs} />
             </Stack>
           )}
 
@@ -1631,7 +1685,10 @@ export function Dashboard({
                   ] as const).map(([range, label]) => (
                     <ButtonBase
                       className={analyticsRange === range ? "is-selected" : ""}
-                      onClick={() => setAnalyticsRange(range)}
+                      onClick={() => {
+                        setAnalyticsRange(range);
+                        setAnalyticsBucket(6);
+                      }}
                       aria-pressed={analyticsRange === range}
                       key={range}
                     >
@@ -1676,13 +1733,19 @@ export function Dashboard({
                   />
                 </div>
                 <div className="workspace-analytics__bars" aria-label="Profile view trend">
-                  {analytics.days.map((day) => {
+                  {analytics.days.map((day, index) => {
                     const maximum = Math.max(
                       1,
                       ...analytics.days.map((item) => item.value),
                     );
                     return (
-                      <div key={day.key}>
+                      <ButtonBase
+                        className={analyticsBucket === index ? "is-selected" : ""}
+                        onClick={() => setAnalyticsBucket(index)}
+                        aria-label={`${day.periodLabel}: ${day.value} views and ${day.clicks} clicks`}
+                        aria-pressed={analyticsBucket === index}
+                        key={day.key}
+                      >
                         <span>{day.value}</span>
                         <i
                           style={{
@@ -1690,10 +1753,42 @@ export function Dashboard({
                           }}
                         />
                         <small>{day.label}</small>
-                      </div>
+                      </ButtonBase>
                     );
                   })}
                 </div>
+                {selectedAnalyticsPeriod && (
+                  <div className="workspace-analytics__period">
+                    <div>
+                      <span>SELECTED PERIOD</span>
+                      <b>{selectedAnalyticsPeriod.periodLabel}</b>
+                    </div>
+                    <div>
+                      <small>CTR</small>
+                      <strong>
+                        {selectedAnalyticsPeriod.value
+                          ? Math.min(
+                              100,
+                              Math.round(
+                                (selectedAnalyticsPeriod.clicks /
+                                  selectedAnalyticsPeriod.value) *
+                                  100,
+                              ),
+                            )
+                          : 0}
+                        %
+                      </strong>
+                    </div>
+                    <span>
+                      <small>Page views</small>
+                      <b>{selectedAnalyticsPeriod.value}</b>
+                    </span>
+                    <span>
+                      <small>Outbound clicks</small>
+                      <b>{selectedAnalyticsPeriod.clicks}</b>
+                    </span>
+                  </div>
+                )}
               </Paper>
 
               <Paper className="workspace-analytics__funnel" variant="outlined">
@@ -1836,6 +1931,65 @@ export function Dashboard({
               </Paper>
             </div>
           )}
+
+          {section === "more" && (
+            <div className="workspace-more">
+              <Typography className="section-label">CREATE & MAINTAIN</Typography>
+              <div className="workspace-more__list">
+                <ButtonBase onClick={() => setSection("highlights")}>
+                  <span className="workspace-more__icon workspace-more__icon--highlight">
+                    <StarOutlineRounded />
+                  </span>
+                  <span>
+                    <b>Highlights</b>
+                    <small>24-hour visual updates</small>
+                  </span>
+                  <ChevronRightRounded />
+                </ButtonBase>
+                <ButtonBase onClick={() => setSection("health")}>
+                  <span className="workspace-more__icon workspace-more__icon--health">
+                    <FavoriteBorderRounded />
+                  </span>
+                  <span>
+                    <b>Link health</b>
+                    <small>Find links that stopped responding</small>
+                  </span>
+                  <ChevronRightRounded />
+                </ButtonBase>
+              </div>
+              <Typography className="section-label">ACCOUNT</Typography>
+              <div className="workspace-more__list">
+                <ButtonBase onClick={() => setSection("account")}>
+                  <span className="workspace-more__icon workspace-more__icon--account">
+                    <SettingsOutlined />
+                  </span>
+                  <span>
+                    <b>Settings</b>
+                    <small>Visibility, discovery, sharing, and sign-in</small>
+                  </span>
+                  <ChevronRightRounded />
+                </ButtonBase>
+              </div>
+              <Button
+                className="workspace-more__logout"
+                color="error"
+                variant="outlined"
+                startIcon={<LogoutRounded />}
+                onClick={signOut}
+              >
+                Log out
+              </Button>
+            </div>
+          )}
+
+          {section === "highlights" && (
+            <HighlightsEditor
+              profileId={profile.id}
+              initialHighlights={highlights}
+            />
+          )}
+
+          {section === "health" && <LinkHealthScanner />}
 
           {section === "account" && (
             <Stack className="workspace-panel" spacing={3}>
@@ -2125,6 +2279,25 @@ export function Dashboard({
         >
           <AnalyticsOutlined />
           <span>Analytics</span>
+        </ButtonBase>
+        <ButtonBase
+          className={
+            ["more", "highlights", "health", "account"].includes(section)
+              ? "is-active"
+              : ""
+          }
+          onClick={() => {
+            setSection("more");
+            setMobileMode("edit");
+          }}
+          aria-current={
+            ["more", "highlights", "health", "account"].includes(section)
+              ? "page"
+              : undefined
+          }
+        >
+          <MoreHorizRounded />
+          <span>More</span>
         </ButtonBase>
       </nav>
 

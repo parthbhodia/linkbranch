@@ -69,6 +69,20 @@ export type PublicMediaEmbed = {
   layout: string;
 };
 
+export type PublicFaq = {
+  id: number;
+  question: string;
+  answer: string;
+};
+
+export type PublicHighlight = {
+  id: number;
+  image_path: string;
+  title: string;
+  destination_url: string | null;
+  expires_at: string;
+};
+
 function mediaPlayerUrl(item: PublicMediaEmbed) {
   try {
     const url = new URL(item.url);
@@ -258,6 +272,8 @@ export function ProfileHub({
   themeConfig,
   products = [],
   mediaEmbeds = [],
+  faqs = [],
+  highlights = [],
   disclosureText,
 }: {
   profile: CreatorProfile;
@@ -268,6 +284,8 @@ export function ProfileHub({
   themeConfig?: unknown;
   products?: PublicProduct[];
   mediaEmbeds?: PublicMediaEmbed[];
+  faqs?: PublicFaq[];
+  highlights?: PublicHighlight[];
   disclosureText?: string | null;
 }) {
   const [query, setQuery] = useState("");
@@ -349,8 +367,11 @@ export function ProfileHub({
           item.badge,
         ]).includes(needle),
       ),
+      faqs: faqs.filter((item) =>
+        searchable([item.question, item.answer]).includes(needle),
+      ),
     };
-  }, [products, profile, query]);
+  }, [faqs, products, profile, query]);
 
   const track = useCallback((label: string, target?: TrackTarget) => {
     setNotice({ message: label, severity: "info" });
@@ -385,11 +406,14 @@ export function ProfileHub({
   }, [track]);
 
   const totalResults =
-    filtered.links.length + filtered.referrals.length + filtered.products.length;
+    filtered.links.length +
+    filtered.referrals.length +
+    filtered.products.length +
+    filtered.faqs.length;
   const currentResultsCount =
     publicView === "shop"
       ? filtered.products.length
-      : filtered.links.length + filtered.referrals.length;
+      : filtered.links.length + filtered.referrals.length + filtered.faqs.length;
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
   const customTheme = parseProfileTheme(themeConfig);
@@ -488,17 +512,66 @@ export function ProfileHub({
         </header>
 
         <section className="hub-panel">
+          {highlights.length > 0 && (
+            <section
+              className="profile-highlights"
+              aria-labelledby="profile-highlights-heading"
+            >
+              <div className="section-heading">
+                <Typography
+                  id="profile-highlights-heading"
+                  component="h2"
+                  className="section-label"
+                >
+                  Right now
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  24-hour highlights
+                </Typography>
+              </div>
+              <div className="profile-highlights__rail">
+                {highlights.map((highlight) => {
+                  const content = (
+                    <>
+                      <Box
+                        component="img"
+                        src={publicAssetUrl(highlight.image_path)}
+                        alt=""
+                      />
+                      <span>{highlight.title || "Update"}</span>
+                    </>
+                  );
+                  return highlight.destination_url ? (
+                    <Box
+                      component="a"
+                      href={highlight.destination_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="profile-highlight"
+                      key={highlight.id}
+                    >
+                      {content}
+                    </Box>
+                  ) : (
+                    <div className="profile-highlight" key={highlight.id}>
+                      {content}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           <div className="profile-search">
             <TextField
               className="search-field"
-              placeholder="Search links, offers, or products…"
+              placeholder="Search this page…"
               type="search"
               size="small"
               fullWidth
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               inputProps={{
-                "aria-label": "Search links, offers, or products",
+                "aria-label": "Search this page",
               }}
               slotProps={{
                 input: {
@@ -662,6 +735,40 @@ export function ProfileHub({
                   <div className="link-list">
                     {standardLinks.map((link) => (
                       <LinkCard key={link.id} link={link} onOpen={track} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {filtered.faqs.length > 0 && (
+                <section
+                  className="content-section profile-faq"
+                  aria-labelledby="profile-faq-heading"
+                >
+                  <div className="section-heading">
+                    <Typography
+                      id="profile-faq-heading"
+                      component="h2"
+                      className="section-label"
+                    >
+                      Good to know
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {filtered.faqs.length}{" "}
+                      {filtered.faqs.length === 1 ? "answer" : "answers"}
+                    </Typography>
+                  </div>
+                  <div className="profile-faq__list">
+                    {filtered.faqs.map((faq) => (
+                      <details key={faq.id}>
+                        <summary>
+                          <span>{faq.question}</span>
+                          <i aria-hidden="true">+</i>
+                        </summary>
+                        <Typography component="div" variant="body2">
+                          {faq.answer}
+                        </Typography>
+                      </details>
                     ))}
                   </div>
                 </section>
