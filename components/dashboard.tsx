@@ -369,6 +369,7 @@ export function Dashboard({
 
   useEffect(() => {
     editorScrollRef.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
   }, [section, mobileMode]);
 
   const activeLinks = useMemo(
