@@ -37,6 +37,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { ShareDialog } from "@/components/share-dialog";
 import { publicProfileAddress } from "@/lib/brand";
+import { creatorInviteUrl } from "@/lib/referrals";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
@@ -59,6 +60,11 @@ export type DashboardProfile = {
   show_location: boolean;
   template: string;
   avatar_path: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_image_path: string | null;
+  show_cueful_badge: boolean;
+  is_discoverable: boolean;
   is_published: boolean;
   onboarding_completed: boolean;
 };
@@ -207,6 +213,7 @@ export function Dashboard({
   socials,
   events,
   views,
+  referralCount,
 }: {
   profile: DashboardProfile;
   email: string;
@@ -215,12 +222,14 @@ export function Dashboard({
   socials: DashboardSocial[];
   events: DashboardEvent[];
   views: DashboardView[];
+  referralCount: number;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(profile);
   const [section, setSection] = useState<WorkspaceSection>("profile");
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [seoImageUploading, setSeoImageUploading] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [notice, setNotice] = useState<{
     severity: "success" | "error";
@@ -371,6 +380,10 @@ export function Dashboard({
         location: draft.location.trim(),
         show_location: draft.show_location,
         template: draft.template,
+        seo_title: draft.seo_title?.trim() || null,
+        seo_description: draft.seo_description?.trim() || null,
+        show_cueful_badge: draft.show_cueful_badge,
+        is_discoverable: draft.is_discoverable,
         is_published: draft.is_published,
       })
       .eq("id", profile.id);
@@ -457,6 +470,81 @@ export function Dashboard({
     update("avatar_path", null);
     setAvatarUploading(false);
     setNotice({ severity: "success", message: "Profile photo removed." });
+    router.refresh();
+  }
+
+  async function uploadSeoImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setSeoImageUploading(true);
+    const supabase = createClient();
+    const path = `${profile.id}/seo/social-${crypto.randomUUID()}.${imageExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setSeoImageUploading(false);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath = draft.seo_image_path;
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ seo_image_path: path })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setSeoImageUploading(false);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    }
+
+    update("seo_image_path", path);
+    setSeoImageUploading(false);
+    setNotice({ severity: "success", message: "Social sharing image updated." });
+    router.refresh();
+  }
+
+  async function removeSeoImage() {
+    if (!draft.seo_image_path) return;
+
+    setSeoImageUploading(true);
+    const supabase = createClient();
+    const previousPath = draft.seo_image_path;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ seo_image_path: null })
+      .eq("id", profile.id);
+
+    if (error) {
+      setSeoImageUploading(false);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    update("seo_image_path", null);
+    setSeoImageUploading(false);
+    setNotice({ severity: "success", message: "Social sharing image removed." });
     router.refresh();
   }
 
@@ -676,6 +764,85 @@ export function Dashboard({
                 }
                 label="Show location publicly"
               />
+              <Paper className="workspace-seo-editor" variant="outlined">
+                <div className="workspace-panel__heading">
+                  <Box>
+                    <Typography variant="h3">Search & sharing</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Control how this profile is introduced in search results
+                      and social previews.
+                    </Typography>
+                  </Box>
+                  <SearchRounded />
+                </div>
+                <TextField
+                  label="SEO title"
+                  value={draft.seo_title ?? ""}
+                  onChange={(event) => update("seo_title", event.target.value)}
+                  placeholder={`${draft.display_name} — links and recommendations`}
+                  inputProps={{ maxLength: 70 }}
+                  helperText={`${draft.seo_title?.length ?? 0}/70 · Leave blank to use your display name`}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  fullWidth
+                />
+                <TextField
+                  label="SEO description"
+                  value={draft.seo_description ?? ""}
+                  onChange={(event) => update("seo_description", event.target.value)}
+                  placeholder={draft.bio || "A clear summary of this public page."}
+                  inputProps={{ maxLength: 170 }}
+                  helperText={`${draft.seo_description?.length ?? 0}/170 · Leave blank to use your profile bio`}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  multiline
+                  minRows={3}
+                  fullWidth
+                />
+                <div className="workspace-seo-image">
+                  {draft.seo_image_path ? (
+                    <Box
+                      component="img"
+                      src={publicAssetUrl(draft.seo_image_path)}
+                      alt="Current social sharing preview"
+                    />
+                  ) : (
+                    <div>
+                      <Typography variant="h3">1200 × 630</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Optional social sharing image
+                      </Typography>
+                    </div>
+                  )}
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      component="label"
+                      variant="outlined"
+                      disabled={seoImageUploading}
+                      startIcon={
+                        seoImageUploading
+                          ? <CircularProgress size={16} />
+                          : <PhotoCameraOutlined />
+                      }
+                    >
+                      {draft.seo_image_path ? "Replace image" : "Upload image"}
+                      <input
+                        hidden
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={uploadSeoImage}
+                      />
+                    </Button>
+                    {draft.seo_image_path && (
+                      <Button
+                        color="inherit"
+                        disabled={seoImageUploading}
+                        onClick={removeSeoImage}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </Stack>
+                </div>
+              </Paper>
             </Stack>
           )}
 
@@ -946,6 +1113,74 @@ export function Dashboard({
                   inputProps={{ "aria-label": "Publish public page" }}
                 />
               </Box>
+              <Paper className="workspace-growth-loop" variant="outlined">
+                <div className="workspace-growth-loop__header">
+                  <Box>
+                    <Chip size="small" label="ALWAYS OPT-IN" variant="outlined" />
+                    <Typography variant="h3">Help another creator find Cueful</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Use a small supporter badge or share your personal invite.
+                      Published referrals improve your position in Discover.
+                    </Typography>
+                  </Box>
+                  <div className="workspace-growth-loop__score">
+                    <b>{referralCount}</b>
+                    <span>published referrals</span>
+                  </div>
+                </div>
+
+                <div className="workspace-growth-loop__invite">
+                  <code>{creatorInviteUrl(draft.username)}</code>
+                  <Button
+                    variant="contained"
+                    startIcon={<ContentCopyRounded />}
+                    onClick={async () => {
+                      const invite = creatorInviteUrl(draft.username);
+                      try {
+                        await navigator.clipboard.writeText(invite);
+                        setNotice({
+                          severity: "success",
+                          message: "Creator invite copied.",
+                        });
+                      } catch {
+                        setNotice({
+                          severity: "error",
+                          message: `Couldn't copy — use ${invite}`,
+                        });
+                      }
+                    }}
+                  >
+                    Copy invite
+                  </Button>
+                </div>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.show_cueful_badge}
+                      onChange={(event) =>
+                        update("show_cueful_badge", event.target.checked)
+                      }
+                    />
+                  }
+                  label="Show a small “Create your Cueful” badge on my profile"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.is_discoverable}
+                      onChange={(event) =>
+                        update("is_discoverable", event.target.checked)
+                      }
+                    />
+                  }
+                  label="List my published profile in Cueful Discover"
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Both settings are off by default. Turning them off later
+                  removes the badge or directory listing.
+                </Typography>
+              </Paper>
               <TextField
                 label="Account email"
                 value={email}
@@ -1072,6 +1307,12 @@ export function Dashboard({
                 </>
               )}
             </div>
+            {draft.show_cueful_badge && (
+              <div className="workspace-phone__supporter-badge">
+                Create your Cueful
+                <ArrowOutwardRounded />
+              </div>
+            )}
           </div>
         </div>
       </aside>

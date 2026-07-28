@@ -9,6 +9,37 @@ const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
 
 export const dynamic = "force-dynamic";
 
+function profileStructuredData({
+  profile,
+  canonicalUrl,
+  createdAt,
+  updatedAt,
+}: {
+  profile: CreatorProfile;
+  canonicalUrl: string;
+  createdAt?: string;
+  updatedAt?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${canonicalUrl}#profile`,
+    url: canonicalUrl,
+    ...(createdAt ? { dateCreated: createdAt } : {}),
+    ...(updatedAt ? { dateModified: updatedAt } : {}),
+    mainEntity: {
+      "@type": "Person",
+      "@id": `${canonicalUrl}#creator`,
+      name: profile.displayName,
+      alternateName: `@${profile.username}`,
+      identifier: profile.username,
+      description: profile.bio,
+      ...(profile.avatarUrl ? { image: profile.avatarUrl } : {}),
+      sameAs: profile.socials.map((social) => social.url),
+    },
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -80,11 +111,25 @@ export default async function PublicProfilePage({
   const example = exampleProfileBySlug.get(username.toLowerCase());
 
   if (example) {
+    const canonicalUrl = `https://cueful.bio/u/${example.slug}`;
     return (
-      <ProfileHub
-        profile={example.profile}
-        template={example.template}
-      />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              profileStructuredData({
+                profile: example.profile,
+                canonicalUrl,
+              }),
+            ),
+          }}
+        />
+        <ProfileHub
+          profile={example.profile}
+          template={example.template}
+        />
+      </>
     );
   }
 
@@ -178,12 +223,30 @@ export default async function PublicProfilePage({
     })),
   };
 
+  const canonicalUrl = `https://cueful.bio/u/${encodeURIComponent(profile.username)}`;
+
   return (
-    <ProfileHub
-      profile={creatorProfile}
-      template={profile.template}
-      databaseProfileId={profile.id}
-      published={published === "1"}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            profileStructuredData({
+              profile: creatorProfile,
+              canonicalUrl,
+              createdAt: profile.created_at,
+              updatedAt: profile.updated_at,
+            }),
+          ),
+        }}
+      />
+      <ProfileHub
+        profile={creatorProfile}
+        template={profile.template}
+        databaseProfileId={profile.id}
+        published={published === "1"}
+        showBadge={Boolean(profile.show_cueful_badge)}
+      />
+    </>
   );
 }

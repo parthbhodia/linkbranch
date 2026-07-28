@@ -57,7 +57,7 @@ export function ImportStarter() {
   }
 
   return (
-    <div className="import-starter">
+    <div className="import-starter" id="import">
       <form onSubmit={importProfile}>
         <TextField
           value={url}

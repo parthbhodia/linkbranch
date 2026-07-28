@@ -49,6 +49,10 @@ import {
   readImportedProfileDraft,
 } from "@/lib/import-draft";
 import {
+  clearReferralCookie,
+  readReferralCookie,
+} from "@/lib/referrals";
+import {
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
@@ -792,6 +796,14 @@ export function OnboardingWizard({
       setNotice({ message: error.message, severity: "error" });
       return;
     }
+
+    const referrerUsername = readReferralCookie();
+    if (referrerUsername && referrerUsername !== username) {
+      await supabase.rpc("claim_profile_referral", {
+        referrer_username: referrerUsername,
+      });
+    }
+    clearReferralCookie();
 
     const staleThumbnailPaths = Array.from(
       pendingThumbnailDeletesRef.current,

@@ -38,6 +38,7 @@ export default async function DashboardPage() {
     { data: socials },
     { data: events },
     { data: views },
+    { count: referralCount },
   ] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -70,6 +71,11 @@ export default async function DashboardPage() {
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("referred_by", user.id)
+        .eq("is_published", true),
     ]);
 
   if (!profile) {
@@ -85,6 +91,7 @@ export default async function DashboardPage() {
       socials={(socials ?? []) as DashboardSocial[]}
       events={(events ?? []) as DashboardEvent[]}
       views={(views ?? []) as DashboardView[]}
+      referralCount={referralCount ?? 0}
     />
   );
 }

@@ -22,6 +22,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { CreatorProfile, LinkItem, Referral } from "@/lib/types";
+import { creatorBadgeUrl } from "@/lib/referrals";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 
@@ -170,11 +171,13 @@ export function ProfileHub({
   template = "field-notes",
   databaseProfileId,
   published = false,
+  showBadge = false,
 }: {
   profile: CreatorProfile;
   template?: string;
   databaseProfileId?: string;
   published?: boolean;
+  showBadge?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<{
@@ -458,6 +461,15 @@ export function ProfileHub({
         )}
 
         </section>
+        {showBadge && (
+          <footer className="profile-supporter-badge">
+            <a href={creatorBadgeUrl(profile.username)}>
+              <span>Made with</span>
+              <b>cueful.</b>
+              <ArrowOutwardRounded aria-hidden="true" />
+            </a>
+          </footer>
+        )}
       </article>
 
       <Snackbar

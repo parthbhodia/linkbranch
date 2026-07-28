@@ -13,6 +13,7 @@ import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { exampleProfiles } from "@/lib/example-profiles";
+import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
@@ -47,6 +48,7 @@ export function MarketingHome() {
   const [builderStep, setBuilderStep] = useState<BuilderStep>("profile");
 
   useEffect(() => {
+    captureReferralFromLocation();
     let active = true;
     void createClient()
       .auth.getUser()
@@ -150,8 +152,8 @@ export function MarketingHome() {
       <nav className="marketing-nav" aria-label="Primary navigation">
         <BrandMark className="brand marketing-nav__brand" />
         <div className="marketing-nav__links">
-          <Button component="a" href="#examples" color="inherit">
-            Examples
+          <Button component={Link} href="/link-in-bio-tools" color="inherit">
+            Compare tools
           </Button>
           {/* Nothing else in the app links to the editor, so a signed-in user
               landing here had no route back to it — the button said "Sign in"
@@ -182,14 +184,13 @@ export function MarketingHome() {
             variant="outlined"
           />
           <Typography component="h1">
-            Your corner of
+            One free link for
             <br />
-            the internet,
-            <br />
-            <span>with direction.</span>
+            <span>everything you create.</span>
           </Typography>
           <Typography className="marketing-hero__body">
-            One focused page for your work, recommendations, and referral offers.
+            Build a customizable, ad-free link-in-bio page for Instagram,
+            TikTok, YouTube, and every other platform.
           </Typography>
           <ImportStarter />
           <div className="marketing-hero__trust" aria-label="Signup benefits">
@@ -497,6 +498,8 @@ export function MarketingHome() {
         <BrandMark />
         <Typography>Clear links. Useful signals.</Typography>
         <div>
+          <Link href="/free-linktree-alternative">Switch from Linktree</Link>
+          <Link href="/best-link-in-bio-tools">Compare tools</Link>
           <Link href="/templates">Templates</Link>
           <Link href="/auth?mode=login">Sign in</Link>
         </div>

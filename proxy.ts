@@ -19,10 +19,22 @@ const APP_ROUTES = new Set([
   "claim",
   "dashboard",
   "demo",
+  "discover",
+  "es",
+  "it",
   "onboarding",
   "templates",
   "u",
   "api",
+  "best-link-in-bio-tools",
+  "cueful-vs-beacons",
+  "cueful-vs-carrd",
+  "free-link-in-bio",
+  "free-linktree-alternative",
+  "link-in-bio-for-instagram",
+  "link-in-bio-for-tiktok",
+  "link-in-bio-tools",
+  "what-does-link-in-bio-mean",
 ]);
 
 const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,29}$/;

@@ -3,16 +3,16 @@ import { MarketingHome } from "@/components/marketing-home";
 import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Cueful — free link in bio for creators",
+  title: "Free Link in Bio Tool for Creators | Cueful",
   description:
-    "Build a free creator page for your links, referral offers, coupon codes, and audience insights.",
+    "Build a customizable, ad-free link-in-bio page for Instagram, TikTok, YouTube, and every other platform.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Cueful — one link in bio for everything you share",
+    title: "Free Link in Bio Tool for Creators | Cueful",
     description:
-      "A free link-in-bio page for your links, shop, and referral codes — and the only one that shows you which codes people actually copy.",
+      "Build a customizable, ad-free link-in-bio page for Instagram, TikTok, YouTube, and every other platform.",
     url: "/",
     siteName: BRAND_NAME,
     type: "website",

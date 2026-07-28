@@ -233,6 +233,15 @@ export function TemplatePicker() {
           </Typography>
         </aside>
       </div>
+
+      <nav className="template-use-case-links" aria-label="Template guides by use case">
+        <Typography variant="caption" color="text.secondary">
+          Explore a complete example
+        </Typography>
+        <Link href="/templates/link-in-bio-for-musicians">Musicians</Link>
+        <Link href="/templates/referral-links-for-creators">Referral creators</Link>
+        <Link href="/templates/portfolio-link-page-for-freelancers">Freelancers</Link>
+      </nav>
     </main>
   );
 }
