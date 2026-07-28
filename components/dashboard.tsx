@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import ColorLensOutlined from "@mui/icons-material/ColorLensOutlined";
+import EditRounded from "@mui/icons-material/EditRounded";
 import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import HelpOutlineRounded from "@mui/icons-material/HelpOutlineRounded";
@@ -17,6 +18,7 @@ import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import {
   Alert,
   Avatar,
@@ -329,6 +331,8 @@ export function Dashboard({
     theme_config: resolveProfileTheme(profile.theme_config, profile.template),
   }));
   const [section, setSection] = useState<WorkspaceSection>("profile");
+  const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
+  const editorScrollRef = useRef<HTMLDivElement | null>(null);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
     "30d",
   );
@@ -362,6 +366,10 @@ export function Dashboard({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [profile.id, profile.is_published]);
+
+  useEffect(() => {
+    editorScrollRef.current?.scrollTo({ top: 0 });
+  }, [section, mobileMode]);
 
   const activeLinks = useMemo(
     () => links.filter((item) => item.is_active),
@@ -839,7 +847,84 @@ export function Dashboard({
   }
 
   return (
-    <main className="workspace-shell">
+    <main
+      className={`workspace-shell ${
+        mobileMode === "preview" ? "is-mobile-preview" : "is-mobile-edit"
+      }`}
+    >
+      <header className="workspace-mobile-header">
+        <div>
+          <BrandMark className="workspace-mobile-brand" />
+          <span>{publicProfileAddress(draft.username || "username")}</span>
+        </div>
+        <Button
+          variant="contained"
+          startIcon={<IosShareRounded />}
+          onClick={() => setShareOpen(true)}
+          disabled={!draft.is_published}
+        >
+          Share
+        </Button>
+      </header>
+
+      <div className="workspace-mobile-tools">
+        <div className="workspace-mobile-mode" aria-label="Dashboard mode">
+          <ButtonBase
+            className={mobileMode === "edit" ? "is-active" : ""}
+            onClick={() => setMobileMode("edit")}
+            aria-pressed={mobileMode === "edit"}
+          >
+            <EditRounded />
+            Edit
+          </ButtonBase>
+          <ButtonBase
+            className={mobileMode === "preview" ? "is-active" : ""}
+            onClick={() => setMobileMode("preview")}
+            aria-pressed={mobileMode === "preview"}
+          >
+            <VisibilityOutlined />
+            Preview
+          </ButtonBase>
+        </div>
+
+        {mobileMode === "edit" ? (
+          <Paper className="workspace-mobile-page-card" variant="outlined">
+            <div>
+              <span>MAIN PAGE</span>
+              <b>@{draft.username || "username"}</b>
+              <small>Public profile</small>
+            </div>
+            <div className="workspace-mobile-page-card__actions">
+              <Button
+                color="inherit"
+                onClick={() => setSection("account")}
+              >
+                Account
+              </Button>
+              <Button
+                variant="contained"
+                onClick={saveProfile}
+                disabled={saving}
+                startIcon={saving ? <CircularProgress size={16} /> : undefined}
+              >
+                {saving ? "Saving" : "Save"}
+              </Button>
+            </div>
+          </Paper>
+        ) : (
+          <Button
+            className="workspace-mobile-live-link"
+            component={Link}
+            href={`/u/${draft.username}`}
+            target="_blank"
+            variant="outlined"
+            startIcon={<ArrowOutwardRounded />}
+          >
+            Open live page
+          </Button>
+        )}
+      </div>
+
       <aside className="workspace-rail" aria-label="Creator workspace">
         <BrandMark className="workspace-rail__brand" compact />
         <Avatar className="workspace-rail__avatar">{initials}</Avatar>
@@ -934,7 +1019,36 @@ export function Dashboard({
           </Stack>
         </header>
 
-        <div className="workspace-editor__scroll">
+        <div className="workspace-editor__scroll" ref={editorScrollRef}>
+          <div className="workspace-mobile-section-heading">
+            <Typography className="section-label">
+              {sectionDetails.eyebrow}
+            </Typography>
+            <Typography component="h1" variant="h2">
+              {sectionDetails.title}
+            </Typography>
+            <Typography color="text.secondary">
+              {sectionDetails.body}
+            </Typography>
+          </div>
+
+          {(section === "profile" || section === "appearance") && (
+            <div className="workspace-mobile-design-tabs" aria-label="Design settings">
+              <ButtonBase
+                className={section === "profile" ? "is-active" : ""}
+                onClick={() => setSection("profile")}
+              >
+                Profile
+              </ButtonBase>
+              <ButtonBase
+                className={section === "appearance" ? "is-active" : ""}
+                onClick={() => setSection("appearance")}
+              >
+                Theme
+              </ButtonBase>
+            </div>
+          )}
+
           <Typography className="workspace-editor__intro" color="text.secondary">
             {sectionDetails.body}
           </Typography>
@@ -1955,6 +2069,63 @@ export function Dashboard({
           </div>
         </div>
       </aside>
+
+      <nav className="workspace-mobile-nav" aria-label="Mobile dashboard sections">
+        <ButtonBase
+          className={section === "content" ? "is-active" : ""}
+          onClick={() => {
+            setSection("content");
+            setMobileMode("edit");
+          }}
+          aria-current={section === "content" ? "page" : undefined}
+        >
+          <InsertLinkRounded />
+          <span>Links</span>
+        </ButtonBase>
+        <ButtonBase
+          className={
+            section === "profile" || section === "appearance" ? "is-active" : ""
+          }
+          onClick={() => {
+            setSection(
+              section === "profile" || section === "appearance"
+                ? section
+                : "profile",
+            );
+            setMobileMode("edit");
+          }}
+          aria-current={
+            section === "profile" || section === "appearance"
+              ? "page"
+              : undefined
+          }
+        >
+          <ColorLensOutlined />
+          <span>Design</span>
+        </ButtonBase>
+        <ButtonBase
+          className={section === "commerce" ? "is-active" : ""}
+          onClick={() => {
+            setSection("commerce");
+            setMobileMode("edit");
+          }}
+          aria-current={section === "commerce" ? "page" : undefined}
+        >
+          <StorefrontOutlined />
+          <span>Shop</span>
+        </ButtonBase>
+        <ButtonBase
+          className={section === "analytics" ? "is-active" : ""}
+          onClick={() => {
+            setSection("analytics");
+            setMobileMode("edit");
+          }}
+          aria-current={section === "analytics" ? "page" : undefined}
+        >
+          <AnalyticsOutlined />
+          <span>Analytics</span>
+        </ButtonBase>
+      </nav>
 
       {tourOpen && (
         <div className="dashboard-tour" role="dialog" aria-modal="true" aria-label="Dashboard tour">
