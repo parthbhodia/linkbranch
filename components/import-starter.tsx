@@ -17,7 +17,7 @@ import {
   type ImportedProfileDraft,
 } from "@/lib/import-draft";
 
-export function ImportStarter() {
+export function ImportStarter({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,12 +57,16 @@ export function ImportStarter() {
   }
 
   return (
-    <div className="import-starter" id="import">
+    <div
+      className={`import-starter${compact ? " import-starter--compact" : ""}`}
+      id="import"
+    >
       <div className="import-starter__intro">
-        <span>COMING FROM LINKTREE?</span>
+        <span>{compact ? "SWITCH IN SECONDS" : "COMING FROM LINKTREE?"}</span>
         <Typography component="p">
-          Paste your public page to carry over your profile, links, and social
-          accounts. You review everything before it goes live.
+          {compact
+            ? "Paste your public Linktree URL. You’ll review everything before publishing."
+            : "Paste your public page to carry over your profile, links, and social accounts. You review everything before it goes live."}
         </Typography>
       </div>
       <form onSubmit={importProfile}>
@@ -89,13 +93,15 @@ export function ImportStarter() {
           }
           disabled={loading}
         >
-          {loading ? "Importing…" : "Import my page"}
+          {loading ? "Importing…" : compact ? "Import Linktree" : "Import my page"}
         </Button>
       </form>
       {error && <Alert severity="error">{error}</Alert>}
-      <Typography component="p">
-        No Linktree page? <Link href="/auth">Start fresh instead.</Link>
-      </Typography>
+      {!compact && (
+        <Typography component="p">
+          No Linktree page? <Link href="/auth">Start fresh instead.</Link>
+        </Typography>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
+import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
@@ -46,6 +47,7 @@ const demoLinks = [
 export function MarketingHome() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [builderStep, setBuilderStep] = useState<BuilderStep>("profile");
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     captureReferralFromLocation();
@@ -192,9 +194,35 @@ export function MarketingHome() {
             Build a customizable, ad-free link-in-bio page for Instagram,
             TikTok, YouTube, and every other platform.
           </Typography>
-          <ImportStarter />
+          <div className="marketing-hero__claim">
+            <span>CLAIM YOUR CUEFUL URL</span>
+            <Typography component="p">
+              Pick your username now. You can add links and choose a design
+              after creating your account.
+            </Typography>
+            <UsernameClaim />
+          </div>
+          <div
+            className={`marketing-import-option${importOpen ? " is-open" : ""}`}
+          >
+            <button
+              type="button"
+              className="marketing-import-option__toggle"
+              aria-expanded={importOpen}
+              aria-controls="linktree-import-panel"
+              onClick={() => setImportOpen((open) => !open)}
+            >
+              <span>Already use Linktree?</span>
+              Import your page instead
+            </button>
+            {importOpen && (
+              <div id="linktree-import-panel">
+                <ImportStarter compact />
+              </div>
+            )}
+          </div>
           <div className="marketing-hero__trust" aria-label="Signup benefits">
-            <span><CheckRounded aria-hidden="true" /> Import in seconds</span>
+            <span><CheckRounded aria-hidden="true" /> Free username</span>
             <span><CheckRounded aria-hidden="true" /> No forced branding</span>
           </div>
         </div>
