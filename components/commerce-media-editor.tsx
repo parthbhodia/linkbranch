@@ -4,6 +4,7 @@ import { useState } from "react";
 import AddRounded from "@mui/icons-material/AddRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
+import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import {
@@ -18,6 +19,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { createClient } from "@/lib/supabase/client";
@@ -102,6 +104,8 @@ export function CommerceMediaEditor({
     cta: "View product",
   });
   const [mediaDraft, setMediaDraft] = useState({ title: "", url: "", layout: "player" });
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [mediaFormOpen, setMediaFormOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploadingProductId, setUploadingProductId] = useState<number | null>(
     null,
@@ -145,6 +149,7 @@ export function CommerceMediaEditor({
       url: "",
       cta: "View product",
     });
+    setProductFormOpen(false);
     setNotice("Product added. Checkout stays on your destination website.");
   }
 
@@ -176,6 +181,7 @@ export function CommerceMediaEditor({
     }
     setMedia((current) => [...current, data as DashboardMediaEmbed]);
     setMediaDraft({ title: "", url: "", layout: "player" });
+    setMediaFormOpen(false);
     setNotice(`${provider.replace("_", " ")} media added.`);
   }
 
@@ -284,75 +290,106 @@ export function CommerceMediaEditor({
         <div className="commerce-editor__heading">
           <Box>
             <Chip icon={<StorefrontOutlined />} label="EXTERNAL CHECKOUT" size="small" />
-            <Typography variant="h3">Shop cards</Typography>
+            <Typography variant="h3">Your products</Typography>
             <Typography variant="body2" color="text.secondary">
               Add products, services, courses, or affiliate picks. Cueful sends
               visitors to your existing checkout and never processes payment.
             </Typography>
           </Box>
-          <strong>{products.filter((item) => item.is_active).length} live</strong>
-        </div>
-        <div className="commerce-editor__form">
-          <TextField
-            label="Product name"
-            value={productDraft.title}
-            onChange={(event) => setProductDraft({ ...productDraft, title: event.target.value })}
-          />
-          <TextField
-            select
-            label="Category"
-            value={productDraft.category}
-            onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })}
+          <Button
+            variant="contained"
+            startIcon={<AddRounded />}
+            onClick={() => setProductFormOpen((current) => !current)}
           >
-            {["digital", "merch", "service", "course", "affiliate"].map((item) => (
-              <MenuItem value={item} key={item}>{item}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Short description"
-            value={productDraft.description}
-            onChange={(event) => setProductDraft({ ...productDraft, description: event.target.value })}
-            className="commerce-editor__wide"
-          />
-          <TextField
-            label="Price"
-            type="number"
-            value={productDraft.price}
-            onChange={(event) => setProductDraft({ ...productDraft, price: event.target.value })}
-          />
-          <TextField
-            label="Currency"
-            value={productDraft.currency}
-            inputProps={{ maxLength: 3 }}
-            onChange={(event) =>
-              setProductDraft({ ...productDraft, currency: event.target.value.toUpperCase() })
-            }
-          />
-          <TextField
-            label="Badge"
-            placeholder="New, Sale, Popular"
-            value={productDraft.badge}
-            onChange={(event) => setProductDraft({ ...productDraft, badge: event.target.value })}
-          />
-          <TextField
-            label="Button label"
-            value={productDraft.cta}
-            onChange={(event) => setProductDraft({ ...productDraft, cta: event.target.value })}
-          />
-          <TextField
-            label="Destination URL"
-            placeholder="https://gumroad.com/your-product"
-            value={productDraft.url}
-            onChange={(event) => setProductDraft({ ...productDraft, url: event.target.value })}
-            className="commerce-editor__wide"
-          />
+            {productFormOpen ? "Close form" : "Add product"}
+          </Button>
         </div>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={addProduct}>
-          Add product
-        </Button>
+        <div className="commerce-editor__summary">
+          <div><span>Products</span><b>{products.length}</b></div>
+          <div><span>Live</span><b>{products.filter((item) => item.is_active).length}</b></div>
+          <div><span>Checkout</span><b>External</b></div>
+        </div>
+        {productFormOpen && (
+          <div className="commerce-editor__composer">
+            <div className="commerce-editor__form">
+              <TextField
+                label="Product name"
+                value={productDraft.title}
+                onChange={(event) => setProductDraft({ ...productDraft, title: event.target.value })}
+              />
+              <TextField
+                select
+                label="Category"
+                value={productDraft.category}
+                onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })}
+              >
+                {["digital", "merch", "service", "course", "affiliate"].map((item) => (
+                  <MenuItem value={item} key={item}>{item}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Short description"
+                value={productDraft.description}
+                onChange={(event) => setProductDraft({ ...productDraft, description: event.target.value })}
+                className="commerce-editor__wide"
+              />
+              <TextField
+                label="Price"
+                type="number"
+                value={productDraft.price}
+                onChange={(event) => setProductDraft({ ...productDraft, price: event.target.value })}
+              />
+              <TextField
+                label="Currency"
+                value={productDraft.currency}
+                inputProps={{ maxLength: 3 }}
+                onChange={(event) =>
+                  setProductDraft({ ...productDraft, currency: event.target.value.toUpperCase() })
+                }
+              />
+              <TextField
+                label="Badge"
+                placeholder="New, Sale, Popular"
+                value={productDraft.badge}
+                onChange={(event) => setProductDraft({ ...productDraft, badge: event.target.value })}
+              />
+              <TextField
+                label="Button label"
+                value={productDraft.cta}
+                onChange={(event) => setProductDraft({ ...productDraft, cta: event.target.value })}
+              />
+              <TextField
+                label="Destination URL"
+                placeholder="https://gumroad.com/your-product"
+                value={productDraft.url}
+                onChange={(event) => setProductDraft({ ...productDraft, url: event.target.value })}
+                className="commerce-editor__wide"
+              />
+            </div>
+            <Button variant="contained" onClick={addProduct}>
+              Save product
+            </Button>
+          </div>
+        )}
         <div className="commerce-editor__items">
+          {products.length === 0 && (
+            <div className="commerce-editor__empty">
+              <StorefrontOutlined />
+              <span>
+                <b>Start your shop</b>
+                <small>Add a product that opens your existing checkout.</small>
+              </span>
+              <Button
+                variant="outlined"
+                startIcon={<AddRounded />}
+                onClick={() => setProductFormOpen(true)}
+              >
+                Add first product
+              </Button>
+            </div>
+          )}
           {products.map((product) => (
-            <div key={product.id}>
+            <div className="commerce-product-row" key={product.id}>
               <span className="commerce-editor__thumb">
                 {product.image_path ? (
                   <Box component="img" src={publicAssetUrl(product.image_path)} alt="" />
@@ -360,7 +397,15 @@ export function CommerceMediaEditor({
                   <StorefrontOutlined />
                 )}
               </span>
-              <span><b>{product.title}</b><small>{product.category} · {product.currency} {product.price_amount ?? "—"}</small></span>
+              <span className="commerce-product-row__copy">
+                <b>{product.title}</b>
+                <small>{product.description || product.category}</small>
+                <strong>
+                  {product.price_amount == null
+                    ? "No price shown"
+                    : `${product.currency} ${product.price_amount}`}
+                </strong>
+              </span>
               <Button
                 component="label"
                 size="small"
@@ -382,11 +427,25 @@ export function CommerceMediaEditor({
                   onChange={(event) => uploadProductImage(product, event)}
                 />
               </Button>
-              <Switch
+              <Button
+                component="a"
+                href={product.destination_url}
+                target="_blank"
+                rel="noreferrer"
                 size="small"
-                checked={product.is_active}
-                onChange={(event) => toggle("products", product.id, event.target.checked)}
-              />
+                color="inherit"
+                startIcon={<OpenInNewRounded />}
+              >
+                Open
+              </Button>
+              <Tooltip title={product.is_active ? "Visible on profile" : "Hidden from profile"} arrow>
+                <Switch
+                  size="small"
+                  checked={product.is_active}
+                  onChange={(event) => toggle("products", product.id, event.target.checked)}
+                  inputProps={{ "aria-label": `${product.is_active ? "Hide" : "Show"} ${product.title}` }}
+                />
+              </Tooltip>
               <IconButton aria-label={`Delete ${product.title}`} onClick={() => remove("products", product.id)}>
                 <DeleteOutlineRounded />
               </IconButton>
@@ -404,35 +463,61 @@ export function CommerceMediaEditor({
               Paste an allow-listed media URL. Players load lazily and never autoplay.
             </Typography>
           </Box>
-          <strong>{media.filter((item) => item.is_active).length} live</strong>
-        </div>
-        <div className="commerce-editor__form">
-          <TextField
-            label="Block title"
-            placeholder="Listen to my latest release"
-            value={mediaDraft.title}
-            onChange={(event) => setMediaDraft({ ...mediaDraft, title: event.target.value })}
-          />
-          <TextField
-            select
-            label="Layout"
-            value={mediaDraft.layout}
-            onChange={(event) => setMediaDraft({ ...mediaDraft, layout: event.target.value })}
+          <Button
+            variant="contained"
+            startIcon={<AddRounded />}
+            onClick={() => setMediaFormOpen((current) => !current)}
           >
-            <MenuItem value="player">Full player</MenuItem>
-            <MenuItem value="compact">Compact card</MenuItem>
-          </TextField>
-          <TextField
-            label="Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Twitch, or Vimeo URL"
-            value={mediaDraft.url}
-            onChange={(event) => setMediaDraft({ ...mediaDraft, url: event.target.value })}
-            className="commerce-editor__wide"
-          />
+            {mediaFormOpen ? "Close form" : "Add media"}
+          </Button>
         </div>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={addMedia}>
-          Add media
-        </Button>
+        {mediaFormOpen && (
+          <div className="commerce-editor__composer">
+            <div className="commerce-editor__form">
+              <TextField
+                label="Block title"
+                placeholder="Listen to my latest release"
+                value={mediaDraft.title}
+                onChange={(event) => setMediaDraft({ ...mediaDraft, title: event.target.value })}
+              />
+              <TextField
+                select
+                label="Layout"
+                value={mediaDraft.layout}
+                onChange={(event) => setMediaDraft({ ...mediaDraft, layout: event.target.value })}
+              >
+                <MenuItem value="player">Full player</MenuItem>
+                <MenuItem value="compact">Compact card</MenuItem>
+              </TextField>
+              <TextField
+                label="Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Twitch, or Vimeo URL"
+                value={mediaDraft.url}
+                onChange={(event) => setMediaDraft({ ...mediaDraft, url: event.target.value })}
+                className="commerce-editor__wide"
+              />
+            </div>
+            <Button variant="contained" onClick={addMedia}>
+              Save media
+            </Button>
+          </div>
+        )}
         <div className="commerce-editor__items commerce-editor__items--media">
+          {media.length === 0 && (
+            <div className="commerce-editor__empty">
+              <MusicNoteRounded />
+              <span>
+                <b>Add music or media</b>
+                <small>Use a player or a compact outbound card.</small>
+              </span>
+              <Button
+                variant="outlined"
+                startIcon={<AddRounded />}
+                onClick={() => setMediaFormOpen(true)}
+              >
+                Add first embed
+              </Button>
+            </div>
+          )}
           {media.map((item) => (
             <div key={item.id}>
               <span><b>{item.title}</b><small>{item.provider.replace("_", " ")} · {item.layout}</small></span>
