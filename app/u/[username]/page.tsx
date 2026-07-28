@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProfileHub } from "@/components/profile-hub";
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
@@ -57,6 +58,13 @@ export async function generateMetadata({
         description: example.profile.bio,
         url: `/u/${username.toLowerCase()}`,
         type: "profile" as const,
+        images: [DEFAULT_SOCIAL_IMAGE],
+      },
+      twitter: {
+        card: "summary_large_image" as const,
+        title: `${example.profile.displayName}'s creator profile`,
+        description: example.profile.bio,
+        images: [DEFAULT_SOCIAL_IMAGE],
       },
     };
   }
@@ -75,7 +83,7 @@ export async function generateMetadata({
     profile?.seo_description ||
     profile?.bio ||
     `Links, resources, and referral offers from @${username}.`;
-  const socialImage = publicAssetUrl(profile?.seo_image_path);
+  const socialImage = publicAssetUrl(profile?.seo_image_path) ?? DEFAULT_SOCIAL_IMAGE;
 
   return {
     title,
@@ -88,13 +96,13 @@ export async function generateMetadata({
       description,
       url: `/u/${username.toLowerCase()}`,
       type: "profile" as const,
-      images: socialImage ? [socialImage] : undefined,
+      images: [socialImage],
     },
     twitter: {
-      card: socialImage ? ("summary_large_image" as const) : ("summary" as const),
+      card: "summary_large_image" as const,
       title,
       description,
-      images: socialImage ? [socialImage] : undefined,
+      images: [socialImage],
     },
   };
 }

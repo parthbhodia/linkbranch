@@ -3,7 +3,7 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@/components/theme-provider";
-import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
+import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import "./globals.css";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-MWDHV6S4";
@@ -46,12 +46,21 @@ export const metadata: Metadata = {
     siteName: BRAND_NAME,
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: DEFAULT_SOCIAL_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Cueful — one useful page for everything you share",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Cueful — one link in bio for everything you share",
     description:
       "A free link-in-bio page for your links, shop, and referral codes — and the only one that shows you which codes people actually copy.",
+    images: [DEFAULT_SOCIAL_IMAGE],
   },
   robots: {
     index: true,

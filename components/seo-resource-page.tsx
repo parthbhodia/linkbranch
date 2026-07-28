@@ -5,7 +5,7 @@ import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { ImportStarter } from "@/components/import-starter";
-import { BRAND_NAME, BRAND_URL } from "@/lib/brand";
+import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import type { SeoPageConfig } from "@/lib/seo-pages";
 
 export function metadataForSeoPage(page: SeoPageConfig): Metadata {
@@ -34,11 +34,20 @@ export function metadataForSeoPage(page: SeoPageConfig): Metadata {
       url: page.path,
       siteName: BRAND_NAME,
       type: "website",
+      images: [
+        {
+          url: DEFAULT_SOCIAL_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: `${page.title} — Cueful`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: page.metaTitle,
       description: page.metaDescription,
+      images: [DEFAULT_SOCIAL_IMAGE],
     },
   };
 }
