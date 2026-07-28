@@ -23,6 +23,7 @@ const APP_ROUTES = new Set([
   "es",
   "it",
   "onboarding",
+  "opengraph-image",
   "templates",
   "u",
   "api",
