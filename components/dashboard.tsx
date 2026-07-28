@@ -383,13 +383,8 @@ export function Dashboard({
   } | null>(null);
 
   useEffect(() => {
-    const tourKey = `cueful:dashboard-tour:${profile.id}`;
     const shareKey = `cueful:share-prompt:${profile.id}`;
     const timer = window.setTimeout(() => {
-      if (window.localStorage.getItem(tourKey) !== "done") {
-        setTourOpen(true);
-        return;
-      }
       if (
         profile.is_published &&
         window.localStorage.getItem(shareKey) !== "dismissed"
@@ -1956,6 +1951,21 @@ export function Dashboard({
                   </span>
                   <ChevronRightRounded />
                 </ButtonBase>
+                <ButtonBase
+                  onClick={() => {
+                    setTourOpen(true);
+                    showTourStep(0);
+                  }}
+                >
+                  <span className="workspace-more__icon workspace-more__icon--guide">
+                    <HelpOutlineRounded />
+                  </span>
+                  <span>
+                    <b>Dashboard guide</b>
+                    <small>Replay the optional walkthrough</small>
+                  </span>
+                  <ChevronRightRounded />
+                </ButtonBase>
               </div>
               <Typography className="section-label">ACCOUNT</Typography>
               <div className="workspace-more__list">
@@ -2508,7 +2518,13 @@ export function Dashboard({
             <Typography variant="body2" color="text.secondary">
               {dashboardTour[tourStep].body}
             </Typography>
-            <div className="dashboard-tour__progress" aria-hidden="true">
+            <div
+              className="dashboard-tour__progress"
+              aria-hidden="true"
+              style={{
+                gridTemplateColumns: `repeat(${dashboardTour.length}, minmax(0, 1fr))`,
+              }}
+            >
               {dashboardTour.map((item, index) => (
                 <i
                   className={index <= tourStep ? "is-active" : ""}
