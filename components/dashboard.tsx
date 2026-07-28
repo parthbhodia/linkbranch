@@ -206,8 +206,8 @@ const sectionCopy: Record<
   },
   account: {
     eyebrow: "ACCOUNT",
-    title: "Publishing and sign-in",
-    body: "Control page visibility and review the email attached to this account.",
+    title: "Settings",
+    body: "Profile details, SEO, QR sharing, visibility, privacy, and sign-in.",
   },
   more: {
     eyebrow: "TOOLS",
@@ -1965,7 +1965,7 @@ export function Dashboard({
                   </span>
                   <span>
                     <b>Settings</b>
-                    <small>Visibility, discovery, sharing, and sign-in</small>
+                    <small>Profile, SEO, sharing, privacy, and sign-in</small>
                   </span>
                   <ChevronRightRounded />
                 </ButtonBase>
@@ -1992,31 +1992,221 @@ export function Dashboard({
           {section === "health" && <LinkHealthScanner />}
 
           {section === "account" && (
-            <Stack className="workspace-panel" spacing={3}>
-              <Box className="workspace-publish-row">
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="h3">Public page</Typography>
-                    <Chip
-                      size="small"
-                      color={draft.is_published ? "success" : "default"}
-                      variant="outlined"
-                      icon={draft.is_published ? <CheckCircleRounded /> : undefined}
-                      label={draft.is_published ? "Published" : "Draft"}
-                    />
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Turn this off to keep your page private while you edit it.
-                  </Typography>
-                </Box>
-                <Switch
-                  checked={draft.is_published}
-                  onChange={(event) =>
-                    update("is_published", event.target.checked)
-                  }
-                  inputProps={{ "aria-label": "Publish public page" }}
-                />
-              </Box>
+            <Stack className="workspace-panel workspace-settings-basic" spacing={2}>
+              <Paper className="workspace-settings-card" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <PersonOutlineRounded />
+                  <Box>
+                    <Typography variant="h3">Profile</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The basic identity attached to this Cueful page.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-settings-card__fields">
+                  <TextField
+                    label="Display name"
+                    value={draft.display_name}
+                    onChange={(event) =>
+                      update("display_name", event.target.value.slice(0, 80))
+                    }
+                    fullWidth
+                  />
+                  <TextField
+                    label="Username"
+                    value={draft.username}
+                    helperText="Your public URL stays stable."
+                    fullWidth
+                    disabled
+                  />
+                  <TextField
+                    label="Account email"
+                    value={email}
+                    helperText="Signed in and verified by Supabase."
+                    fullWidth
+                    disabled
+                  />
+                </div>
+              </Paper>
+
+              <Paper className="workspace-settings-card" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <SearchRounded />
+                  <Box>
+                    <Typography variant="h3">SEO & sharing</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The title, summary, and image people see in search and chats.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-settings-card__fields">
+                  <TextField
+                    label="SEO title"
+                    value={draft.seo_title ?? ""}
+                    onChange={(event) =>
+                      update("seo_title", event.target.value.slice(0, 70))
+                    }
+                    placeholder={`${draft.display_name} — links and recommendations`}
+                    helperText={`${draft.seo_title?.length ?? 0}/70`}
+                    fullWidth
+                  />
+                  <TextField
+                    label="SEO description"
+                    value={draft.seo_description ?? ""}
+                    onChange={(event) =>
+                      update("seo_description", event.target.value.slice(0, 170))
+                    }
+                    placeholder={draft.bio || "A clear summary of this public page."}
+                    helperText={`${draft.seo_description?.length ?? 0}/170`}
+                    multiline
+                    minRows={3}
+                    fullWidth
+                  />
+                  <div className="workspace-seo-image">
+                    {draft.seo_image_path ? (
+                      <Box
+                        component="img"
+                        src={publicAssetUrl(draft.seo_image_path)}
+                        alt="Current social sharing preview"
+                      />
+                    ) : (
+                      <div>
+                        <Typography variant="h3">1200 × 630</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Default Cueful share image
+                        </Typography>
+                      </div>
+                    )}
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={seoImageUploading}
+                        startIcon={
+                          seoImageUploading
+                            ? <CircularProgress size={16} />
+                            : <PhotoCameraOutlined />
+                        }
+                      >
+                        {draft.seo_image_path ? "Replace image" : "Choose image"}
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={uploadSeoImage}
+                        />
+                      </Button>
+                      {draft.seo_image_path && (
+                        <Button
+                          color="inherit"
+                          disabled={seoImageUploading}
+                          onClick={removeSeoImage}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </div>
+                </div>
+              </Paper>
+
+              <Paper className="workspace-settings-card" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <IosShareRounded />
+                  <Box>
+                    <Typography variant="h3">QR & page sharing</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Share {publicProfileAddress(draft.username)} online or offline.
+                    </Typography>
+                  </Box>
+                </div>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <Button
+                    variant="contained"
+                    startIcon={<IosShareRounded />}
+                    onClick={() => setShareOpen(true)}
+                    disabled={!draft.is_published}
+                  >
+                    Open share kit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ContentCopyRounded />}
+                    onClick={copyPublicPage}
+                  >
+                    Copy page link
+                  </Button>
+                </Stack>
+              </Paper>
+
+              <Paper className="workspace-settings-card" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <SettingsOutlined />
+                  <Box>
+                    <Typography variant="h3">Visibility</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Decide where your page appears and whether it credits Cueful.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-settings-switch">
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography fontWeight={850}>Public page</Typography>
+                      <Chip
+                        size="small"
+                        color={draft.is_published ? "success" : "default"}
+                        variant="outlined"
+                        icon={
+                          draft.is_published ? <CheckCircleRounded /> : undefined
+                        }
+                        label={draft.is_published ? "Published" : "Draft"}
+                      />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      Turn this off to keep the page private while editing.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={draft.is_published}
+                    onChange={(event) =>
+                      update("is_published", event.target.checked)
+                    }
+                    inputProps={{ "aria-label": "Publish public page" }}
+                  />
+                </div>
+                <div className="workspace-settings-switch">
+                  <Box>
+                    <Typography fontWeight={850}>Cueful Discover</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Let people find this published profile in Discover.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={draft.is_discoverable}
+                    onChange={(event) =>
+                      update("is_discoverable", event.target.checked)
+                    }
+                    inputProps={{ "aria-label": "List profile in Cueful Discover" }}
+                  />
+                </div>
+                <div className="workspace-settings-switch">
+                  <Box>
+                    <Typography fontWeight={850}>Create your Cueful badge</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Show a small, removable supporter badge on the public page.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={draft.show_cueful_badge}
+                    onChange={(event) =>
+                      update("show_cueful_badge", event.target.checked)
+                    }
+                    inputProps={{ "aria-label": "Show Create your Cueful badge" }}
+                  />
+                </div>
+              </Paper>
+
               <Paper className="workspace-growth-loop" variant="outlined">
                 <div className="workspace-growth-loop__header">
                   <Box>
@@ -2058,48 +2248,45 @@ export function Dashboard({
                   </Button>
                 </div>
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={draft.show_cueful_badge}
-                      onChange={(event) =>
-                        update("show_cueful_badge", event.target.checked)
-                      }
-                    />
-                  }
-                  label="Show a small “Create your Cueful” badge on my profile"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={draft.is_discoverable}
-                      onChange={(event) =>
-                        update("is_discoverable", event.target.checked)
-                      }
-                    />
-                  }
-                  label="List my published profile in Cueful Discover"
-                />
                 <Typography variant="caption" color="text.secondary">
-                  Publishing, Discover, and the supporter badge start on for new
-                  profiles. Each remains removable at any time.
+                  The invite and supporter badge are optional. Nothing is forced
+                  onto your public page.
                 </Typography>
               </Paper>
-              <TextField
-                label="Account email"
-                value={email}
-                fullWidth
-                disabled
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
+
+              <Paper className="workspace-settings-card" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <SettingsOutlined />
+                  <Box>
+                    <Typography variant="h3">Privacy & sign-in</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Review Cueful’s privacy policy or end this session.
+                    </Typography>
+                  </Box>
+                </div>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <Button component={Link} href="/privacy" variant="outlined">
+                    Privacy policy
+                  </Button>
+                  <Button
+                    color="error"
+                    variant="outlined"
+                    startIcon={<LogoutRounded />}
+                    onClick={signOut}
+                  >
+                    Sign out
+                  </Button>
+                </Stack>
+              </Paper>
+
               <Button
-                color="inherit"
-                variant="outlined"
-                startIcon={<LogoutRounded />}
-                onClick={signOut}
+                variant="contained"
+                onClick={saveProfile}
+                disabled={saving}
+                startIcon={saving ? <CircularProgress size={17} /> : undefined}
                 sx={{ alignSelf: "flex-start" }}
               >
-                Sign out
+                {saving ? "Saving settings…" : "Save settings"}
               </Button>
             </Stack>
           )}
