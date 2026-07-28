@@ -2,15 +2,10 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
+import { CookieConsent } from "@/components/cookie-consent";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import "./globals.css";
-
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-MWDHV6S4";
-// Loaded directly rather than as a tag inside the GTM container. If a Google
-// tag with this same id is ever added to GTM as well, pageviews will be
-// counted twice — configure it in one place or the other, not both.
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-D641JQ9E35";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND_URL),
@@ -81,36 +76,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* GTM's noscript fallback has to be the first element inside body. */}
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-        <Script id="gtm-init" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`}
-        </Script>
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="ga-init" strategy="afterInteractive">
+        <Script id="google-consent-default" strategy="beforeInteractive">
           {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA_ID}');`}
+gtag('consent', 'default', {
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  analytics_storage: 'denied'
+});`}
         </Script>
         <AppRouterCacheProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </AppRouterCacheProvider>
         <Analytics />
+        <CookieConsent />
       </body>
     </html>
   );

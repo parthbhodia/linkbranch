@@ -39,6 +39,11 @@ export type SeoPageConfig = {
   secondaryCta?: string;
   secondaryHref?: string;
   sourceLinks?: Array<{ label: string; href: string }>;
+  placeholderTestimonials?: Array<{
+    quote: string;
+    persona: string;
+    context: string;
+  }>;
 };
 
 const startFresh = "/auth?mode=signup&utm_source=seo&utm_medium=landing";
@@ -169,16 +174,36 @@ export const seoPages: SeoPageConfig[] = [
         href: "https://linktr.ee/s/pricing",
       },
     ],
+    placeholderTestimonials: [
+      {
+        quote:
+          "The import preview makes switching feel like a small edit instead of a weekend project.",
+        persona: "Illustrative creator",
+        context: "SAMPLE COPY · NOT A CUSTOMER ENDORSEMENT",
+      },
+      {
+        quote:
+          "I can see the referral code, the reason to use it, and the next step without hunting.",
+        persona: "Illustrative visitor",
+        context: "SAMPLE COPY · NOT A CUSTOMER ENDORSEMENT",
+      },
+      {
+        quote:
+          "The page looks finished before I have to think about upgrades or visitor ads.",
+        persona: "Illustrative independent maker",
+        context: "SAMPLE COPY · NOT A CUSTOMER ENDORSEMENT",
+      },
+    ],
   },
   {
     path: "/free-link-in-bio",
-    metaTitle: "Free Link in Bio Tool for Creators | Cueful",
+    metaTitle: "Create a Free Bio Link Page | Cueful",
     metaDescription:
-      "Create a fast, customizable, ad-free link-in-bio page with referral cards, QR downloads, and lifetime audience analytics.",
-    eyebrow: "FREE LINK IN BIO",
-    title: "One free link for everything you create.",
+      "Create a free bio link page with customizable layouts, referral cards, QR downloads, and lifetime audience analytics—without visitor ads.",
+    eyebrow: "FREE BIO LINK PAGE",
+    title: "Build your free bio link page.",
     lead:
-      "Give every social profile one calm destination for your work, recommendations, referral codes, and next action.",
+      "Turn scattered links, recommendations, and referral codes into one focused page you can publish and share from any social profile.",
     theme: "rose",
     proof: [
       { value: "1", label: "memorable URL" },
@@ -273,13 +298,13 @@ export const seoPages: SeoPageConfig[] = [
   },
   {
     path: "/best-link-in-bio-tools",
-    metaTitle: "Best Link-in-Bio Tools in 2026: A Practical Comparison",
+    metaTitle: "4 Best Link-in-Bio Tools for Creators in 2026",
     metaDescription:
-      "Compare Cueful, Linktree, Beacons, and Carrd by setup speed, customization, monetization, analytics, and the job each tool does best.",
+      "Compare four leading link-in-bio tools and find the best option for referrals, selling, customization, analytics, or an all-purpose creator page.",
     eyebrow: "BUYER’S GUIDE / JULY 2026",
-    title: "The best link-in-bio tool depends on the job.",
+    title: "Four strong link-in-bio tools, each best at a different job.",
     lead:
-      "A referral curator, digital-product seller, and portfolio designer should not automatically choose the same platform. Start with the outcome, then compare the tradeoffs.",
+      "Our practical shortlist compares Cueful, Linktree, Beacons, and Carrd by the creator outcome each serves best—not by affiliate commission or widget count.",
     theme: "sky",
     proof: [
       { value: "4", label: "tools reviewed" },
@@ -378,11 +403,11 @@ export const seoPages: SeoPageConfig[] = [
   },
   {
     path: "/link-in-bio-tools",
-    metaTitle: "Link-in-Bio Tools Compared: Features That Actually Matter",
+    metaTitle: "How to Compare Link-in-Bio Tools: 7 Useful Criteria",
     metaDescription:
-      "Compare link-in-bio tools by visitor experience, page speed, customization, analytics, referrals, portability, and total cost.",
-    eyebrow: "LINK-IN-BIO TOOLS COMPARED",
-    title: "Compare the experience, not the widget count.",
+      "Evaluate any link-in-bio tool using seven practical criteria: focus, speed, branding, analytics, portability, sharing, and total cost.",
+    eyebrow: "LINK-IN-BIO EVALUATION GUIDE",
+    title: "How to compare link-in-bio tools before you commit.",
     lead:
       "The best tool helps a visitor decide what to open next. Use this framework to evaluate the public page, the editor, and the price you will still be paying a year from now.",
     theme: "ink",

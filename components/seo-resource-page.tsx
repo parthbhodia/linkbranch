@@ -7,6 +7,7 @@ import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { ImportStarter } from "@/components/import-starter";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 import type { SeoPageConfig } from "@/lib/seo-pages";
+import proofStyles from "./seo-proof.module.css";
 
 export function metadataForSeoPage(page: SeoPageConfig): Metadata {
   const localizedAlternates =
@@ -298,6 +299,37 @@ export function SeoResourcePage({ page }: { page: SeoPageConfig }) {
             </a>
           ))}
         </aside>
+      )}
+
+      {page.placeholderTestimonials && (
+        <section className={proofStyles.section} aria-labelledby="placeholder-proof-title">
+          <div className={proofStyles.header}>
+            <div>
+              <p className={proofStyles.eyebrow}>PLACEHOLDER PROOF / CLEARLY LABELLED</p>
+              <h2 className={proofStyles.heading} id="placeholder-proof-title">
+                The reactions this flow is designed to earn.
+              </h2>
+            </div>
+            <p className={proofStyles.disclosure}>
+              These are illustrative copy examples, not customer testimonials.
+              Replace them with permissioned, verifiable creator quotes before
+              presenting this section as social proof.
+            </p>
+          </div>
+          <div className={proofStyles.grid}>
+            {page.placeholderTestimonials.map((testimonial) => (
+              <article className={proofStyles.card} key={testimonial.quote}>
+                <blockquote className={proofStyles.quote}>
+                  “{testimonial.quote}”
+                </blockquote>
+                <footer className={proofStyles.persona}>
+                  <b>{testimonial.persona}</b>
+                  <span>{testimonial.context}</span>
+                </footer>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
 
       <section className="seo-related" aria-labelledby="related-heading">
