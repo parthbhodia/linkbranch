@@ -1812,8 +1812,8 @@ export function Dashboard({
                   label="List my published profile in Cueful Discover"
                 />
                 <Typography variant="caption" color="text.secondary">
-                  Both settings are off by default. Turning them off later
-                  removes the badge or directory listing.
+                  Publishing, Discover, and the supporter badge start on for new
+                  profiles. Each remains removable at any time.
                 </Typography>
               </Paper>
               <TextField

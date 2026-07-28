@@ -34,19 +34,22 @@ export default function PrivacyPage() {
         </section>
 
         <section id="analytics">
-          <h2>Analytics and cookie consent</h2>
+          <h2>Analytics</h2>
           <p>
-            Google Analytics and Google Tag Manager are optional. Cueful does
-            not load either service until you select “Accept analytics.” Your
-            choice is stored in your browser so the site can remember it. You
-            can reopen Cookie settings from the bottom of any page and reject
-            optional analytics later.
+            Cueful uses its own first-party activity records to show creators
+            page views, outbound actions, and aggregated audience signals. It
+            does not load Google Analytics or Google Tag Manager.
           </p>
           <p>
             Vercel Web Analytics remains enabled. Vercel describes this service
             as cookie-free, anonymous, and limited to aggregated traffic
-            measurement. Cueful does not use the consent banner to authorize
-            advertising storage or personalized advertising.
+            measurement. Cueful does not enable advertising storage or
+            personalized advertising.
+          </p>
+          <p>
+            Sign-in uses essential session storage so Cueful can protect an
+            account and keep its owner signed in. Creator referral attribution
+            is stored locally in the browser for up to seven days.
           </p>
         </section>
 

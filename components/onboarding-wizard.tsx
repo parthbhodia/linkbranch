@@ -55,8 +55,8 @@ import {
   readImportedProfileDraft,
 } from "@/lib/import-draft";
 import {
-  clearReferralCookie,
-  readReferralCookie,
+  clearReferralAttribution,
+  readReferralAttribution,
 } from "@/lib/referrals";
 import {
   imageExtension,
@@ -939,13 +939,13 @@ export function OnboardingWizard({
       return;
     }
 
-    const referrerUsername = readReferralCookie();
+    const referrerUsername = readReferralAttribution();
     if (referrerUsername && referrerUsername !== username) {
       await supabase.rpc("claim_profile_referral", {
         referrer_username: referrerUsername,
       });
     }
-    clearReferralCookie();
+    clearReferralAttribution();
 
     const staleThumbnailPaths = Array.from(
       pendingThumbnailDeletesRef.current,
