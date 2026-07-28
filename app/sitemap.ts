@@ -33,6 +33,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.7,
     },
+    {
+      url: `${BRAND_URL}/privacy`,
+      lastModified: updatedAt,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
     ...seoPages.map((page) => ({
       url: `${BRAND_URL}${page.path}`,
       lastModified: updatedAt,
@@ -51,6 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 en: `${BRAND_URL}/what-does-link-in-bio-mean`,
                 es: `${BRAND_URL}/es/que-significa-link-en-bio`,
                 it: `${BRAND_URL}/it/cosa-significa-link-in-bio`,
+                "x-default": `${BRAND_URL}/what-does-link-in-bio-mean`,
               },
             }
           : undefined,

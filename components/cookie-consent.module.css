@@ -1,0 +1,113 @@
+.panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1400;
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px;
+  color: #171714;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 240, 226, 0.98));
+  border: 1px solid rgba(23, 23, 20, 0.24);
+  border-radius: 4px;
+  box-shadow: 0 20px 70px rgba(23, 23, 20, 0.22);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font: 700 0.68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  margin: 0;
+  font: 700 clamp(1.35rem, 5vw, 1.85rem)/1.05 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.03em;
+}
+
+.copy {
+  margin: 12px 0 18px;
+  color: rgba(23, 23, 20, 0.74);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.copy a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid #171714;
+  border-radius: 999px;
+  font: 700 0.76rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.accept {
+  color: #fff;
+  background: #171714;
+}
+
+.reject {
+  color: #171714;
+  background: transparent;
+}
+
+.settings {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1300;
+  min-height: 36px;
+  padding: 0 12px;
+  color: #171714;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(23, 23, 20, 0.3);
+  border-radius: 999px;
+  font: 700 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.button:focus-visible,
+.settings:focus-visible {
+  outline: 3px solid #246bfd;
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .panel {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    animation: consent-arrive 280ms ease-out both;
+  }
+
+  @keyframes consent-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+}

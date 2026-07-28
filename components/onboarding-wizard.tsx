@@ -10,8 +10,14 @@ import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
 import LinkRounded from "@mui/icons-material/LinkRounded";
+import LocalMallOutlined from "@mui/icons-material/LocalMallOutlined";
+import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
+import RocketLaunchOutlined from "@mui/icons-material/RocketLaunchOutlined";
+import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
 import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
+import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
+import WorkOutlineRounded from "@mui/icons-material/WorkOutlineRounded";
 import {
   Alert,
   Avatar,
@@ -100,6 +106,65 @@ type SocialDraft = {
   url: string;
 };
 
+type StarterPurpose =
+  | "creator"
+  | "freelancer"
+  | "coach"
+  | "musician"
+  | "referral"
+  | "local-shop";
+
+const starterPurposes: Array<{
+  id: StarterPurpose;
+  name: string;
+  note: string;
+  icon: React.ReactNode;
+  links: string[];
+}> = [
+  {
+    id: "creator",
+    name: "Creator",
+    note: "Latest drop, subscribe, and collaborate",
+    icon: <RocketLaunchOutlined />,
+    links: ["Watch my latest video", "Subscribe / follow me", "Book a collaboration call"],
+  },
+  {
+    id: "freelancer",
+    name: "Freelancer",
+    note: "Portfolio, services, and availability",
+    icon: <WorkOutlineRounded />,
+    links: ["View selected work", "See my services", "Check availability"],
+  },
+  {
+    id: "coach",
+    name: "Coach",
+    note: "Consultation, free guide, and proof",
+    icon: <SchoolOutlined />,
+    links: ["Book a consultation", "Download my free guide", "Read client results"],
+  },
+  {
+    id: "musician",
+    name: "Musician",
+    note: "Latest release, tickets, and merch",
+    icon: <MusicNoteRounded />,
+    links: ["Listen to my latest release", "See upcoming shows", "Shop music and merch"],
+  },
+  {
+    id: "referral",
+    name: "Deal curator",
+    note: "Favorite tools and current offers",
+    icon: <LocalMallOutlined />,
+    links: ["My most-used tools", "Current deals and offers", "Weekly recommendations"],
+  },
+  {
+    id: "local-shop",
+    name: "Local shop",
+    note: "Menu, ordering, and directions",
+    icon: <StorefrontOutlined />,
+    links: ["View our menu or catalog", "Order or book online", "Get directions"],
+  },
+];
+
 export type OnboardingInitialData = {
   profile: {
     id: string;
@@ -111,6 +176,7 @@ export type OnboardingInitialData = {
     bio: string;
     location: string;
     show_location: boolean;
+    avatar_path: string | null;
   };
   links: Array<{
     id: number;
@@ -334,6 +400,9 @@ export function OnboardingWizard({
 }) {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
+  const [starterPurpose, setStarterPurpose] = useState<StarterPurpose | null>(
+    initialData.links.length ? null : "creator",
+  );
   const [displayName, setDisplayName] = useState(initialData.profile.display_name);
   const [greeting, setGreeting] = useState(initialData.profile.greeting);
   const [headline, setHeadline] = useState(initialData.profile.headline);
@@ -346,6 +415,8 @@ export function OnboardingWizard({
   const [showLocation, setShowLocation] = useState(
     initialData.profile.show_location,
   );
+  const [avatarPath, setAvatarPath] = useState(initialData.profile.avatar_path);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [socials, setSocials] = useState<SocialDraft[]>(
     initialData.socials.map((item, index) => ({
       id: index + 1,
@@ -455,19 +526,87 @@ export function OnboardingWizard({
     );
   }
 
-  function addLink() {
+  function addLink(title = "") {
     setLinks((current) => [
       ...current,
       {
         id: Math.max(0, ...current.map((item) => item.id)) + 1,
-        title: "",
+        title,
         url: "",
         is_active: true,
         is_featured: false,
         thumbnail_path: null,
       },
     ]);
-    setNotice({ message: "Link added", severity: "success" });
+    setNotice({
+      message: title ? `${title} starter added` : "Link added",
+      severity: "success",
+    });
+  }
+
+  function applyStarterPurpose(purpose: StarterPurpose) {
+    const preset = starterPurposes.find((item) => item.id === purpose);
+    if (!preset) return;
+    setStarterPurpose(purpose);
+    setLinks(
+      preset.links.map((title, index) => ({
+        id: index + 1,
+        title,
+        url: "",
+        is_active: true,
+        is_featured: index === 0,
+        thumbnail_path: null,
+      })),
+    );
+    setNotice({
+      message: `${preset.name} starter links added. Replace the blank URLs with yours.`,
+      severity: "success",
+    });
+  }
+
+  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice({ message: validationError, severity: "error" });
+      return;
+    }
+
+    setAvatarUploading(true);
+    const supabase = createClient();
+    const path = `${initialData.profile.id}/profile/avatar-${crypto.randomUUID()}.${imageExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+    if (uploadError) {
+      setAvatarUploading(false);
+      setNotice({ message: uploadError.message, severity: "error" });
+      return;
+    }
+
+    const previous = avatarPath;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_path: path })
+      .eq("id", initialData.profile.id);
+    if (error) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setAvatarUploading(false);
+      setNotice({ message: error.message, severity: "error" });
+      return;
+    }
+    if (previous) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previous]);
+    }
+    setAvatarPath(path);
+    setAvatarUploading(false);
+    setNotice({ message: "Profile photo updated", severity: "success" });
   }
 
   function reorderLinks(event: DragEndEvent) {
@@ -660,7 +799,9 @@ export function OnboardingWizard({
       return;
     }
 
-    const completedLinks = links.filter((item) => item.title.trim() && item.url.trim());
+    const completedLinks = links.filter(
+      (item) => item.is_active && item.title.trim() && item.url.trim(),
+    );
     const completedReferrals = referrals.filter(
       (item) => item.provider.trim() && item.offer.trim() && item.url.trim(),
     );
@@ -679,6 +820,7 @@ export function OnboardingWizard({
     if (
       links.some(
         (item) =>
+          item.is_active &&
           (item.title || item.url) &&
           (!item.title.trim() || !item.url.trim()),
       )
@@ -879,14 +1021,63 @@ export function OnboardingWizard({
 
           {activeStep === 1 ? (
             <Stack spacing={3} className="setup-form">
+              <Paper variant="outlined" className="form-section setup-starter">
+                <div className="setup-starter__heading">
+                  <Box>
+                    <Typography className="section-label">OPTIONAL SHORTCUT</Typography>
+                    <Typography component="h2" variant="h3">
+                      Start with useful links already written
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Choose what fits. We write the labels; you only add your
+                      destinations and switch off anything you do not need.
+                    </Typography>
+                  </Box>
+                  <Chip label="EDIT EVERYTHING" size="small" variant="outlined" />
+                </div>
+                <div className="setup-starter__grid">
+                  {starterPurposes.map((purpose) => (
+                    <Button
+                      className={starterPurpose === purpose.id ? "is-selected" : ""}
+                      variant="outlined"
+                      onClick={() => applyStarterPurpose(purpose.id)}
+                      startIcon={purpose.icon}
+                      key={purpose.id}
+                    >
+                      <span>
+                        <b>{purpose.name}</b>
+                        <small>{purpose.note}</small>
+                      </span>
+                      {starterPurpose === purpose.id && <CheckCircleRounded />}
+                    </Button>
+                  ))}
+                </div>
+              </Paper>
+
               <Paper variant="outlined" className="form-section">
                 <Typography component="h2" variant="h3">Profile image</Typography>
                 <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mt: 2 }}>
-                  <Avatar className="setup-avatar">{initials}</Avatar>
+                  <Avatar className="setup-avatar" src={publicAssetUrl(avatarPath)}>
+                    {initials}
+                  </Avatar>
                   <Box>
-                    <Button variant="outlined" startIcon={<ImageOutlined />} component="label">
-                      Upload image
-                      <input hidden type="file" accept="image/png,image/jpeg,image/webp" />
+                    <Button
+                      variant="outlined"
+                      startIcon={
+                        avatarUploading
+                          ? <CircularProgress size={16} />
+                          : <ImageOutlined />
+                      }
+                      component="label"
+                      disabled={avatarUploading}
+                    >
+                      {avatarPath ? "Replace image" : "Upload image"}
+                      <input
+                        hidden
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={uploadAvatar}
+                      />
                     </Button>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
                       JPG, PNG, or WebP. Maximum 5 MB.
@@ -1120,8 +1311,32 @@ export function OnboardingWizard({
                       Add at least one destination. Keep drafts hidden or spotlight one link.
                     </Typography>
                   </Box>
-                  <Button startIcon={<AddRounded />} onClick={addLink}>Add link</Button>
+                  <Button startIcon={<AddRounded />} onClick={() => addLink()}>
+                    Add link
+                  </Button>
                 </Stack>
+                <div className="link-quick-add">
+                  <Typography variant="caption" color="text.secondary">
+                    QUICK ADD
+                  </Typography>
+                  <div>
+                    {[
+                      "Book a call",
+                      "WhatsApp me",
+                      "Watch my latest video",
+                      "Join my community",
+                    ].map((title) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={title}
+                        onClick={() => addLink(title)}
+                      >
+                        {title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <DndContext
                   sensors={dragSensors}
                   collisionDetection={closestCenter}
@@ -1317,7 +1532,9 @@ export function OnboardingWizard({
             </Tooltip>
           </div>
           <div className={`setup-phone setup-phone--${initialTemplate}`}>
-            <Avatar className="setup-phone__avatar">{initials}</Avatar>
+            <Avatar className="setup-phone__avatar" src={publicAssetUrl(avatarPath)}>
+              {initials}
+            </Avatar>
             <Typography fontWeight={800} textAlign="center" sx={{ mt: 1.5 }}>
               {greeting || "Hello, I’m"} {displayName || "Your name"}.
             </Typography>
