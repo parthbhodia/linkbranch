@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProfileHub } from "@/components/profile-hub";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
+import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import type { CreatorProfile } from "@/lib/types";
 
@@ -73,7 +74,7 @@ export default async function PublicProfilePage({
     await Promise.all([
       supabase
         .from("links")
-        .select("id,title,subtitle,url,position,is_featured")
+        .select("id,title,subtitle,url,thumbnail_path,position,is_featured")
         .eq("user_id", profile.id)
         .eq("is_active", true)
         .order("position"),
@@ -117,6 +118,7 @@ export default async function PublicProfilePage({
         ? profile.location
         : `@${profile.username}`,
     bio: profile.bio,
+    avatarUrl: publicAssetUrl(profile.avatar_path),
     socials: (socials ?? []).map((item) => ({
       platform: item.platform,
       url: item.url,
@@ -131,6 +133,7 @@ export default async function PublicProfilePage({
       visits: 0,
       color: linkColors[index % linkColors.length],
       featured: item.is_featured,
+      thumbnailUrl: publicAssetUrl(item.thumbnail_path),
     })),
     referrals: (referrals ?? []).map((item) => ({
       id: String(item.id),

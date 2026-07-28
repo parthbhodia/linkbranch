@@ -36,7 +36,7 @@ export default async function OnboardingPage({
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase
         .from("links")
-        .select("id,title,url,is_active,is_featured")
+        .select("id,title,url,thumbnail_path,is_active,is_featured")
         .eq("user_id", user.id)
         .order("position"),
       supabase

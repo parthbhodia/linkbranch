@@ -41,7 +41,7 @@ export default async function DashboardPage() {
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase
         .from("links")
-        .select("id,title,subtitle,url,position,is_active,is_featured")
+        .select("id,title,subtitle,url,thumbnail_path,position,is_active,is_featured")
         .eq("user_id", user.id)
         .order("position"),
       supabase

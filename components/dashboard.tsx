@@ -7,9 +7,11 @@ import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import ColorLensOutlined from "@mui/icons-material/ColorLensOutlined";
 import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
+import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import LocalOfferOutlined from "@mui/icons-material/LocalOfferOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
+import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import {
@@ -33,9 +35,16 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { ShareDialog } from "@/components/share-dialog";
 import { publicProfileAddress } from "@/lib/brand";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
+import {
+  imageExtension,
+  publicAssetUrl,
+  PUBLIC_ASSET_BUCKET,
+  validateImage,
+} from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 
 export type DashboardProfile = {
@@ -62,6 +71,7 @@ export type DashboardLink = {
   position: number;
   is_active: boolean;
   is_featured: boolean;
+  thumbnail_path: string | null;
 };
 
 export type DashboardReferral = {
@@ -198,6 +208,8 @@ export function Dashboard({
   const [draft, setDraft] = useState(profile);
   const [section, setSection] = useState<WorkspaceSection>("profile");
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [notice, setNotice] = useState<{
     severity: "success" | "error";
     message: string;
@@ -333,6 +345,81 @@ export function Dashboard({
     router.refresh();
   }
 
+  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setAvatarUploading(true);
+    const supabase = createClient();
+    const path = `${profile.id}/profile/avatar-${crypto.randomUUID()}.${imageExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setAvatarUploading(false);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath = draft.avatar_path;
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ avatar_path: path })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setAvatarUploading(false);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    }
+
+    update("avatar_path", path);
+    setAvatarUploading(false);
+    setNotice({ severity: "success", message: "Profile photo updated." });
+    router.refresh();
+  }
+
+  async function removeAvatar() {
+    if (!draft.avatar_path) return;
+
+    setAvatarUploading(true);
+    const supabase = createClient();
+    const previousPath = draft.avatar_path;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_path: null })
+      .eq("id", profile.id);
+
+    if (error) {
+      setAvatarUploading(false);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    update("avatar_path", null);
+    setAvatarUploading(false);
+    setNotice({ severity: "success", message: "Profile photo removed." });
+    router.refresh();
+  }
+
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -406,16 +493,25 @@ export function Dashboard({
               </IconButton>
             </Tooltip>
             {draft.is_published && (
-              <Tooltip title="Open public page" arrow>
-                <IconButton
-                  component={Link}
-                  href={`/u/${draft.username}`}
-                  target="_blank"
-                  aria-label="Open public page"
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<IosShareRounded />}
+                  onClick={() => setShareOpen(true)}
                 >
-                  <ArrowOutwardRounded />
-                </IconButton>
-              </Tooltip>
+                  Share
+                </Button>
+                <Tooltip title="Open public page" arrow>
+                  <IconButton
+                    component={Link}
+                    href={`/u/${draft.username}`}
+                    target="_blank"
+                    aria-label="Open public page"
+                  >
+                    <ArrowOutwardRounded />
+                  </IconButton>
+                </Tooltip>
+              </>
             )}
             <Button
               variant="contained"
@@ -436,16 +532,42 @@ export function Dashboard({
           {section === "profile" && (
             <Stack className="workspace-panel" spacing={2}>
               <Box className="workspace-profile-row">
-                <Avatar>{initials}</Avatar>
+                <Avatar src={publicAssetUrl(draft.avatar_path)}>{initials}</Avatar>
                 <Box>
                   <Typography variant="h3">{draft.display_name}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     @{draft.username}
                   </Typography>
                 </Box>
-                <Button variant="outlined" disabled>
-                  Upload photo
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    startIcon={
+                      avatarUploading
+                        ? <CircularProgress size={16} />
+                        : <PhotoCameraOutlined />
+                    }
+                    disabled={avatarUploading}
+                  >
+                    {draft.avatar_path ? "Replace" : "Upload photo"}
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={uploadAvatar}
+                    />
+                  </Button>
+                  {draft.avatar_path && (
+                    <Button
+                      color="inherit"
+                      onClick={removeAvatar}
+                      disabled={avatarUploading}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Stack>
               </Box>
               <TextField
                 label="Display name"
@@ -802,7 +924,12 @@ export function Dashboard({
         </header>
         <div className={`workspace-phone workspace-phone--${draft.template}`}>
           <div className="workspace-phone__body">
-            <Avatar className="workspace-phone__avatar">{initials}</Avatar>
+            <Avatar
+              className="workspace-phone__avatar"
+              src={publicAssetUrl(draft.avatar_path)}
+            >
+              {initials}
+            </Avatar>
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
@@ -861,6 +988,14 @@ export function Dashboard({
             <div className="workspace-phone__links">
               {activeLinks.slice(0, 4).map((item) => (
                 <div className="workspace-phone__link" key={item.id}>
+                  {item.thumbnail_path && (
+                    <Box
+                      component="img"
+                      className="workspace-phone__link-image"
+                      src={publicAssetUrl(item.thumbnail_path)}
+                      alt=""
+                    />
+                  )}
                   <span>
                     <b>{item.title}</b>
                     {item.subtitle && <small>{item.subtitle}</small>}
@@ -899,6 +1034,11 @@ export function Dashboard({
           {notice?.message}
         </Alert>
       </Snackbar>
+      <ShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        username={draft.username}
+      />
     </main>
   );
 }

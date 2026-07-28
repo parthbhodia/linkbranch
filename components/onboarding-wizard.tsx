@@ -7,6 +7,7 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
@@ -43,6 +44,29 @@ import {
   socialPlatformOptions,
 } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
+import {
+  imageExtension,
+  publicAssetUrl,
+  PUBLIC_ASSET_BUCKET,
+  validateImage,
+} from "@/lib/storage";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type LinkDraft = {
   id: number;
@@ -50,6 +74,7 @@ type LinkDraft = {
   url: string;
   is_active: boolean;
   is_featured: boolean;
+  thumbnail_path: string | null;
 };
 
 type ReferralDraft = {
@@ -69,6 +94,7 @@ type SocialDraft = {
 
 export type OnboardingInitialData = {
   profile: {
+    id: string;
     display_name: string;
     username: string;
     greeting: string;
@@ -84,6 +110,7 @@ export type OnboardingInitialData = {
     url: string;
     is_active: boolean;
     is_featured: boolean;
+    thumbnail_path: string | null;
   }>;
   referrals: Array<{
     id: number;
@@ -126,6 +153,168 @@ function normalizeHttpUrl(value: string) {
   }
 }
 
+function SortableLinkEditor({
+  item,
+  uploading,
+  onUpdate,
+  onFeature,
+  onVisibility,
+  onRemove,
+  onUpload,
+  onRemoveThumbnail,
+}: {
+  item: LinkDraft;
+  uploading: boolean;
+  onUpdate: (id: number, field: "title" | "url", value: string) => void;
+  onFeature: (id: number) => void;
+  onVisibility: (id: number) => void;
+  onRemove: (id: number) => void;
+  onUpload: (id: number, event: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveThumbnail: (id: number) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  return (
+    <Box
+      ref={setNodeRef}
+      className={`link-editor${isDragging ? " is-dragging" : ""}`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+    >
+      <Tooltip title="Drag to reorder" arrow>
+        <IconButton
+          className="link-editor__handle"
+          aria-label={`Reorder ${item.title || "link"}`}
+          {...attributes}
+          {...listeners}
+        >
+          <DragIndicatorRounded />
+        </IconButton>
+      </Tooltip>
+
+      <div className="link-editor__fields">
+        <TextField
+          label="Link title"
+          value={item.title}
+          onChange={(event) => onUpdate(item.id, "title", event.target.value)}
+          fullWidth
+          size="small"
+        />
+        <TextField
+          label="URL"
+          type="url"
+          placeholder="https://example.com"
+          value={item.url}
+          onChange={(event) => onUpdate(item.id, "url", event.target.value)}
+          onBlur={() => {
+            const normalized = normalizeHttpUrl(item.url);
+            if (normalized) {
+              onUpdate(item.id, "url", normalized);
+            }
+          }}
+          fullWidth
+          size="small"
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LinkRounded fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </div>
+
+      <div className="link-editor__thumbnail">
+        {item.thumbnail_path ? (
+          <>
+            <Box
+              component="img"
+              src={publicAssetUrl(item.thumbnail_path)}
+              alt=""
+            />
+            <Tooltip title="Remove thumbnail" arrow>
+              <IconButton
+                size="small"
+                aria-label={`Remove ${item.title || "link"} thumbnail`}
+                onClick={() => onRemoveThumbnail(item.id)}
+              >
+                <CloseRounded fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ) : (
+          <Button
+            component="label"
+            size="small"
+            variant="outlined"
+            startIcon={
+              uploading ? <CircularProgress size={14} /> : <ImageOutlined />
+            }
+            disabled={uploading}
+          >
+            Thumbnail
+            <input
+              hidden
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => onUpload(item.id, event)}
+            />
+          </Button>
+        )}
+      </div>
+
+      <div className="link-editor__actions">
+        <Tooltip
+          title={item.is_featured ? "Remove spotlight" : "Spotlight this link"}
+          arrow
+        >
+          <IconButton
+            color={item.is_featured ? "primary" : "default"}
+            aria-label={
+              item.is_featured
+                ? `Remove ${item.title || "link"} from spotlight`
+                : `Spotlight ${item.title || "link"}`
+            }
+            onClick={() => onFeature(item.id)}
+          >
+            {item.is_featured ? <StarRounded /> : <StarOutlineRounded />}
+          </IconButton>
+        </Tooltip>
+        <FormControlLabel
+          className="link-editor__visibility"
+          control={
+            <Switch
+              size="small"
+              checked={item.is_active}
+              onChange={() => onVisibility(item.id)}
+            />
+          }
+          label={item.is_active ? "Visible" : "Hidden"}
+        />
+        <Tooltip title="Remove link" arrow>
+          <IconButton
+            aria-label={`Remove ${item.title || "link"}`}
+            onClick={() => onRemove(item.id)}
+          >
+            <DeleteOutlineRounded />
+          </IconButton>
+        </Tooltip>
+      </div>
+    </Box>
+  );
+}
+
 export function OnboardingWizard({
   initialTemplate,
   initialData,
@@ -159,21 +348,32 @@ export function OnboardingWizard({
       ? initialData.links
       : [{
           id: 1,
-          title: "",
-          url: "",
-          is_active: true,
-          is_featured: false,
-        }],
+        title: "",
+        url: "",
+        is_active: true,
+        is_featured: false,
+        thumbnail_path: null,
+      }],
   );
   const [referrals, setReferrals] = useState<ReferralDraft[]>(
     initialData.referrals.map((item) => ({ ...item, code: item.code ?? "" })),
   );
   const [saving, setSaving] = useState(false);
+  const [uploadingThumbnailId, setUploadingThumbnailId] = useState<number | null>(
+    null,
+  );
   const [notice, setNotice] = useState<{
     message: string;
     severity: "success" | "info" | "warning" | "error";
   } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const pendingThumbnailDeletesRef = useRef(new Set<string>());
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const templateName = templateNames[initialTemplate] ?? templateNames["field-notes"];
   const initials = useMemo(
@@ -213,9 +413,81 @@ export function OnboardingWizard({
         url: "",
         is_active: true,
         is_featured: false,
+        thumbnail_path: null,
       },
     ]);
     setNotice({ message: "Link added", severity: "success" });
+  }
+
+  function reorderLinks(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setLinks((current) => {
+      const previousIndex = current.findIndex((item) => item.id === active.id);
+      const nextIndex = current.findIndex((item) => item.id === over.id);
+      return arrayMove(current, previousIndex, nextIndex);
+    });
+    setNotice({ message: "Link order updated", severity: "success" });
+  }
+
+  async function uploadLinkThumbnail(
+    id: number,
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice({ message: validationError, severity: "error" });
+      return;
+    }
+
+    setUploadingThumbnailId(id);
+    const supabase = createClient();
+    const path = `${initialData.profile.id}/links/link-${id}-${crypto.randomUUID()}.${imageExtension(file)}`;
+    const { error } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (error) {
+      setUploadingThumbnailId(null);
+      setNotice({ message: error.message, severity: "error" });
+      return;
+    }
+
+    const previousPath = links.find((item) => item.id === id)?.thumbnail_path;
+    setLinks((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, thumbnail_path: path } : item,
+      ),
+    );
+    if (previousPath) {
+      pendingThumbnailDeletesRef.current.add(previousPath);
+    }
+
+    setUploadingThumbnailId(null);
+    setNotice({ message: "Thumbnail added", severity: "success" });
+  }
+
+  async function removeLinkThumbnail(id: number) {
+    const path = links.find((item) => item.id === id)?.thumbnail_path;
+    setLinks((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, thumbnail_path: null } : item,
+      ),
+    );
+
+    if (path) {
+      pendingThumbnailDeletesRef.current.add(path);
+    }
+    setNotice({ message: "Thumbnail removed", severity: "warning" });
   }
 
   function toggleLinkVisibility(id: number) {
@@ -238,6 +510,11 @@ export function OnboardingWizard({
   function removeLink(id: number) {
     const removed = links.find((item) => item.id === id);
     setLinks((current) => current.filter((item) => item.id !== id));
+
+    if (removed?.thumbnail_path) {
+      pendingThumbnailDeletesRef.current.add(removed.thumbnail_path);
+    }
+
     setNotice({
       message: `${removed?.title || "Link"} removed`,
       severity: "warning",
@@ -467,6 +744,18 @@ export function OnboardingWizard({
     if (error) {
       setNotice({ message: error.message, severity: "error" });
       return;
+    }
+
+    const staleThumbnailPaths = Array.from(
+      pendingThumbnailDeletesRef.current,
+    );
+    if (staleThumbnailPaths.length > 0) {
+      const { error: cleanupError } = await supabase.storage
+        .from(PUBLIC_ASSET_BUCKET)
+        .remove(staleThumbnailPaths);
+      if (!cleanupError) {
+        pendingThumbnailDeletesRef.current.clear();
+      }
     }
 
     router.push(`/u/${encodeURIComponent(username)}?published=1`);
@@ -771,74 +1060,32 @@ export function OnboardingWizard({
                   </Box>
                   <Button startIcon={<AddRounded />} onClick={addLink}>Add link</Button>
                 </Stack>
-                <Stack spacing={2} sx={{ mt: 2.5 }}>
-                  {links.map((item, index) => (
-                    <Box className="link-editor" key={item.id}>
-                      <span className="link-editor__handle">{index + 1}</span>
-                      <TextField
-                        label="Link title"
-                        value={item.title}
-                        onChange={(event) => updateLink(item.id, "title", event.target.value)}
-                        fullWidth
-                        size="small"
-                      />
-                      <TextField
-                        label="URL"
-                        type="url"
-                        placeholder="https://example.com"
-                        value={item.url}
-                        onChange={(event) => updateLink(item.id, "url", event.target.value)}
-                        onBlur={() => {
-                          const normalized = normalizeHttpUrl(item.url);
-                          if (normalized) {
-                            updateLink(item.id, "url", normalized);
-                          }
-                        }}
-                        fullWidth
-                        size="small"
-                        slotProps={{
-                          input: {
-                            startAdornment: (
-                              <InputAdornment position="start"><LinkRounded fontSize="small" /></InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-                      <Tooltip
-                        title={item.is_featured ? "Remove spotlight" : "Spotlight this link"}
-                        arrow
-                      >
-                        <IconButton
-                          color={item.is_featured ? "primary" : "default"}
-                          aria-label={
-                            item.is_featured
-                              ? `Remove ${item.title || "link"} from spotlight`
-                              : `Spotlight ${item.title || "link"}`
-                          }
-                          onClick={() => featureLink(item.id)}
-                        >
-                          {item.is_featured ? <StarRounded /> : <StarOutlineRounded />}
-                        </IconButton>
-                      </Tooltip>
-                      <FormControlLabel
-                        className="link-editor__visibility"
-                        control={
-                          <Switch
-                            size="small"
-                            checked={item.is_active}
-                            onChange={() => toggleLinkVisibility(item.id)}
-                          />
-                        }
-                        label={item.is_active ? "Visible" : "Hidden"}
-                      />
-                      <Tooltip title="Remove link" arrow>
-                        <IconButton aria-label={`Remove ${item.title || "link"}`} onClick={() => removeLink(item.id)}>
-                          <DeleteOutlineRounded />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  ))}
-                </Stack>
+                <DndContext
+                  sensors={dragSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={reorderLinks}
+                >
+                  <SortableContext
+                    items={links.map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <Stack spacing={2} sx={{ mt: 2.5 }}>
+                      {links.map((item) => (
+                        <SortableLinkEditor
+                          key={item.id}
+                          item={item}
+                          uploading={uploadingThumbnailId === item.id}
+                          onUpdate={updateLink}
+                          onFeature={featureLink}
+                          onVisibility={toggleLinkVisibility}
+                          onRemove={removeLink}
+                          onUpload={uploadLinkThumbnail}
+                          onRemoveThumbnail={removeLinkThumbnail}
+                        />
+                      ))}
+                    </Stack>
+                  </SortableContext>
+                </DndContext>
               </Paper>
 
               <Paper variant="outlined" className="form-section">

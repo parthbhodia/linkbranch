@@ -57,8 +57,20 @@ const LinkCard = memo(function LinkCard({
         })
       }
     >
-      <span className="link-index" style={{ background: link.color }}>
-        {link.index}
+      <span
+        className={`link-index${link.thumbnailUrl ? " link-index--image" : ""}`}
+        style={{ background: link.color }}
+      >
+        {link.thumbnailUrl ? (
+          <Box
+            component="img"
+            src={link.thumbnailUrl}
+            alt=""
+            loading="lazy"
+          />
+        ) : (
+          link.index
+        )}
       </span>
       <span>
         <Stack direction="row" spacing={1} alignItems="center">
@@ -291,23 +303,26 @@ export function ProfileHub({
           </div>
 
           <Box className="profile-copy">
-            {profile.avatarUrl ? (
-              <Box
-                component="img"
-                className="avatar avatar--image"
-                src={profile.avatarUrl}
-                alt={`${profile.displayName}'s profile photo`}
-                loading="eager"
-                width={96}
-                height={96}
-              />
-            ) : (
-              <Box className="avatar" aria-label={`${profile.displayName} initials`}>
+            <Box
+              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}`}
+              aria-label={
+                profile.avatarUrl
+                  ? `${profile.displayName} profile photo`
+                  : `${profile.displayName} initials`
+              }
+            >
+              {profile.avatarUrl ? (
+                <Box
+                  component="img"
+                  src={profile.avatarUrl}
+                  alt={`${profile.displayName} profile`}
+                />
+              ) : (
                 <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
                   {profile.initials}
                 </Typography>
-              </Box>
-            )}
+              )}
+            </Box>
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1">
               {profile.greeting} {profile.displayName}.

@@ -8,6 +8,7 @@ export type LinkItem = {
   visits: number;
   color: string;
   featured?: boolean;
+  thumbnailUrl?: string;
 };
 
 export type Referral = {
@@ -36,6 +37,7 @@ export type CreatorProfile = {
   headlineAccent: string;
   eyebrow: string;
   bio: string;
+  avatarUrl?: string;
   socials: SocialLink[];
   links: LinkItem[];
   referrals: Referral[];
