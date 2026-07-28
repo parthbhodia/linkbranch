@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BrandMark } from "@/components/brand-mark";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
@@ -186,12 +185,24 @@ export function ProfileHub({
       ? { message: "Profile saved and published", severity: "success" }
       : null,
   );
+  const viewRecorded = useRef(false);
 
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    if (!databaseProfileId || viewRecorded.current) return;
+    viewRecorded.current = true;
+
+    void fetch("/api/analytics/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profileId: databaseProfileId,
+        referrer: document.referrer || null,
+      }),
+    });
+  }, [databaseProfileId]);
 
   useEffect(() => {
     if (!databaseProfileId) return;
@@ -277,7 +288,6 @@ export function ProfileHub({
       <article className="creator-card">
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
-          <BrandMark />
             <Stack direction="row" spacing={0.5} alignItems="center">
               <span className="profile-handle">@{profile.username}</span>
               <Tooltip title="Share this page" arrow>
@@ -447,12 +457,6 @@ export function ProfileHub({
           </Box>
         )}
 
-        <footer className="hub-footer">
-          <Typography variant="caption" color="text.secondary">
-            Make your own{" "}
-            <Link href="/auth"><strong>cueful ↗</strong></Link>
-          </Typography>
-        </footer>
         </section>
       </article>
 

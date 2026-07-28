@@ -19,18 +19,21 @@ export const dynamic = "force-dynamic";
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string }>;
+  searchParams: Promise<{ template?: string; import?: string }>;
 }) {
+  const { template, import: importMode } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth");
+    const params = new URLSearchParams();
+    if (template) params.set("template", template);
+    if (importMode === "1") params.set("import", "1");
+    redirect(`/auth?${params.toString()}`);
   }
 
-  const { template } = await searchParams;
   const [{ data: profile }, { data: links }, { data: referrals }, { data: socials }] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -66,6 +69,7 @@ export default async function OnboardingPage({
     <OnboardingWizard
       initialTemplate={template ?? profile.template ?? "field-notes"}
       initialData={initialData}
+      shouldImport={importMode === "1"}
     />
   );
 }

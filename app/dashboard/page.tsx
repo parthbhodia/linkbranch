@@ -6,6 +6,7 @@ import {
   type DashboardProfile,
   type DashboardReferral,
   type DashboardSocial,
+  type DashboardView,
 } from "@/components/dashboard";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     { data: referrals },
     { data: socials },
     { data: events },
+    { data: views },
   ] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -56,7 +58,15 @@ export default async function DashboardPage() {
         .order("position"),
       supabase
         .from("click_events")
-        .select("event_type,link_id,referral_id,occurred_at")
+        .select(
+          "event_type,link_id,referral_id,occurred_at,device_type,country_code,referrer",
+        )
+        .eq("profile_id", user.id)
+        .order("occurred_at", { ascending: false })
+        .limit(5000),
+      supabase
+        .from("profile_views")
+        .select("occurred_at,device_type,country_code,referrer")
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
@@ -74,6 +84,7 @@ export default async function DashboardPage() {
       referrals={(referrals ?? []) as DashboardReferral[]}
       socials={(socials ?? []) as DashboardSocial[]}
       events={(events ?? []) as DashboardEvent[]}
+      views={(views ?? []) as DashboardView[]}
     />
   );
 }

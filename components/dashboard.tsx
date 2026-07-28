@@ -96,6 +96,16 @@ export type DashboardEvent = {
   link_id: number | null;
   referral_id: number | null;
   occurred_at: string;
+  device_type: string | null;
+  country_code: string | null;
+  referrer: string | null;
+};
+
+export type DashboardView = {
+  occurred_at: string;
+  device_type: string | null;
+  country_code: string | null;
+  referrer: string | null;
 };
 
 type WorkspaceSection =
@@ -196,6 +206,7 @@ export function Dashboard({
   referrals,
   socials,
   events,
+  views,
 }: {
   profile: DashboardProfile;
   email: string;
@@ -203,6 +214,7 @@ export function Dashboard({
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
   events: DashboardEvent[];
+  views: DashboardView[];
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(profile);
@@ -231,6 +243,7 @@ export function Dashboard({
     const referralCopies = events.filter(
       (event) => event.event_type === "referral_copy",
     ).length;
+    const outboundClicks = linkOpens + referralOpens;
 
     const content = new Map<
       string,
@@ -282,24 +295,51 @@ export function Dashboard({
       };
     });
     const dayMap = new Map(days.map((day) => [day.key, day]));
-    events.forEach((event) => {
-      const day = dayMap.get(event.occurred_at.slice(0, 10));
+    views.forEach((view) => {
+      const day = dayMap.get(view.occurred_at.slice(0, 10));
       if (day) day.value += 1;
     });
 
+    function mostCommon(values: Array<string | null>) {
+      const counts = new Map<string, number>();
+      values.filter(Boolean).forEach((value) => {
+        counts.set(value as string, (counts.get(value as string) ?? 0) + 1);
+      });
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+    }
+
+    const topReferrer = mostCommon(
+      views.map((view) => {
+        if (!view.referrer) return "Direct";
+        try {
+          return new URL(view.referrer).hostname.replace(/^www\./, "");
+        } catch {
+          return "Direct";
+        }
+      }),
+    );
+
     return {
-      total: events.length,
+      views: views.length,
+      outboundClicks,
       linkOpens,
       referralOpens,
       referralCopies,
+      ctr:
+        views.length > 0
+          ? Math.min(100, Math.round((outboundClicks / views.length) * 100))
+          : 0,
       copyRate:
         referralOpens > 0
           ? Math.min(100, Math.round((referralCopies / referralOpens) * 100))
           : 0,
       days,
       topContent,
+      topDevice: mostCommon(views.map((view) => view.device_type)),
+      topCountry: mostCommon(views.map((view) => view.country_code)),
+      topReferrer,
     };
-  }, [events, links, referrals]);
+  }, [events, links, referrals, views]);
   const sectionDetails = sectionCopy[section];
   const initials =
     draft.display_name
@@ -780,19 +820,19 @@ export function Dashboard({
           {section === "analytics" && (
             <div className="workspace-analytics">
               <StatCard
-                label="TOTAL ACTIONS"
-                value={analytics.total}
-                note="Across links and referral offers"
+                label="LIFETIME VIEWS"
+                value={analytics.views}
+                note="Public profile visits"
               />
               <StatCard
-                label="LINK OPENS"
-                value={analytics.linkOpens}
-                note="Visitors sent to your destinations"
+                label="TOTAL CLICKS"
+                value={analytics.outboundClicks}
+                note={`${analytics.linkOpens} links · ${analytics.referralOpens} offers`}
               />
               <StatCard
-                label="OFFER OPENS"
-                value={analytics.referralOpens}
-                note="Referral destinations explored"
+                label="CLICK RATE"
+                value={`${analytics.ctr}%`}
+                note="Clicks divided by profile views"
               />
               <StatCard
                 label="CODE COPIES"
@@ -803,9 +843,9 @@ export function Dashboard({
               <Paper className="workspace-analytics__chart-card" variant="outlined">
                 <div className="workspace-analytics__card-heading">
                   <Box>
-                    <Typography variant="h3">Activity</Typography>
+                    <Typography variant="h3">Profile views</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      All tracked actions from the last seven days
+                      Visits recorded over the last seven days
                     </Typography>
                   </Box>
                   <Chip label="7 DAYS" size="small" variant="outlined" />
@@ -828,6 +868,22 @@ export function Dashboard({
                       </div>
                     );
                   })}
+                </div>
+              </Paper>
+
+              <Paper className="workspace-analytics__insights" variant="outlined">
+                <div className="workspace-analytics__card-heading">
+                  <Box>
+                    <Typography variant="h3">Audience signals</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Your strongest traffic patterns
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-analytics__signal-grid">
+                  <span><small>TOP REFERRER</small><b>{analytics.topReferrer}</b></span>
+                  <span><small>TOP DEVICE</small><b>{analytics.topDevice}</b></span>
+                  <span><small>TOP COUNTRY</small><b>{analytics.topCountry}</b></span>
                 </div>
               </Paper>
 
@@ -1038,6 +1094,7 @@ export function Dashboard({
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         username={draft.username}
+        displayName={draft.display_name}
       />
     </main>
   );

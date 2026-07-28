@@ -45,6 +45,10 @@ import {
 } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 import {
+  IMPORT_DRAFT_STORAGE_KEY,
+  readImportedProfileDraft,
+} from "@/lib/import-draft";
+import {
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
@@ -318,9 +322,11 @@ function SortableLinkEditor({
 export function OnboardingWizard({
   initialTemplate,
   initialData,
+  shouldImport = false,
 }: {
   initialTemplate: string;
   initialData: OnboardingInitialData;
+  shouldImport?: boolean;
 }) {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
@@ -368,6 +374,7 @@ export function OnboardingWizard({
   } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const pendingThumbnailDeletesRef = useRef(new Set<string>());
+  const importedDraftAppliedRef = useRef(false);
   const dragSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, {
@@ -386,6 +393,46 @@ export function OnboardingWizard({
         .toUpperCase() || "PB",
     [displayName],
   );
+
+  useEffect(() => {
+    if (!shouldImport || importedDraftAppliedRef.current) return;
+    importedDraftAppliedRef.current = true;
+
+    const timeout = window.setTimeout(() => {
+      const draft = readImportedProfileDraft();
+      if (!draft) return;
+
+      setDisplayName(draft.displayName || displayName);
+      setBio(draft.bio || bio);
+      if (draft.links.length > 0) {
+        setLinks(
+          draft.links.map((item, index) => ({
+            id: index + 1,
+            title: item.title,
+            url: item.url,
+            is_active: true,
+            is_featured: index === 0,
+            thumbnail_path: null,
+          })),
+        );
+      }
+      if (draft.socials.length > 0) {
+        setSocials(
+          draft.socials.map((item, index) => ({
+            id: index + 1,
+            platform: item.platform,
+            url: item.url,
+          })),
+        );
+      }
+      setNotice({
+        message: `${draft.links.length} links imported from Linktree`,
+        severity: "success",
+      });
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [bio, displayName, shouldImport]);
   const unusedSocialPlatforms = useMemo(
     () =>
       socialPlatformOptions.filter(
@@ -758,6 +805,9 @@ export function OnboardingWizard({
       }
     }
 
+    if (shouldImport) {
+      window.sessionStorage.removeItem(IMPORT_DRAFT_STORAGE_KEY);
+    }
     router.push(`/u/${encodeURIComponent(username)}?published=1`);
     router.refresh();
   }

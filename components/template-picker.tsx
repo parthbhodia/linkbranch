@@ -16,7 +16,9 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
+import { readImportedProfileDraft } from "@/lib/import-draft";
 
 type TemplateId = "field-notes" | "after-dark" | "soft-studio";
 
@@ -85,7 +87,10 @@ function MiniProfile({ template }: { template: Template }) {
 }
 
 export function TemplatePicker() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<TemplateId>("field-notes");
+  const isImportFlow = searchParams.get("import") === "1";
 
   const selected = useMemo(
     () => templates.find((template) => template.id === selectedId) ?? templates[0],
@@ -94,6 +99,27 @@ export function TemplatePicker() {
 
   function selectTemplate(id: TemplateId) {
     setSelectedId(id);
+  }
+
+  function continueSetup() {
+    if (!isImportFlow) {
+      router.push(`/onboarding?template=${selected.id}`);
+      return;
+    }
+
+    const draft = readImportedProfileDraft();
+    const params = new URLSearchParams({
+      mode: "signup",
+      import: "1",
+      template: selected.id,
+    });
+    if (draft?.suggestedUsername) {
+      params.set("username", draft.suggestedUsername);
+    }
+    if (draft?.displayName) {
+      params.set("display_name", draft.displayName);
+    }
+    router.push(`/auth?${params.toString()}`);
   }
 
   return (
@@ -123,12 +149,11 @@ export function TemplatePicker() {
             Back
           </Button>
           <Button
-            component={Link}
-            href={`/onboarding?template=${selected.id}`}
+            onClick={continueSetup}
             variant="contained"
             endIcon={<ArrowForwardRounded />}
           >
-            Continue
+            {isImportFlow ? "Use this design" : "Continue"}
           </Button>
         </Stack>
       </section>
@@ -202,7 +227,9 @@ export function TemplatePicker() {
             <MiniProfile template={selected} />
           </div>
           <Typography variant="caption" color="text.secondary" textAlign="center">
-            Preview uses sample content. Your links come next.
+            {isImportFlow
+              ? "Your imported profile and links will be applied after signup."
+              : "Preview uses sample content. Your links come next."}
           </Typography>
         </aside>
       </div>

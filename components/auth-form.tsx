@@ -30,8 +30,15 @@ export function AuthForm() {
     searchParams.get("mode") === "login" ? "login" : "signup";
   const initialNotice = searchParams.get("notice");
   const initialError = searchParams.get("error");
+  const isImportFlow = searchParams.get("import") === "1";
+  const selectedTemplate = searchParams.get("template") ?? "field-notes";
+  const nextPath = isImportFlow
+    ? `/onboarding?template=${encodeURIComponent(selectedTemplate)}&import=1`
+    : "/templates";
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(
+    searchParams.get("display_name")?.trim() ?? "",
+  );
   const [username, setUsername] = useState(
     searchParams.get("username")?.trim().toLowerCase() ?? "",
   );
@@ -80,7 +87,7 @@ export function AuthForm() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/templates`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
           data: {
             full_name: displayName.trim(),
             username: cleanUsername,
@@ -91,7 +98,7 @@ export function AuthForm() {
       if (error) {
         setMessage({ severity: "error", text: error.message });
       } else if (data.session) {
-        router.push("/templates");
+        router.push(nextPath);
         router.refresh();
       } else {
         router.push("/auth/check-email?type=confirmation");
@@ -108,11 +115,15 @@ export function AuthForm() {
           text: "Email or password is incorrect.",
         });
       } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .single();
-        router.push(profile?.onboarding_completed ? "/dashboard" : "/templates");
+        if (isImportFlow) {
+          router.push(nextPath);
+        } else {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .single();
+          router.push(profile?.onboarding_completed ? "/dashboard" : "/templates");
+        }
         router.refresh();
       }
     }

@@ -37,7 +37,6 @@ export type CreatorProfile = {
   headlineAccent: string;
   eyebrow: string;
   bio: string;
-  avatarUrl?: string;
   socials: SocialLink[];
   links: LinkItem[];
   referrals: Referral[];

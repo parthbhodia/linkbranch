@@ -11,8 +11,8 @@ import CheckRounded from "@mui/icons-material/CheckRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
+import { ImportStarter } from "@/components/import-starter";
 import { exampleProfiles } from "@/lib/example-profiles";
-import { UsernameClaim } from "@/components/username-claim";
 import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
@@ -191,10 +191,10 @@ export function MarketingHome() {
           <Typography className="marketing-hero__body">
             One focused page for your work, recommendations, and referral offers.
           </Typography>
-          <UsernameClaim />
+          <ImportStarter />
           <div className="marketing-hero__trust" aria-label="Signup benefits">
-            <span><CheckRounded aria-hidden="true" /> Free to start</span>
-            <span><CheckRounded aria-hidden="true" /> No credit card</span>
+            <span><CheckRounded aria-hidden="true" /> Import in seconds</span>
+            <span><CheckRounded aria-hidden="true" /> No forced branding</span>
           </div>
         </div>
 
