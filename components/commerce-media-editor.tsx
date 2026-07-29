@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import AddPhotoAlternateOutlined from "@mui/icons-material/AddPhotoAlternateOutlined";
 import AddRounded from "@mui/icons-material/AddRounded";
+import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
@@ -82,6 +84,32 @@ function detectProvider(value: string) {
   return null;
 }
 
+function formatDraftPrice(price: string, currency: string) {
+  if (!price.trim()) return null;
+  const amount = Number(price);
+  if (!Number.isFinite(amount)) return null;
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency: currency || "USD",
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount}`;
+  }
+}
+
+const EMPTY_PRODUCT_DRAFT = {
+  title: "",
+  description: "",
+  price: "",
+  currency: "USD",
+  category: "digital",
+  badge: "",
+  url: "",
+  cta: "View product",
+};
+
 export function CommerceMediaEditor({
   profileId,
   initialProducts,
@@ -93,23 +121,45 @@ export function CommerceMediaEditor({
 }) {
   const [products, setProducts] = useState(initialProducts);
   const [media, setMedia] = useState(initialMedia);
-  const [productDraft, setProductDraft] = useState({
-    title: "",
-    description: "",
-    price: "",
-    currency: "USD",
-    category: "digital",
-    badge: "",
-    url: "",
-    cta: "View product",
-  });
+  const [productDraft, setProductDraft] = useState(EMPTY_PRODUCT_DRAFT);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [mediaDraft, setMediaDraft] = useState({ title: "", url: "", layout: "player" });
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [mediaFormOpen, setMediaFormOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingProductId, setUploadingProductId] = useState<number | null>(
     null,
   );
+
+  const productImagePreview = useMemo(
+    () => (productImageFile ? URL.createObjectURL(productImageFile) : null),
+    [productImageFile],
+  );
+
+  useEffect(
+    () => () => {
+      if (productImagePreview) URL.revokeObjectURL(productImagePreview);
+    },
+    [productImagePreview],
+  );
+
+  function resetProductDraft() {
+    setProductDraft(EMPTY_PRODUCT_DRAFT);
+    setProductImageFile(null);
+  }
+
+  function pickProductImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (!file) return;
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice(validationError);
+      return;
+    }
+    setProductImageFile(file);
+  }
 
   async function addProduct() {
     const destination = normalizeUrl(productDraft.url);
@@ -117,6 +167,8 @@ export function CommerceMediaEditor({
       setNotice("Add a product name and a valid destination URL.");
       return;
     }
+
+    setSavingProduct(true);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("products")
@@ -135,22 +187,59 @@ export function CommerceMediaEditor({
       .select("*")
       .single();
     if (error || !data) {
+      setSavingProduct(false);
       setNotice(error?.message ?? "Product could not be saved.");
       return;
     }
-    setProducts((current) => [...current, data as DashboardProduct]);
-    setProductDraft({
-      title: "",
-      description: "",
-      price: "",
-      currency: "USD",
-      category: "digital",
-      badge: "",
-      url: "",
-      cta: "View product",
-    });
+
+    let saved = data as DashboardProduct;
+    if (productImageFile) {
+      const path = `${profileId}/products/${saved.id}-${crypto.randomUUID()}.${imageExtension(productImageFile)}`;
+      const { error: uploadError } = await supabase.storage
+        .from(PUBLIC_ASSET_BUCKET)
+        .upload(path, productImageFile, {
+          cacheControl: "31536000",
+          contentType: productImageFile.type,
+          upsert: false,
+        });
+      if (uploadError) {
+        setProducts((current) => [...current, saved]);
+        resetProductDraft();
+        setProductFormOpen(false);
+        setSavingProduct(false);
+        setNotice(
+          `Product saved, but the image failed to upload: ${uploadError.message}`,
+        );
+        return;
+      }
+
+      const { error: imageError } = await supabase
+        .from("products")
+        .update({ image_path: path })
+        .eq("id", saved.id);
+      if (imageError) {
+        await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+        setProducts((current) => [...current, saved]);
+        resetProductDraft();
+        setProductFormOpen(false);
+        setSavingProduct(false);
+        setNotice(
+          `Product saved, but the image could not be attached: ${imageError.message}`,
+        );
+        return;
+      }
+      saved = { ...saved, image_path: path };
+    }
+
+    setProducts((current) => [...current, saved]);
+    resetProductDraft();
     setProductFormOpen(false);
-    setNotice("Product added. Checkout stays on your destination website.");
+    setSavingProduct(false);
+    setNotice(
+      saved.image_path
+        ? "Product added with image. Checkout stays on your destination website."
+        : "Product added. Checkout stays on your destination website.",
+    );
   }
 
   async function addMedia() {
@@ -311,63 +400,164 @@ export function CommerceMediaEditor({
         </div>
         {productFormOpen && (
           <div className="commerce-editor__composer">
-            <div className="commerce-editor__form">
-              <TextField
-                label="Product name"
-                value={productDraft.title}
-                onChange={(event) => setProductDraft({ ...productDraft, title: event.target.value })}
-              />
-              <TextField
-                select
-                label="Category"
-                value={productDraft.category}
-                onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })}
-              >
-                {["digital", "merch", "service", "course", "affiliate"].map((item) => (
-                  <MenuItem value={item} key={item}>{item}</MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                label="Short description"
-                value={productDraft.description}
-                onChange={(event) => setProductDraft({ ...productDraft, description: event.target.value })}
-                className="commerce-editor__wide"
-              />
-              <TextField
-                label="Price"
-                type="number"
-                value={productDraft.price}
-                onChange={(event) => setProductDraft({ ...productDraft, price: event.target.value })}
-              />
-              <TextField
-                label="Currency"
-                value={productDraft.currency}
-                inputProps={{ maxLength: 3 }}
-                onChange={(event) =>
-                  setProductDraft({ ...productDraft, currency: event.target.value.toUpperCase() })
-                }
-              />
-              <TextField
-                label="Badge"
-                placeholder="New, Sale, Popular"
-                value={productDraft.badge}
-                onChange={(event) => setProductDraft({ ...productDraft, badge: event.target.value })}
-              />
-              <TextField
-                label="Button label"
-                value={productDraft.cta}
-                onChange={(event) => setProductDraft({ ...productDraft, cta: event.target.value })}
-              />
-              <TextField
-                label="Destination URL"
-                placeholder="https://gumroad.com/your-product"
-                value={productDraft.url}
-                onChange={(event) => setProductDraft({ ...productDraft, url: event.target.value })}
-                className="commerce-editor__wide"
-              />
+            <div className="commerce-editor__composer-layout">
+              <div className="commerce-editor__form-column">
+                <Button
+                  component="label"
+                  className="commerce-editor__image-picker"
+                  variant="outlined"
+                  disabled={savingProduct}
+                >
+                  {productImagePreview ? (
+                    <Box
+                      component="img"
+                      src={productImagePreview}
+                      alt="Product preview"
+                    />
+                  ) : (
+                    <span>
+                      <AddPhotoAlternateOutlined />
+                      <b>Add product image</b>
+                      <small>JPG, PNG, or WebP · under 5 MB</small>
+                    </span>
+                  )}
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={pickProductImage}
+                  />
+                </Button>
+                {productImageFile && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    className="commerce-editor__image-clear"
+                    onClick={() => setProductImageFile(null)}
+                    disabled={savingProduct}
+                  >
+                    Remove image
+                  </Button>
+                )}
+                <div className="commerce-editor__form">
+                  <TextField
+                    label="Product name"
+                    value={productDraft.title}
+                    onChange={(event) => setProductDraft({ ...productDraft, title: event.target.value })}
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    select
+                    label="Category"
+                    value={productDraft.category}
+                    onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })}
+                    disabled={savingProduct}
+                  >
+                    {["digital", "merch", "service", "course", "affiliate"].map((item) => (
+                      <MenuItem value={item} key={item}>{item}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    label="Short description"
+                    value={productDraft.description}
+                    onChange={(event) => setProductDraft({ ...productDraft, description: event.target.value })}
+                    className="commerce-editor__wide"
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    label="Price"
+                    type="number"
+                    value={productDraft.price}
+                    onChange={(event) => setProductDraft({ ...productDraft, price: event.target.value })}
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    label="Currency"
+                    value={productDraft.currency}
+                    inputProps={{ maxLength: 3 }}
+                    onChange={(event) =>
+                      setProductDraft({ ...productDraft, currency: event.target.value.toUpperCase() })
+                    }
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    label="Badge"
+                    placeholder="New, Sale, Popular"
+                    value={productDraft.badge}
+                    onChange={(event) => setProductDraft({ ...productDraft, badge: event.target.value })}
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    label="Button label"
+                    value={productDraft.cta}
+                    onChange={(event) => setProductDraft({ ...productDraft, cta: event.target.value })}
+                    disabled={savingProduct}
+                  />
+                  <TextField
+                    label="Destination URL"
+                    placeholder="https://gumroad.com/your-product"
+                    value={productDraft.url}
+                    onChange={(event) => setProductDraft({ ...productDraft, url: event.target.value })}
+                    className="commerce-editor__wide"
+                    disabled={savingProduct}
+                  />
+                </div>
+              </div>
+              <aside className="commerce-editor__preview" aria-live="polite">
+                <span className="commerce-editor__preview-label">Live card preview</span>
+                <article className="product-card commerce-editor__preview-card">
+                  <div className="product-card__media">
+                    {productImagePreview ? (
+                      <Box
+                        component="img"
+                        src={productImagePreview}
+                        alt=""
+                      />
+                    ) : (
+                      <StorefrontOutlined />
+                    )}
+                    {productDraft.badge.trim() && (
+                      <Chip label={productDraft.badge.trim()} size="small" />
+                    )}
+                  </div>
+                  <div className="product-card__copy">
+                    <span>{productDraft.category}</span>
+                    <Typography variant="h3">
+                      {productDraft.title.trim() || "Product name"}
+                    </Typography>
+                    {(productDraft.description.trim() || !productDraft.title.trim()) && (
+                      <Typography variant="body2" color="text.secondary">
+                        {productDraft.description.trim() ||
+                          "Short description shows here."}
+                      </Typography>
+                    )}
+                    <div>
+                      <strong>
+                        {formatDraftPrice(productDraft.price, productDraft.currency) ??
+                          "See details"}
+                      </strong>
+                      <Button
+                        variant="contained"
+                        endIcon={<ArrowOutwardRounded />}
+                        tabIndex={-1}
+                        disableRipple
+                      >
+                        {productDraft.cta.trim() || "View product"}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              </aside>
             </div>
-            <Button variant="contained" onClick={addProduct}>
-              Save product
+            <Button
+              variant="contained"
+              onClick={addProduct}
+              disabled={savingProduct}
+              startIcon={
+                savingProduct ? <CircularProgress size={16} color="inherit" /> : undefined
+              }
+            >
+              {savingProduct ? "Saving product…" : "Save product"}
             </Button>
           </div>
         )}
