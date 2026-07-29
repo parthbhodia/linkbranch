@@ -8492,6 +8492,7 @@ a {
 }
 
 .marketing-template-card--field-notes {
+  color: #1b1c18;
   background:
     linear-gradient(rgba(43, 47, 38, 0.05) 1px, transparent 1px),
     #faf9f1;
@@ -8499,9 +8500,15 @@ a {
 }
 
 .marketing-template-card--soft-studio {
+  color: #2a1f24;
   background:
     radial-gradient(circle at 20% 0%, rgba(255, 183, 208, 0.35), transparent 42%),
     #fff8f4;
+}
+
+.marketing-template-card--field-notes > .MuiTypography-root:last-of-type,
+.marketing-template-card--soft-studio > .MuiTypography-root:last-of-type {
+  color: color-mix(in srgb, currentColor 62%, transparent);
 }
 
 .marketing-templates__footer {
