@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
@@ -20,75 +19,6 @@ import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
-
-const homepageFeatures = [
-  {
-    href: "/templates/referral-links-for-creators",
-    label: "Referral cards",
-    note: "Share offers & codes — free forever.",
-    image: "/marketing/feature-referrals.png",
-    alt: "Cueful referral card with a one-tap copy code on a mobile profile",
-  },
-  {
-    href: "/templates/spotify-embed-link-in-bio",
-    label: "Music embeds",
-    note: "Play on your page — free forever.",
-    image: "/marketing/feature-music.png",
-    alt: "Cueful Spotify music embed playing on a mobile profile",
-  },
-  {
-    href: "/templates/link-in-bio-shop",
-    label: "Shop cards",
-    note: "Sell from your bio — free forever.",
-    image: "/marketing/feature-shop.png",
-    alt: "Cueful shop cards with product images, prices, and buy buttons",
-  },
-];
-
-const homepageTemplates = [
-  {
-    href: "/templates/link-in-bio-for-musicians",
-    label: "Musicians",
-    title: "Release-first page",
-    note: "Spotify embed, tour dates, merch.",
-    template: "after-dark",
-  },
-  {
-    href: "/templates/spotify-embed-link-in-bio",
-    label: "Spotify embed",
-    title: "Put the player on the page",
-    note: "Paste a track, album, or playlist URL.",
-    template: "after-dark",
-  },
-  {
-    href: "/templates/link-in-bio-shop",
-    label: "Shop",
-    title: "Mini shop in your bio",
-    note: "Product cards, prices, external checkout.",
-    template: "soft-studio",
-  },
-  {
-    href: "/templates/link-in-bio-for-podcasters",
-    label: "Podcasters",
-    title: "One link for every episode",
-    note: "Episode player, guests, subscribe.",
-    template: "field-notes",
-  },
-  {
-    href: "/templates/referral-links-for-creators",
-    label: "Referral creators",
-    title: "Offers that stay clear",
-    note: "Codes, disclosures, copy actions.",
-    template: "field-notes",
-  },
-  {
-    href: "/templates/portfolio-link-page-for-freelancers",
-    label: "Freelancers",
-    title: "Portfolio that books work",
-    note: "Selected work, services, availability.",
-    template: "soft-studio",
-  },
-];
 
 const builderTabs: Array<{ id: BuilderStep; label: string }> = [
   { id: "profile", label: "Profile" },
@@ -225,12 +155,6 @@ export function MarketingHome() {
       <nav className="marketing-nav" aria-label="Primary navigation">
         <BrandMark className="brand marketing-nav__brand" />
         <div className="marketing-nav__links">
-          <Button component={Link} href="#features" color="inherit">
-            Features
-          </Button>
-          <Button component={Link} href="#templates" color="inherit">
-            Templates
-          </Button>
           <Button component={Link} href="/link-in-bio-tools" color="inherit">
             Compare tools
           </Button>
@@ -483,88 +407,6 @@ export function MarketingHome() {
           </div>
         </div>
       </section>
-
-      <section className="marketing-features" id="features">
-        <div className="marketing-features__heading">
-          <div>
-            <p className="section-label">FREE FOREVER</p>
-            <Typography component="h2">
-              Referral cards. Music embeds. Shop cards.
-            </Typography>
-          </div>
-          <Typography>
-            The same features from our Instagram — live on your bio page, no
-            paywall.
-          </Typography>
-        </div>
-        <div className="marketing-features__grid">
-          {homepageFeatures.map((feature) => (
-            <Link
-              className="marketing-feature-poster"
-              href={feature.href}
-              key={feature.href}
-            >
-              <span className="marketing-feature-poster__media">
-                <Image
-                  src={feature.image}
-                  alt={feature.alt}
-                  width={1080}
-                  height={1350}
-                  sizes="(max-width: 900px) 100vw, 33vw"
-                  priority={feature.label === "Referral cards"}
-                />
-              </span>
-              <span className="marketing-feature-poster__copy">
-                <b>{feature.label}</b>
-                <small>{feature.note}</small>
-                <em>
-                  See template{" "}
-                  <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
-                </em>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-templates" id="templates">
-        <div className="marketing-templates__heading">
-          <div>
-            <p className="section-label">TEMPLATES</p>
-            <Typography component="h2">Start with a finished layout.</Typography>
-          </div>
-          <Typography>
-            Musicians, Spotify embeds, shop pages, podcasters, referrals, and freelancer portfolios.
-          </Typography>
-        </div>
-        <div className="marketing-templates__grid">
-          {homepageTemplates.map((item) => (
-            <Link
-              className={`marketing-template-card marketing-template-card--${item.template}`}
-              href={item.href}
-              key={item.href}
-            >
-              <span>{item.label}</span>
-              <Typography component="h3">{item.title}</Typography>
-              <Typography>{item.note}</Typography>
-              <em>
-                Open template <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
-              </em>
-            </Link>
-          ))}
-        </div>
-        <div className="marketing-templates__footer">
-          <Button
-            component={Link}
-            href="/templates"
-            variant="outlined"
-            endIcon={<ArrowForwardRounded aria-hidden="true" />}
-          >
-            Browse all templates
-          </Button>
-        </div>
-      </section>
-
       <section className="marketing-examples" id="examples">
         <div className="marketing-examples__heading">
           <div>
