@@ -502,7 +502,13 @@ export function OnboardingWizard({
     }),
   );
 
-  const templateName = templateNames[initialTemplate] ?? templateNames["field-notes"];
+  const templateNames: Record<string, string> = {
+    "field-notes": "Field Notes",
+    "after-dark": "After Dark",
+    "soft-studio": "Soft Studio",
+  };
+  const templateName =
+    templateNames[initialTemplate] ?? templateNames["field-notes"];
   const initials = useMemo(
     () =>
       displayName

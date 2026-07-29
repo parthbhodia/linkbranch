@@ -449,6 +449,44 @@ export function MarketingHome() {
         </div>
       </section>
 
+      <section className="marketing-templates" id="templates">
+        <div className="marketing-templates__heading">
+          <div>
+            <p className="section-label">TEMPLATES</p>
+            <Typography component="h2">Start with a finished layout.</Typography>
+          </div>
+          <Typography>
+            Musicians, Spotify embeds, podcasters, referral pages, and freelancer portfolios.
+          </Typography>
+        </div>
+        <div className="marketing-templates__grid">
+          {homepageTemplates.map((item) => (
+            <Link
+              className={`marketing-template-card marketing-template-card--${item.template}`}
+              href={item.href}
+              key={item.href}
+            >
+              <span>{item.label}</span>
+              <Typography component="h3">{item.title}</Typography>
+              <Typography>{item.note}</Typography>
+              <em>
+                Open template <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
+              </em>
+            </Link>
+          ))}
+        </div>
+        <div className="marketing-templates__footer">
+          <Button
+            component={Link}
+            href="/templates"
+            variant="outlined"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Browse all templates
+          </Button>
+        </div>
+      </section>
+
       <section className="marketing-examples" id="examples">
         <div className="marketing-examples__heading">
           <div>
@@ -456,7 +494,7 @@ export function MarketingHome() {
             <Typography component="h2">Pick the page that fits.</Typography>
           </div>
           <Typography>
-            Creator, freelancer, curator, musician, coach, or shop.
+            Musician with Spotify embed, coach with Calendly, creator, freelancer, curator, or shop.
           </Typography>
         </div>
         <div className="example-carousel">
@@ -522,12 +560,38 @@ export function MarketingHome() {
                       <em>{example.mediaEmbeds[0].provider.replace("_", " ")} embed</em>
                     </span>
                   ) : null}
-                  {example.profile.links.slice(0, example.mediaEmbeds?.length ? 1 : 2).map((link) => (
-                    <span className="example-profile__link" key={link.id}>
-                      <strong>{link.title}</strong>
-                      <em>{link.subtitle}</em>
-                    </span>
-                  ))}
+                  {example.profile.links
+                    .slice(0, example.mediaEmbeds?.length ? 1 : 2)
+                    .map((link) => {
+                      const isBooking =
+                        /calendly|cal\.com|tidycal|savvycal|hubspot|calendar\.google/i.test(
+                          link.url,
+                        );
+                      const isMusic =
+                        /spotify|music\.apple|soundcloud|youtube|bandcamp|audiomack/i.test(
+                          link.url,
+                        );
+                      return (
+                        <span
+                          className={`example-profile__link${
+                            isBooking ? " example-profile__link--booking" : ""
+                          }${isMusic ? " example-profile__link--music" : ""}`}
+                          key={link.id}
+                        >
+                          <strong>
+                            {isBooking ? "📅 " : isMusic ? "♪ " : ""}
+                            {link.title}
+                          </strong>
+                          <em>
+                            {isBooking
+                              ? "Book a call"
+                              : isMusic
+                                ? "Music / video"
+                                : link.subtitle}
+                          </em>
+                        </span>
+                      );
+                    })}
                 </div>
                 <div>
                   <Typography component="h3">{example.profile.displayName}</Typography>
@@ -548,44 +612,6 @@ export function MarketingHome() {
               />
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="marketing-templates" id="templates">
-        <div className="marketing-templates__heading">
-          <div>
-            <p className="section-label">TEMPLATES</p>
-            <Typography component="h2">Start with a finished layout.</Typography>
-          </div>
-          <Typography>
-            Musicians, Spotify embeds, podcasters, referral pages, and freelancer portfolios.
-          </Typography>
-        </div>
-        <div className="marketing-templates__grid">
-          {homepageTemplates.map((item) => (
-            <Link
-              className={`marketing-template-card marketing-template-card--${item.template}`}
-              href={item.href}
-              key={item.href}
-            >
-              <span>{item.label}</span>
-              <Typography component="h3">{item.title}</Typography>
-              <Typography>{item.note}</Typography>
-              <em>
-                Open template <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
-              </em>
-            </Link>
-          ))}
-        </div>
-        <div className="marketing-templates__footer">
-          <Button
-            component={Link}
-            href="/templates"
-            variant="outlined"
-            endIcon={<ArrowForwardRounded aria-hidden="true" />}
-          >
-            Browse all templates
-          </Button>
         </div>
       </section>
 

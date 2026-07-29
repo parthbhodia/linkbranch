@@ -8389,12 +8389,19 @@ a {
   white-space: nowrap;
 }
 
-.example-profile__music em {
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.72;
-  font-style: normal;
+.example-profile__link--booking,
+.example-profile__link--music {
+  border-color: color-mix(in srgb, currentColor 28%, transparent) !important;
+}
+
+.example-profile--after-dark .example-profile__music {
+  border-color: rgba(185, 255, 102, 0.35);
+  background: rgba(185, 255, 102, 0.12);
+}
+
+.example-profile--after-dark .example-profile__link--booking,
+.example-profile--after-dark .example-profile__link--music {
+  border-color: rgba(185, 255, 102, 0.28);
 }
 
 .marketing-templates {
