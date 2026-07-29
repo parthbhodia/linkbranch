@@ -23,6 +23,12 @@ import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import FavoriteBorderRounded from "@mui/icons-material/FavoriteBorderRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import LanguageRounded from "@mui/icons-material/LanguageRounded";
+import HubOutlined from "@mui/icons-material/HubOutlined";
+import DownloadRounded from "@mui/icons-material/DownloadRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
+import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
 import {
   Alert,
   Avatar,
@@ -31,8 +37,13 @@ import {
   ButtonBase,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -55,15 +66,27 @@ import {
   type DashboardHighlight,
 } from "@/components/highlights-editor";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
+import {
+  resolveSeoDescription,
+  resolveSeoTitle,
+  SeoPreview,
+} from "@/components/seo-preview";
+import { SettingsConnectEditor } from "@/components/settings-connect-editor";
+import {
+  SettingsJumpNav,
+  type SettingsJumpId,
+} from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
-import { publicProfileAddress } from "@/lib/brand";
+import { publicProfileAddress, publicProfilePath } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
+  faviconExtension,
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
+  validateFavicon,
   validateImage,
 } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
@@ -72,6 +95,7 @@ import {
   profileThemeClassName,
   profileThemeStyle,
   resolveProfileTheme,
+  themeBackgroundOptions,
   themePalettes,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
@@ -91,6 +115,13 @@ export type DashboardProfile = {
   seo_title: string | null;
   seo_description: string | null;
   seo_image_path: string | null;
+  favicon_path: string | null;
+  seo_og_title: string | null;
+  seo_og_description: string | null;
+  seo_keywords: string | null;
+  seo_noindex: boolean;
+  twitter_card_style: "summary" | "summary_large_image";
+  canonical_url: string | null;
   show_cueful_badge: boolean;
   is_discoverable: boolean;
   is_published: boolean;
@@ -360,8 +391,20 @@ export function Dashboard({
   const router = useRouter();
   const [draft, setDraft] = useState(() => ({
     ...profile,
+    seo_og_title: profile.seo_og_title ?? null,
+    seo_og_description: profile.seo_og_description ?? null,
+    seo_keywords: profile.seo_keywords ?? null,
+    seo_noindex: profile.seo_noindex ?? false,
+    twitter_card_style: profile.twitter_card_style ?? "summary_large_image",
+    canonical_url: profile.canonical_url ?? null,
     theme_config: resolveProfileTheme(profile.theme_config, profile.template),
   }));
+  const [connectedSocials, setConnectedSocials] = useState(socials);
+  const [settingsJump, setSettingsJump] = useState<SettingsJumpId | null>(null);
+  const [exportingData, setExportingData] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [section, setSection] = useState<WorkspaceSection>("profile");
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
   const editorScrollRef = useRef<HTMLDivElement | null>(null);
@@ -373,6 +416,10 @@ export function Dashboard({
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [seoImageUploading, setSeoImageUploading] = useState(false);
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const [brandingUploading, setBrandingUploading] = useState<
+    null | "logo" | "wallpaper"
+  >(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -409,6 +456,23 @@ export function Dashboard({
     [referrals],
   );
   const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
+  const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
+  const wallpaperUrl = publicAssetUrl(activeTheme.wallpaperPath);
+  const seoPreviewTitle = resolveSeoTitle({
+    seoTitle: draft.seo_title,
+    displayName: draft.display_name,
+    username: draft.username,
+  });
+  const seoPreviewDescription = resolveSeoDescription({
+    seoDescription: draft.seo_description,
+    bio: draft.bio,
+    username: draft.username,
+  });
+  const seoSocialTitle =
+    draft.seo_og_title?.trim() || seoPreviewTitle;
+  const seoSocialDescription =
+    draft.seo_og_description?.trim() || seoPreviewDescription;
+  const seoPreviewImage = publicAssetUrl(draft.seo_image_path) ?? null;
   const analytics = useMemo(() => {
     const knownDates = [...views, ...events]
       .map((item) => new Date(item.occurred_at).getTime())
@@ -660,11 +724,19 @@ export function Dashboard({
   }
 
   function selectTemplate(template: string) {
-    setDraft((current) => ({
-      ...current,
-      template,
-      theme_config: defaultProfileTheme(template),
-    }));
+    setDraft((current) => {
+      const previous = resolveProfileTheme(current.theme_config, current.template);
+      const next = defaultProfileTheme(template);
+      return {
+        ...current,
+        template,
+        theme_config: {
+          ...next,
+          logoPath: previous.logoPath ?? null,
+          wallpaperPath: previous.wallpaperPath ?? null,
+        },
+      };
+    });
   }
 
   async function copyPublicPage() {
@@ -718,6 +790,12 @@ export function Dashboard({
         theme_config: activeTheme,
         seo_title: draft.seo_title?.trim() || null,
         seo_description: draft.seo_description?.trim() || null,
+        seo_og_title: draft.seo_og_title?.trim() || null,
+        seo_og_description: draft.seo_og_description?.trim() || null,
+        seo_keywords: draft.seo_keywords?.trim() || null,
+        seo_noindex: draft.seo_noindex,
+        twitter_card_style: draft.twitter_card_style || "summary_large_image",
+        canonical_url: draft.canonical_url?.trim() || null,
         show_cueful_badge: draft.show_cueful_badge,
         is_discoverable: draft.is_discoverable,
         is_published: draft.is_published,
@@ -885,11 +963,254 @@ export function Dashboard({
     router.refresh();
   }
 
+  async function uploadFavicon(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateFavicon(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setFaviconUploading(true);
+    const supabase = createClient();
+    const path = `${profile.id}/seo/favicon-${crypto.randomUUID()}.${faviconExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setFaviconUploading(false);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath = draft.favicon_path;
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ favicon_path: path })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setFaviconUploading(false);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    }
+
+    update("favicon_path", path);
+    setFaviconUploading(false);
+    setNotice({ severity: "success", message: "Favicon updated." });
+    router.refresh();
+  }
+
+  async function removeFavicon() {
+    if (!draft.favicon_path) return;
+
+    setFaviconUploading(true);
+    const supabase = createClient();
+    const previousPath = draft.favicon_path;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ favicon_path: null })
+      .eq("id", profile.id);
+
+    if (error) {
+      setFaviconUploading(false);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    update("favicon_path", null);
+    setFaviconUploading(false);
+    setNotice({ severity: "success", message: "Favicon removed." });
+    router.refresh();
+  }
+
+  async function uploadBrandAsset(
+    kind: "logo" | "wallpaper",
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImage(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setBrandingUploading(kind);
+    const supabase = createClient();
+    const folder = kind === "logo" ? "branding" : "wallpapers";
+    const path = `${profile.id}/${folder}/${kind}-${crypto.randomUUID()}.${imageExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setBrandingUploading(null);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath =
+      kind === "logo" ? activeTheme.logoPath : activeTheme.wallpaperPath;
+    const nextTheme: ProfileThemeConfig = {
+      ...activeTheme,
+      ...(kind === "logo"
+        ? { logoPath: path }
+        : { wallpaperPath: path }),
+    };
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ theme_config: nextTheme })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setBrandingUploading(null);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    }
+
+    updateTheme(() => nextTheme);
+    setBrandingUploading(null);
+    setNotice({
+      severity: "success",
+      message: kind === "logo" ? "Brand logo updated." : "Wallpaper updated.",
+    });
+    router.refresh();
+  }
+
+  async function removeBrandAsset(kind: "logo" | "wallpaper") {
+    const previousPath =
+      kind === "logo" ? activeTheme.logoPath : activeTheme.wallpaperPath;
+    if (!previousPath) return;
+
+    setBrandingUploading(kind);
+    const supabase = createClient();
+    const nextTheme: ProfileThemeConfig = {
+      ...activeTheme,
+      ...(kind === "logo" ? { logoPath: null } : { wallpaperPath: null }),
+    };
+    const { error } = await supabase
+      .from("profiles")
+      .update({ theme_config: nextTheme })
+      .eq("id", profile.id);
+
+    if (error) {
+      setBrandingUploading(null);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([previousPath]);
+    updateTheme(() => nextTheme);
+    setBrandingUploading(null);
+    setNotice({
+      severity: "success",
+      message: kind === "logo" ? "Brand logo removed." : "Wallpaper removed.",
+    });
+    router.refresh();
+  }
+
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/auth");
     router.refresh();
+  }
+
+  function jumpToSettings(id: SettingsJumpId) {
+    setSection("account");
+    setSettingsJump(id);
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 40);
+  }
+
+  async function downloadAccountData() {
+    setExportingData(true);
+    try {
+      const response = await fetch("/api/account/export");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(payload?.error ?? "Could not export your data.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${draft.username || "cueful"}-cueful-export.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setNotice({
+        severity: "success",
+        message: "Your Cueful data download started.",
+      });
+    } catch (error) {
+      setNotice({
+        severity: "error",
+        message:
+          error instanceof Error ? error.message : "Could not export your data.",
+      });
+    } finally {
+      setExportingData(false);
+    }
+  }
+
+  async function deleteAccount() {
+    setDeletingAccount(true);
+    try {
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deleteConfirmation }),
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Could not delete this account.");
+      }
+      router.push("/auth");
+      router.refresh();
+    } catch (error) {
+      setDeletingAccount(false);
+      setNotice({
+        severity: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not delete this account.",
+      });
+    }
   }
 
   return (
@@ -962,7 +1283,7 @@ export function Dashboard({
           <Button
             className="workspace-mobile-live-link"
             component={Link}
-            href={`/u/${draft.username}`}
+            href={publicProfilePath(draft.username)}
             target="_blank"
             variant="outlined"
             startIcon={<ArrowOutwardRounded />}
@@ -1047,7 +1368,7 @@ export function Dashboard({
                 <Tooltip title="Open public page" arrow>
                   <IconButton
                     component={Link}
-                    href={`/u/${draft.username}`}
+                    href={publicProfilePath(draft.username)}
                     target="_blank"
                     aria-label="Open public page"
                   >
@@ -1219,6 +1540,12 @@ export function Dashboard({
                   </Box>
                   <SearchRounded />
                 </div>
+                <SeoPreview
+                  title={seoPreviewTitle}
+                  description={seoPreviewDescription}
+                  username={draft.username}
+                  imageUrl={seoPreviewImage}
+                />
                 <TextField
                   label="SEO title"
                   value={draft.seo_title ?? ""}
@@ -1241,6 +1568,55 @@ export function Dashboard({
                   minRows={3}
                   fullWidth
                 />
+                <div className="workspace-favicon-row">
+                  <span className="workspace-favicon-row__preview">
+                    {draft.favicon_path ? (
+                      <Box
+                        component="img"
+                        src={publicAssetUrl(draft.favicon_path)}
+                        alt="Current favicon"
+                      />
+                    ) : (
+                      <LanguageRounded />
+                    )}
+                  </span>
+                  <Box>
+                    <Typography fontWeight={850}>Custom favicon</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Square PNG or ICO, 64×64 recommended. Shows in browser tabs
+                      for your public page.
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.25 }}>
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={faviconUploading}
+                        startIcon={
+                          faviconUploading
+                            ? <CircularProgress size={16} />
+                            : <LanguageRounded />
+                        }
+                      >
+                        {draft.favicon_path ? "Replace favicon" : "Upload favicon"}
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg,image/webp,.ico"
+                          onChange={uploadFavicon}
+                        />
+                      </Button>
+                      {draft.favicon_path && (
+                        <Button
+                          color="inherit"
+                          disabled={faviconUploading}
+                          onClick={removeFavicon}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </div>
                 <div className="workspace-seo-image">
                   {draft.seo_image_path ? (
                     <Box
@@ -1628,31 +2004,161 @@ export function Dashboard({
               </div>
 
               <div className="workspace-design-group">
-                <Typography variant="h3">Background texture</Typography>
-                <div className="workspace-choice-grid">
-                  {(["solid", "grid", "dots", "bloom"] as const).map(
-                    (background) => (
-                      <ButtonBase
-                        className={`workspace-background-choice workspace-background-choice--${background} ${
-                          activeTheme.background === background ? "is-selected" : ""
-                        }`}
-                        onClick={() =>
-                          updateTheme((current) => ({ ...current, background }))
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Wallpapers</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Pick a texture, or upload your own full-bleed wallpaper.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-choice-grid workspace-choice-grid--wallpapers">
+                  {themeBackgroundOptions.map((background) => (
+                    <ButtonBase
+                      className={`workspace-background-choice workspace-background-choice--${background.id} ${
+                        activeTheme.background === background.id
+                          ? "is-selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          background: background.id,
+                        }))
+                      }
+                      key={background.id}
+                    >
+                      <i
+                        style={
+                          {
+                            "--choice-bg": activeTheme.colors.background,
+                            "--choice-accent": activeTheme.colors.accent,
+                          } as React.CSSProperties
                         }
-                        key={background}
+                      />
+                      <span>
+                        <b>{background.name}</b>
+                        <small>{background.note}</small>
+                      </span>
+                    </ButtonBase>
+                  ))}
+                </div>
+                <div className="workspace-branding-row">
+                  <span className="workspace-branding-row__preview workspace-branding-row__preview--wallpaper">
+                    {wallpaperUrl ? (
+                      <Box component="img" src={wallpaperUrl} alt="" />
+                    ) : (
+                      <Typography variant="caption">Custom wallpaper</Typography>
+                    )}
+                  </span>
+                  <Box>
+                    <Typography fontWeight={850}>Your wallpaper</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Optional image layered behind your page. JPG, PNG, or WebP.
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 1.25 }}
+                    >
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={brandingUploading !== null}
+                        startIcon={
+                          brandingUploading === "wallpaper" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <PhotoCameraOutlined />
+                          )
+                        }
                       >
-                        <i
-                          style={
-                            {
-                              "--choice-bg": activeTheme.colors.background,
-                              "--choice-accent": activeTheme.colors.accent,
-                            } as React.CSSProperties
+                        {wallpaperUrl ? "Replace wallpaper" : "Upload wallpaper"}
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(event) =>
+                            uploadBrandAsset("wallpaper", event)
                           }
                         />
-                        <span>{background}</span>
-                      </ButtonBase>
-                    ),
-                  )}
+                      </Button>
+                      {wallpaperUrl && (
+                        <Button
+                          color="inherit"
+                          disabled={brandingUploading !== null}
+                          onClick={() => removeBrandAsset("wallpaper")}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Your branding</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Add a logo mark that sits above your photo and intro.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-branding-row">
+                  <span className="workspace-branding-row__preview">
+                    {brandingLogoUrl ? (
+                      <Box component="img" src={brandingLogoUrl} alt="" />
+                    ) : (
+                      <Typography variant="caption">Logo</Typography>
+                    )}
+                  </span>
+                  <Box>
+                    <Typography fontWeight={850}>Brand logo</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Transparent PNG works best. Keep it under 5 MB.
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 1.25 }}
+                    >
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={brandingUploading !== null}
+                        startIcon={
+                          brandingUploading === "logo" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <PhotoCameraOutlined />
+                          )
+                        }
+                      >
+                        {brandingLogoUrl ? "Replace logo" : "Upload logo"}
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(event) => uploadBrandAsset("logo", event)}
+                        />
+                      </Button>
+                      {brandingLogoUrl && (
+                        <Button
+                          color="inherit"
+                          disabled={brandingUploading !== null}
+                          onClick={() => removeBrandAsset("logo")}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
                 </div>
               </div>
 
@@ -2003,7 +2509,16 @@ export function Dashboard({
 
           {section === "account" && (
             <Stack className="workspace-panel workspace-settings-basic" spacing={2}>
-              <Paper className="workspace-settings-card" variant="outlined">
+              <SettingsJumpNav
+                activeId={settingsJump}
+                onJump={jumpToSettings}
+              />
+
+              <Paper
+                id="settings-profile"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
                 <div className="workspace-settings-card__heading">
                   <PersonOutlineRounded />
                   <Box>
@@ -2025,7 +2540,7 @@ export function Dashboard({
                   <TextField
                     label="Username"
                     value={draft.username}
-                    helperText="Your public URL stays stable."
+                    helperText={`Public URL: ${publicProfileAddress(draft.username)}`}
                     fullWidth
                     disabled
                   />
@@ -2039,19 +2554,31 @@ export function Dashboard({
                 </div>
               </Paper>
 
-              <Paper className="workspace-settings-card" variant="outlined">
+              <Paper
+                id="settings-seo"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
                 <div className="workspace-settings-card__heading">
                   <SearchRounded />
                   <Box>
-                    <Typography variant="h3">SEO & sharing</Typography>
+                    <Typography variant="h3">SEO & branding</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      The title, summary, and image people see in search and chats.
+                      Search and social preview settings.
                     </Typography>
                   </Box>
                 </div>
                 <div className="workspace-settings-card__fields">
+                  <SeoPreview
+                    title={seoPreviewTitle}
+                    description={seoPreviewDescription}
+                    socialTitle={seoSocialTitle}
+                    socialDescription={seoSocialDescription}
+                    username={draft.username}
+                    imageUrl={seoPreviewImage}
+                  />
                   <TextField
-                    label="SEO title"
+                    label="Page title"
                     value={draft.seo_title ?? ""}
                     onChange={(event) =>
                       update("seo_title", event.target.value.slice(0, 70))
@@ -2061,7 +2588,7 @@ export function Dashboard({
                     fullWidth
                   />
                   <TextField
-                    label="SEO description"
+                    label="Meta description"
                     value={draft.seo_description ?? ""}
                     onChange={(event) =>
                       update("seo_description", event.target.value.slice(0, 170))
@@ -2070,6 +2597,125 @@ export function Dashboard({
                     helperText={`${draft.seo_description?.length ?? 0}/170`}
                     multiline
                     minRows={3}
+                    fullWidth
+                  />
+                  <div className="workspace-favicon-row">
+                    <span className="workspace-favicon-row__preview">
+                      {draft.favicon_path ? (
+                        <Box
+                          component="img"
+                          src={publicAssetUrl(draft.favicon_path)}
+                          alt="Current favicon"
+                        />
+                      ) : (
+                        <LanguageRounded />
+                      )}
+                    </span>
+                    <Box>
+                      <Typography fontWeight={850}>Custom favicon</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Square PNG or ICO, 64×64 recommended. Shows in browser tabs
+                        for your public page.
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                        sx={{ mt: 1.25 }}
+                      >
+                        <Button
+                          component="label"
+                          variant="outlined"
+                          disabled={faviconUploading}
+                          startIcon={
+                            faviconUploading
+                              ? <CircularProgress size={16} />
+                              : <LanguageRounded />
+                          }
+                        >
+                          {draft.favicon_path ? "Replace favicon" : "Upload favicon"}
+                          <input
+                            hidden
+                            type="file"
+                            accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg,image/webp,.ico"
+                            onChange={uploadFavicon}
+                          />
+                        </Button>
+                        {draft.favicon_path && (
+                          <Button
+                            color="inherit"
+                            disabled={faviconUploading}
+                            onClick={removeFavicon}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </Stack>
+                    </Box>
+                  </div>
+
+                  <Typography variant="h3" sx={{ pt: 1 }}>
+                    Advanced social SEO
+                  </Typography>
+                  <TextField
+                    label="Open Graph title"
+                    value={draft.seo_og_title ?? ""}
+                    onChange={(event) =>
+                      update("seo_og_title", event.target.value.slice(0, 70))
+                    }
+                    placeholder={seoPreviewTitle}
+                    helperText={`${draft.seo_og_title?.length ?? 0}/70 · Leave blank to reuse page title`}
+                    fullWidth
+                  />
+                  <TextField
+                    select
+                    label="Twitter card style"
+                    value={draft.twitter_card_style || "summary_large_image"}
+                    onChange={(event) =>
+                      update(
+                        "twitter_card_style",
+                        event.target.value as DashboardProfile["twitter_card_style"],
+                      )
+                    }
+                    fullWidth
+                  >
+                    <MenuItem value="summary_large_image">Large image</MenuItem>
+                    <MenuItem value="summary">Summary</MenuItem>
+                  </TextField>
+                  <TextField
+                    label="Open Graph description"
+                    value={draft.seo_og_description ?? ""}
+                    onChange={(event) =>
+                      update(
+                        "seo_og_description",
+                        event.target.value.slice(0, 170),
+                      )
+                    }
+                    placeholder={seoPreviewDescription}
+                    helperText={`${draft.seo_og_description?.length ?? 0}/170 · Leave blank to reuse meta description`}
+                    multiline
+                    minRows={3}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Keywords (comma separated)"
+                    value={draft.seo_keywords ?? ""}
+                    onChange={(event) =>
+                      update("seo_keywords", event.target.value.slice(0, 240))
+                    }
+                    placeholder="creator, portfolio, links"
+                    helperText={`${draft.seo_keywords?.length ?? 0}/240`}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Canonical URL"
+                    value={draft.canonical_url ?? ""}
+                    onChange={(event) =>
+                      update("canonical_url", event.target.value)
+                    }
+                    placeholder={`https://cueful.bio${publicProfilePath(draft.username)}`}
+                    helperText="Optional override. Leave blank to use your Cueful page URL."
                     fullWidth
                   />
                   <div className="workspace-seo-image">
@@ -2098,7 +2744,7 @@ export function Dashboard({
                             : <PhotoCameraOutlined />
                         }
                       >
-                        {draft.seo_image_path ? "Replace image" : "Choose image"}
+                        {draft.seo_image_path ? "Replace image" : "Choose share image"}
                         <input
                           hidden
                           type="file"
@@ -2117,12 +2763,27 @@ export function Dashboard({
                       )}
                     </Stack>
                   </div>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={draft.seo_noindex}
+                        onChange={(event) =>
+                          update("seo_noindex", event.target.checked)
+                        }
+                      />
+                    }
+                    label="Hide page from search engines (noindex)"
+                  />
                 </div>
               </Paper>
 
-              <Paper className="workspace-settings-card" variant="outlined">
+              <Paper
+                id="settings-qr"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
                 <div className="workspace-settings-card__heading">
-                  <IosShareRounded />
+                  <QrCode2Rounded />
                   <Box>
                     <Typography variant="h3">QR & page sharing</Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -2147,6 +2808,34 @@ export function Dashboard({
                     Copy page link
                   </Button>
                 </Stack>
+              </Paper>
+
+              <Paper
+                id="settings-connect"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
+                <div className="workspace-settings-card__heading">
+                  <HubOutlined />
+                  <Box>
+                    <Typography variant="h3">Connect</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Social profiles shown as icons on your public page.
+                    </Typography>
+                  </Box>
+                </div>
+                <SettingsConnectEditor
+                  profileId={profile.id}
+                  initialSocials={connectedSocials}
+                  onSaved={(next) => {
+                    setConnectedSocials(next);
+                    setNotice({
+                      severity: "success",
+                      message: "Social profiles updated.",
+                    });
+                    router.refresh();
+                  }}
+                />
               </Paper>
 
               <Paper className="workspace-settings-card" variant="outlined">
@@ -2264,29 +2953,85 @@ export function Dashboard({
                 </Typography>
               </Paper>
 
-              <Paper className="workspace-settings-card" variant="outlined">
+              <Paper
+                id="settings-tools"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
                 <div className="workspace-settings-card__heading">
-                  <SettingsOutlined />
+                  <ShieldOutlined />
                   <Box>
-                    <Typography variant="h3">Privacy & sign-in</Typography>
+                    <Typography variant="h3">Privacy & data rights</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Review Cueful’s privacy policy or end this session.
+                      Download a copy of your Cueful data or review the privacy policy.
                     </Typography>
                   </Box>
                 </div>
-                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                  <Button component={Link} href="/privacy" variant="outlined">
-                    Privacy policy
+                <Stack spacing={1.5}>
+                  <Button
+                    variant="outlined"
+                    startIcon={
+                      exportingData ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <DownloadRounded />
+                      )
+                    }
+                    onClick={downloadAccountData}
+                    disabled={exportingData}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    {exportingData ? "Preparing…" : "Download my data"}
                   </Button>
+                  <Typography variant="body2" color="text.secondary">
+                    Get a JSON file with your profile, links, offers, shop items,
+                    media, FAQs, and highlights.
+                  </Typography>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Button component={Link} href="/privacy" variant="text">
+                      Privacy policy
+                    </Button>
+                    <Button
+                      color="inherit"
+                      variant="outlined"
+                      startIcon={<LogoutRounded />}
+                      onClick={signOut}
+                    >
+                      Sign out
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Paper>
+
+              <Paper className="workspace-settings-card workspace-settings-card--danger" variant="outlined">
+                <div className="workspace-settings-card__heading">
+                  <DeleteOutlineRounded />
+                  <Box>
+                    <Typography variant="h3">Danger zone</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Permanent account deletion.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-settings-danger">
+                  <Box>
+                    <Typography fontWeight={850}>Delete account</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Permanently remove your page and all associated data.
+                    </Typography>
+                  </Box>
                   <Button
                     color="error"
                     variant="outlined"
-                    startIcon={<LogoutRounded />}
-                    onClick={signOut}
+                    startIcon={<DeleteOutlineRounded />}
+                    onClick={() => {
+                      setDeleteConfirmation("");
+                      setDeleteOpen(true);
+                    }}
                   >
-                    Sign out
+                    Delete account
                   </Button>
-                </Stack>
+                </div>
               </Paper>
 
               <Button
@@ -2304,8 +3049,15 @@ export function Dashboard({
       </section>
 
       <aside
-        className={`workspace-preview workspace-preview--${draft.template} ${profileThemeClassName(activeTheme)}`}
-        style={profileThemeStyle(activeTheme) as React.CSSProperties}
+        className={`workspace-preview workspace-preview--${draft.template} ${profileThemeClassName(
+          activeTheme,
+          { wallpaperUrl },
+        )}`}
+        style={
+          profileThemeStyle(activeTheme, {
+            wallpaperUrl,
+          }) as React.CSSProperties
+        }
         aria-label="Live page preview"
       >
         <header className="workspace-preview__topbar">
@@ -2316,10 +3068,25 @@ export function Dashboard({
           <Typography variant="caption">LIVE PREVIEW</Typography>
         </header>
         <div
-          className={`workspace-phone workspace-phone--${draft.template} ${profileThemeClassName(activeTheme)}`}
-          style={profileThemeStyle(activeTheme) as React.CSSProperties}
+          className={`workspace-phone workspace-phone--${draft.template} ${profileThemeClassName(
+            activeTheme,
+            { wallpaperUrl },
+          )}`}
+          style={
+            profileThemeStyle(activeTheme, {
+              wallpaperUrl,
+            }) as React.CSSProperties
+          }
         >
           <div className="workspace-phone__body">
+            {brandingLogoUrl && (
+              <Box
+                component="img"
+                className="workspace-phone__brand-logo"
+                src={brandingLogoUrl}
+                alt=""
+              />
+            )}
             <Avatar
               className="workspace-phone__avatar"
               src={publicAssetUrl(draft.avatar_path)}
@@ -2340,9 +3107,9 @@ export function Dashboard({
               </Typography>
             )}
 
-            {socials.length > 0 && (
+            {connectedSocials.length > 0 && (
               <div className="workspace-phone__socials" aria-label="Social profile preview">
-                {socials.slice(0, 5).map((social) => (
+                {connectedSocials.slice(0, 5).map((social) => (
                   <span title={social.platform} key={social.platform}>
                     {getSocialPlatformIcon(social.platform)}
                   </span>
@@ -2614,6 +3381,48 @@ export function Dashboard({
         username={draft.username}
         displayName={draft.display_name}
       />
+      <Dialog
+        open={deleteOpen}
+        onClose={() => (!deletingAccount ? setDeleteOpen(false) : undefined)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Delete account permanently?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This removes your Cueful page, links, offers, shop items, analytics,
+            and uploaded files. Type DELETE to confirm.
+          </Typography>
+          <TextField
+            label="Confirmation"
+            value={deleteConfirmation}
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            placeholder="DELETE"
+            fullWidth
+            disabled={deletingAccount}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteOpen(false)}
+            disabled={deletingAccount}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deletingAccount || deleteConfirmation !== "DELETE"}
+            onClick={deleteAccount}
+            startIcon={
+              deletingAccount ? <CircularProgress size={16} /> : undefined
+            }
+          >
+            {deletingAccount ? "Deleting…" : "Delete forever"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </main>
   );
 }

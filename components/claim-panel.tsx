@@ -64,7 +64,7 @@ export function ClaimPanel({
           {!isClaimed && suggestedUsername && (
             <Typography variant="body2" color="text.secondary" alignSelf="center">
               {usernameAvailable
-                ? `cueful.bio/u/${suggestedUsername} is still free`
+                ? `cueful.bio/${suggestedUsername} is still free`
                 : `${suggestedUsername} is taken — you can pick another`}
             </Typography>
           )}

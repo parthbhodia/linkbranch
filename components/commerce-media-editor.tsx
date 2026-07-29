@@ -26,6 +26,15 @@ import {
 } from "@mui/material";
 import { createClient } from "@/lib/supabase/client";
 import {
+  detectMusicProvider,
+  isLikelyCompleteMusicUrl,
+  musicEmbedHeight,
+  musicPlayerUrl,
+  musicProviderLabel,
+  musicQuickAdds,
+  type MusicProviderId,
+} from "@/lib/music-providers";
+import {
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
@@ -68,20 +77,6 @@ function normalizeUrl(value: string) {
   } catch {
     return null;
   }
-}
-
-function detectProvider(value: string) {
-  const host = normalizeUrl(value);
-  if (!host) return null;
-  const hostname = new URL(host).hostname.replace(/^www\./, "");
-  if (hostname.includes("spotify.com")) return "spotify";
-  if (hostname.includes("music.apple.com")) return "apple_music";
-  if (hostname.includes("soundcloud.com")) return "soundcloud";
-  if (hostname.includes("youtube.com") || hostname === "youtu.be") return "youtube";
-  if (hostname.includes("bandcamp.com")) return "bandcamp";
-  if (hostname.includes("twitch.tv")) return "twitch";
-  if (hostname.includes("vimeo.com")) return "vimeo";
-  return null;
 }
 
 function formatDraftPrice(price: string, currency: string) {
@@ -244,10 +239,10 @@ export function CommerceMediaEditor({
 
   async function addMedia() {
     const url = normalizeUrl(mediaDraft.url);
-    const provider = url ? detectProvider(url) : null;
+    const provider = url ? detectMusicProvider(url)?.id ?? null : null;
     if (!mediaDraft.title.trim() || !url || !provider) {
       setNotice(
-        "Use a Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Twitch, or Vimeo URL.",
+        "Use a Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Audiomack, Twitch, or Vimeo URL.",
       );
       return;
     }
@@ -271,7 +266,20 @@ export function CommerceMediaEditor({
     setMedia((current) => [...current, data as DashboardMediaEmbed]);
     setMediaDraft({ title: "", url: "", layout: "player" });
     setMediaFormOpen(false);
-    setNotice(`${provider.replace("_", " ")} media added.`);
+    setNotice(`${musicProviderLabel(provider)} media added.`);
+  }
+
+  function applyMusicTemplate(providerId: MusicProviderId) {
+    const provider = musicQuickAdds.find((item) => item.id === providerId);
+    if (!provider) return;
+    const starterUrl = `https://${provider.hostPatterns[0]}/`;
+    setMediaDraft({
+      title: provider.title,
+      url: starterUrl,
+      layout: "player",
+    });
+    setMediaFormOpen(true);
+    setNotice(`Paste your full ${provider.label} link to finish the embed.`);
   }
 
   async function toggle(
@@ -647,10 +655,11 @@ export function CommerceMediaEditor({
       <Paper className="commerce-editor" variant="outlined">
         <div className="commerce-editor__heading">
           <Box>
-            <Chip icon={<MusicNoteRounded />} label="SAFE MEDIA" size="small" />
-            <Typography variant="h3">Music and media</Typography>
+            <Chip icon={<MusicNoteRounded />} label="MUSIC & MEDIA" size="small" />
+            <Typography variant="h3">Music and media embeds</Typography>
             <Typography variant="body2" color="text.secondary">
-              Paste an allow-listed media URL. Players load lazily and never autoplay.
+              Paste a Spotify, Apple Music, SoundCloud, YouTube, or Bandcamp URL —
+              Cueful shows an inline player like Linktree and Sociials. No autoplay.
             </Typography>
           </Box>
           <Button
@@ -661,30 +670,113 @@ export function CommerceMediaEditor({
             {mediaFormOpen ? "Close form" : "Add media"}
           </Button>
         </div>
+        <div className="link-quick-add commerce-editor__music-templates">
+          <Typography variant="caption" color="text.secondary">
+            MUSIC TEMPLATES
+          </Typography>
+          <div>
+            {musicQuickAdds.map((provider) => (
+              <Button
+                size="small"
+                variant="outlined"
+                key={provider.id}
+                startIcon={provider.icon}
+                onClick={() => applyMusicTemplate(provider.id)}
+              >
+                {provider.label}
+              </Button>
+            ))}
+          </div>
+        </div>
         {mediaFormOpen && (
           <div className="commerce-editor__composer">
-            <div className="commerce-editor__form">
-              <TextField
-                label="Block title"
-                placeholder="Listen to my latest release"
-                value={mediaDraft.title}
-                onChange={(event) => setMediaDraft({ ...mediaDraft, title: event.target.value })}
-              />
-              <TextField
-                select
-                label="Layout"
-                value={mediaDraft.layout}
-                onChange={(event) => setMediaDraft({ ...mediaDraft, layout: event.target.value })}
-              >
-                <MenuItem value="player">Full player</MenuItem>
-                <MenuItem value="compact">Compact card</MenuItem>
-              </TextField>
-              <TextField
-                label="Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Twitch, or Vimeo URL"
-                value={mediaDraft.url}
-                onChange={(event) => setMediaDraft({ ...mediaDraft, url: event.target.value })}
-                className="commerce-editor__wide"
-              />
+            <div className="commerce-editor__composer-layout">
+              <div className="commerce-editor__form-column">
+                <div className="commerce-editor__form">
+                  <TextField
+                    label="Block title"
+                    placeholder="Listen to my latest release"
+                    value={mediaDraft.title}
+                    onChange={(event) =>
+                      setMediaDraft({ ...mediaDraft, title: event.target.value })
+                    }
+                  />
+                  <TextField
+                    select
+                    label="Layout"
+                    value={mediaDraft.layout}
+                    onChange={(event) =>
+                      setMediaDraft({ ...mediaDraft, layout: event.target.value })
+                    }
+                  >
+                    <MenuItem value="player">Full player</MenuItem>
+                    <MenuItem value="compact">Compact card</MenuItem>
+                  </TextField>
+                  <TextField
+                    label="Music or media URL"
+                    placeholder="https://open.spotify.com/track/…"
+                    helperText={
+                      detectMusicProvider(mediaDraft.url)
+                        ? `${musicProviderLabel(detectMusicProvider(mediaDraft.url)!.id)} detected`
+                        : "Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, Audiomack, Twitch, Vimeo"
+                    }
+                    value={mediaDraft.url}
+                    onChange={(event) =>
+                      setMediaDraft({ ...mediaDraft, url: event.target.value })
+                    }
+                    className="commerce-editor__wide"
+                  />
+                </div>
+              </div>
+              <aside className="commerce-editor__preview" aria-live="polite">
+                <span className="commerce-editor__preview-label">
+                  Live player preview
+                </span>
+                {(() => {
+                  const provider = detectMusicProvider(mediaDraft.url);
+                  const previewUrl =
+                    provider &&
+                    mediaDraft.layout === "player" &&
+                    isLikelyCompleteMusicUrl(mediaDraft.url)
+                      ? musicPlayerUrl(mediaDraft.url, provider.id)
+                      : null;
+                  return (
+                    <article className="media-embed-card commerce-editor__preview-card">
+                      {previewUrl ? (
+                        <iframe
+                          src={previewUrl}
+                          title="Media preview"
+                          loading="lazy"
+                          allow="encrypted-media; picture-in-picture"
+                          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                          style={{
+                            minHeight: musicEmbedHeight(provider!.id),
+                          }}
+                        />
+                      ) : (
+                        <div className="commerce-editor__media-placeholder">
+                          <MusicNoteRounded />
+                          <span>
+                            Paste a full track, album, or video URL to preview the
+                            embed.
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <span>
+                          <MusicNoteRounded />
+                          {provider
+                            ? musicProviderLabel(provider.id)
+                            : "Provider"}
+                        </span>
+                        <Typography variant="h3">
+                          {mediaDraft.title.trim() || "Release title"}
+                        </Typography>
+                      </div>
+                    </article>
+                  );
+                })()}
+              </aside>
             </div>
             <Button variant="contained" onClick={addMedia}>
               Save media
@@ -696,27 +788,39 @@ export function CommerceMediaEditor({
             <div className="commerce-editor__empty">
               <MusicNoteRounded />
               <span>
-                <b>Add music or media</b>
-                <small>Use a player or a compact outbound card.</small>
+                <b>Add a music embed</b>
+                <small>
+                  Start from a Spotify, Apple Music, or SoundCloud template.
+                </small>
               </span>
               <Button
                 variant="outlined"
                 startIcon={<AddRounded />}
-                onClick={() => setMediaFormOpen(true)}
+                onClick={() => applyMusicTemplate("spotify")}
               >
-                Add first embed
+                Add Spotify embed
               </Button>
             </div>
           )}
           {media.map((item) => (
             <div key={item.id}>
-              <span><b>{item.title}</b><small>{item.provider.replace("_", " ")} · {item.layout}</small></span>
+              <span>
+                <b>{item.title}</b>
+                <small>
+                  {musicProviderLabel(item.provider)} · {item.layout}
+                </small>
+              </span>
               <Switch
                 size="small"
                 checked={item.is_active}
-                onChange={(event) => toggle("media_embeds", item.id, event.target.checked)}
+                onChange={(event) =>
+                  toggle("media_embeds", item.id, event.target.checked)
+                }
               />
-              <IconButton aria-label={`Delete ${item.title}`} onClick={() => remove("media_embeds", item.id)}>
+              <IconButton
+                aria-label={`Delete ${item.title}`}
+                onClick={() => remove("media_embeds", item.id)}
+              >
                 <DeleteOutlineRounded />
               </IconButton>
             </div>

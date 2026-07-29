@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import { BRAND_URL } from "@/lib/brand";
+import { publicProfilePath, publicProfileUrl } from "@/lib/brand";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
@@ -84,7 +84,7 @@ export default async function DiscoverPage() {
     itemListElement: discoverProfiles.map((profile, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `${BRAND_URL}/u/${profile.username}`,
+      url: publicProfileUrl(profile.username),
       name: profile.display_name,
     })),
   };
@@ -122,7 +122,7 @@ export default async function DiscoverPage() {
           {discoverProfiles.map((profile, index) => (
             <Link
               className={`discover-card discover-card--${profile.template}`}
-              href={`/u/${profile.username}`}
+              href={publicProfilePath(profile.username)}
               key={profile.id}
             >
               <div className="discover-card__meta">
@@ -159,13 +159,13 @@ export default async function DiscoverPage() {
             <p className="seo-eyebrow">FOUNDING DIRECTORY</p>
             <h2>The first opt-in profiles will appear here.</h2>
             <p>
-              Until then, these three working examples show the range Cueful is
+              Until then, these working examples show the range Cueful is
               designed to support.
             </p>
           </div>
           <div>
             {exampleProfiles.map((example, index) => (
-              <Link href={`/u/${example.slug}`} key={example.slug}>
+              <Link href={publicProfilePath(example.slug)} key={example.slug}>
                 <span>0{index + 1} / {example.role}</span>
                 <b>{example.profile.displayName}</b>
                 <p>{example.profile.bio}</p>

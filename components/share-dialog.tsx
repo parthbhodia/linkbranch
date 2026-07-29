@@ -20,7 +20,7 @@ import {
   Typography,
 } from "@mui/material";
 import QRCode from "qrcode";
-import { BRAND_URL } from "@/lib/brand";
+import { publicProfileUrl } from "@/lib/brand";
 
 type ShareFormat = "square" | "poster";
 type ShareThemeId = "paper" | "signal" | "blush";
@@ -233,7 +233,7 @@ export function ShareDialog({
   username: string;
   displayName: string;
 }) {
-  const profileUrl = `${BRAND_URL}/u/${encodeURIComponent(username)}`;
+  const profileUrl = publicProfileUrl(username);
   const [format, setFormat] = useState<ShareFormat>("square");
   const [themeId, setThemeId] = useState<ShareThemeId>("paper");
   const [qrAsset, setQrAsset] = useState<{

@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
+import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
@@ -23,6 +24,18 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import {
+  bookingEmbedUrl,
+  detectBookingProvider,
+  isLikelyCompleteBookingUrl,
+} from "@/lib/booking-providers";
+import {
+  detectMusicProvider,
+  isLikelyCompleteMusicUrl,
+  musicEmbedHeight,
+  musicPlayerUrl,
+  musicProviderLabel,
+} from "@/lib/music-providers";
 import type { CreatorProfile, LinkItem, Referral } from "@/lib/types";
 import { creatorBadgeUrl } from "@/lib/referrals";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
@@ -84,34 +97,11 @@ export type PublicHighlight = {
 };
 
 function mediaPlayerUrl(item: PublicMediaEmbed) {
-  try {
-    const url = new URL(item.url);
-    if (item.provider === "spotify") {
-      const path = url.pathname.replace(/^\/embed\//, "/");
-      return `https://open.spotify.com/embed${path}`;
-    }
-    if (item.provider === "apple_music") {
-      return `https://embed.music.apple.com${url.pathname}${url.search}`;
-    }
-    if (item.provider === "youtube") {
-      const id =
-        url.hostname === "youtu.be"
-          ? url.pathname.slice(1).split("/")[0]
-          : url.searchParams.get("v") ??
-            url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
-      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
-    }
-    if (item.provider === "soundcloud") {
-      return `https://w.soundcloud.com/player/?url=${encodeURIComponent(item.url)}&auto_play=false&hide_related=true&show_comments=false`;
-    }
-    if (item.provider === "vimeo") {
-      const id = url.pathname.split("/").filter(Boolean).pop();
-      return id ? `https://player.vimeo.com/video/${id}` : null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
+  const parentHost =
+    typeof window !== "undefined" ? window.location.hostname : undefined;
+  return musicPlayerUrl(item.url, item.provider as Parameters<typeof musicPlayerUrl>[1], {
+    parentHost,
+  });
 }
 
 function formatPrice(item: PublicProduct) {
@@ -140,55 +130,149 @@ const LinkCard = memo(function LinkCard({
   link: LinkItem;
   onOpen: (label: string, target: TrackTarget) => void;
 }) {
-  return (
-    <Box
-      component="a"
-      className={`link-card${link.featured ? " link-card--featured" : ""}`}
-      href={link.url}
-      target="_blank"
-      rel="noreferrer"
-      onClick={() =>
-        onOpen(`Opened ${link.title}`, {
-          eventType: "link_open",
-          linkId: Number(link.id),
+  const [showEmbed, setShowEmbed] = useState(false);
+  const music = detectMusicProvider(link.url);
+  const booking = music ? null : detectBookingProvider(link.url);
+  const musicEmbedSrc =
+    music?.embeddable && isLikelyCompleteMusicUrl(link.url)
+      ? musicPlayerUrl(link.url, music.id, {
+          parentHost:
+            typeof window !== "undefined" ? window.location.hostname : undefined,
         })
-      }
+      : null;
+  const bookingEmbedSrc =
+    booking?.embeddable && isLikelyCompleteBookingUrl(link.url)
+      ? bookingEmbedUrl(link.url, booking.id)
+      : null;
+  const embedSrc = musicEmbedSrc || bookingEmbedSrc;
+  const subtitle =
+    link.subtitle ||
+    (music ? music.subtitle : null) ||
+    (booking ? booking.subtitle : null) ||
+    "";
+
+  return (
+    <div
+      className={`link-card-wrap${music ? " link-card-wrap--music" : ""}${
+        booking ? " link-card-wrap--booking" : ""
+      }`}
     >
-      <span
-        className={`link-index${link.thumbnailUrl ? " link-index--image" : ""}`}
-        style={{ background: link.color }}
+      <Box
+        component="a"
+        className={`link-card${link.featured ? " link-card--featured" : ""}${
+          music ? " link-card--music" : ""
+        }${booking ? " link-card--booking" : ""}`}
+        href={link.url}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() =>
+          onOpen(`Opened ${link.title}`, {
+            eventType: "link_open",
+            linkId: Number(link.id),
+          })
+        }
       >
-        {link.thumbnailUrl ? (
-          <Box
-            component="img"
-            src={link.thumbnailUrl}
-            alt=""
-            loading="lazy"
-          />
-        ) : (
-          link.index
-        )}
-      </span>
-      <span>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="h3">{link.title}</Typography>
-          {link.featured && (
-            <Chip
-              className="featured-chip"
-              icon={<StarRounded />}
-              label="Spotlight"
-              size="small"
+        <span
+          className={`link-index${
+            link.thumbnailUrl
+              ? " link-index--image"
+              : music
+                ? " link-index--music"
+                : booking
+                  ? " link-index--booking"
+                  : ""
+          }`}
+          style={{
+            background: music || booking ? undefined : link.color,
+          }}
+        >
+          {link.thumbnailUrl ? (
+            <Box
+              component="img"
+              src={link.thumbnailUrl}
+              alt=""
+              loading="lazy"
             />
+          ) : music ? (
+            <MusicNoteRounded fontSize="small" />
+          ) : booking ? (
+            <CalendarMonthRounded fontSize="small" />
+          ) : (
+            link.index
           )}
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          {link.subtitle}
-        </Typography>
-      </span>
-      <span className="link-card__arrow" aria-hidden="true">
-        <ArrowOutwardRounded fontSize="small" />
-      </span>
-    </Box>
+        </span>
+        <span>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="h3">{link.title}</Typography>
+            {music && (
+              <Chip className="music-chip" label={music.label} size="small" />
+            )}
+            {booking && (
+              <Chip
+                className="booking-chip"
+                label={booking.label}
+                size="small"
+              />
+            )}
+            {link.featured && !music && !booking && (
+              <Chip
+                className="featured-chip"
+                icon={<StarRounded />}
+                label="Spotlight"
+                size="small"
+              />
+            )}
+          </Stack>
+          {subtitle ? (
+            <Typography variant="body2" color="text.secondary">
+              {subtitle}
+            </Typography>
+          ) : null}
+        </span>
+        <span className="link-card__arrow" aria-hidden="true">
+          <ArrowOutwardRounded fontSize="small" />
+        </span>
+      </Box>
+      {embedSrc ? (
+        <div className={music ? "music-embed" : "booking-embed"}>
+          <Button
+            size="small"
+            variant="outlined"
+            className={
+              music ? "music-embed__toggle" : "booking-embed__toggle"
+            }
+            onClick={() => setShowEmbed((open) => !open)}
+          >
+            {showEmbed
+              ? music
+                ? "Hide player"
+                : "Hide calendar"
+              : music
+                ? "Play here"
+                : "Schedule here"}
+          </Button>
+          {showEmbed ? (
+            <iframe
+              className={
+                music ? "music-embed__frame" : "booking-embed__frame"
+              }
+              style={
+                music
+                  ? {
+                      minHeight: musicEmbedHeight(music.id),
+                    }
+                  : undefined
+              }
+              src={embedSrc}
+              title={`${link.title} ${music ? "player" : "scheduler"}`}
+              loading="lazy"
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 });
 
@@ -417,15 +501,21 @@ export function ProfileHub({
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
   const customTheme = parseProfileTheme(themeConfig);
+  const brandingLogoUrl = publicAssetUrl(customTheme?.logoPath);
+  const wallpaperUrl = publicAssetUrl(customTheme?.wallpaperPath);
 
   return (
     <main
       className={`app-shell public-template public-template--${template}${
-        customTheme ? ` ${profileThemeClassName(customTheme)}` : ""
+        customTheme
+          ? ` ${profileThemeClassName(customTheme, { wallpaperUrl })}`
+          : ""
       }`}
       style={
         customTheme
-          ? (profileThemeStyle(customTheme) as React.CSSProperties)
+          ? (profileThemeStyle(customTheme, {
+              wallpaperUrl,
+            }) as React.CSSProperties)
           : undefined
       }
     >
@@ -457,6 +547,14 @@ export function ProfileHub({
           </div>
 
           <Box className="profile-copy">
+            {brandingLogoUrl && (
+              <Box
+                component="img"
+                className="profile-brand-logo"
+                src={brandingLogoUrl}
+                alt={`${profile.displayName} logo`}
+              />
+            )}
             <Box
               className={`avatar${profile.avatarUrl ? " avatar--image" : ""}`}
               aria-label={
@@ -624,6 +722,10 @@ export function ProfileHub({
                     {mediaEmbeds.map((item) => {
                       const playerUrl =
                         item.layout === "player" ? mediaPlayerUrl(item) : null;
+                      const height = musicEmbedHeight(
+                        item.provider as Parameters<typeof musicEmbedHeight>[0],
+                        item.layout,
+                      );
                       return (
                         <article className="media-embed-card" key={item.id}>
                           {playerUrl && (
@@ -631,14 +733,15 @@ export function ProfileHub({
                               src={playerUrl}
                               title={item.title}
                               loading="lazy"
-                              allow="autoplay; encrypted-media; picture-in-picture"
-                              sandbox="allow-scripts allow-same-origin allow-popups"
+                              allow="encrypted-media; picture-in-picture; fullscreen"
+                              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                              style={{ minHeight: height }}
                             />
                           )}
                           <div>
                             <span>
                               <MusicNoteRounded />
-                              {item.provider.replace("_", " ")}
+                              {musicProviderLabel(item.provider)}
                             </span>
                             <Typography variant="h3">{item.title}</Typography>
                             <Button

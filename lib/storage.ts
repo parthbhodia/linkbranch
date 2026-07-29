@@ -37,3 +37,40 @@ export function imageExtension(file: File) {
   if (file.type === "image/webp") return "webp";
   return "jpg";
 }
+
+export const MAX_FAVICON_BYTES = 1024 * 1024;
+export const SUPPORTED_FAVICON_TYPES = [
+  "image/png",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export function validateFavicon(file: File) {
+  if (
+    !SUPPORTED_FAVICON_TYPES.includes(
+      file.type as (typeof SUPPORTED_FAVICON_TYPES)[number],
+    )
+  ) {
+    return "Use a PNG, ICO, JPG, or WebP favicon.";
+  }
+
+  if (file.size > MAX_FAVICON_BYTES) {
+    return "Keep favicons under 1 MB.";
+  }
+
+  return null;
+}
+
+export function faviconExtension(file: File) {
+  if (file.type === "image/png") return "png";
+  if (file.type === "image/webp") return "webp";
+  if (
+    file.type === "image/x-icon" ||
+    file.type === "image/vnd.microsoft.icon"
+  ) {
+    return "ico";
+  }
+  return "jpg";
+}

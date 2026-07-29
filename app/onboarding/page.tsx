@@ -44,7 +44,7 @@ export default async function OnboardingPage({
         .order("position"),
       supabase
         .from("referrals")
-        .select("id,provider,offer,url,code,is_active")
+        .select("id,provider,offer,url,code,color,is_active")
         .eq("user_id", user.id)
         .order("position"),
       supabase

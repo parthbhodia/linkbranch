@@ -9,7 +9,7 @@ Creators can:
 - choose one of three profile templates;
 - edit their intro, social profiles, links, and referral offers;
 - hide content without deleting it and spotlight one primary link;
-- publish a public page at `/u/[username]`;
+- publish a public page at `cueful.bio/[username]`;
 - track link opens, referral opens, and coupon copies.
 
 Production domain: [cueful.bio](https://cueful.bio).

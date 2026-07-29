@@ -6,10 +6,11 @@ import {
   type PublicFaq,
   type PublicHighlight,
 } from "@/components/profile-hub";
-import { DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
+import { DEFAULT_SOCIAL_IMAGE, publicProfilePath, publicProfileUrl } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
+import { defaultProfileTheme } from "@/lib/theme-config";
 import type { CreatorProfile } from "@/lib/types";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
@@ -58,11 +59,11 @@ export async function generateMetadata({
     return {
       title: `${example.profile.displayName} | Cueful example`,
       description: example.profile.bio,
-      alternates: { canonical: `/u/${username.toLowerCase()}` },
+      alternates: { canonical: publicProfilePath(username) },
       openGraph: {
         title: `${example.profile.displayName}'s creator profile`,
         description: example.profile.bio,
-        url: `/u/${username.toLowerCase()}`,
+        url: publicProfilePath(username),
         type: "profile" as const,
         images: [DEFAULT_SOCIAL_IMAGE],
       },
@@ -79,7 +80,7 @@ export async function generateMetadata({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name,bio,seo_title,seo_description,seo_image_path,is_published",
+      "display_name,bio,seo_title,seo_description,seo_image_path,favicon_path,seo_og_title,seo_og_description,seo_keywords,seo_noindex,twitter_card_style,canonical_url,is_published",
     )
     .eq("username", username.toLowerCase())
     .eq("is_published", true)
@@ -89,25 +90,51 @@ export async function generateMetadata({
     profile?.seo_description ||
     profile?.bio ||
     `Links, resources, and referral offers from @${username}.`;
+  const ogTitle = profile?.seo_og_title || title;
+  const ogDescription = profile?.seo_og_description || description;
   const socialImage = publicAssetUrl(profile?.seo_image_path) ?? DEFAULT_SOCIAL_IMAGE;
+  const favicon = publicAssetUrl(profile?.favicon_path);
+  const canonical =
+    profile?.canonical_url?.trim() || publicProfilePath(username);
+  const twitterCard =
+    profile?.twitter_card_style === "summary"
+      ? ("summary" as const)
+      : ("summary_large_image" as const);
+  const keywords = profile?.seo_keywords
+    ?.split(",")
+    .map((item: string) => item.trim())
+    .filter(Boolean);
 
   return {
     title,
     description,
+    ...(keywords?.length ? { keywords } : {}),
     alternates: {
-      canonical: `/u/${username.toLowerCase()}`,
+      canonical,
     },
+    robots: profile?.seo_noindex
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
+    ...(favicon
+      ? {
+          icons: {
+            icon: [{ url: favicon }],
+            shortcut: [{ url: favicon }],
+            apple: [{ url: favicon }],
+          },
+        }
+      : {}),
     openGraph: {
-      title,
-      description,
-      url: `/u/${username.toLowerCase()}`,
+      title: ogTitle,
+      description: ogDescription,
+      url: canonical,
       type: "profile" as const,
       images: [socialImage],
     },
     twitter: {
-      card: "summary_large_image" as const,
-      title,
-      description,
+      card: twitterCard,
+      title: ogTitle,
+      description: ogDescription,
       images: [socialImage],
     },
   };
@@ -125,7 +152,7 @@ export default async function PublicProfilePage({
   const example = exampleProfileBySlug.get(username.toLowerCase());
 
   if (example) {
-    const canonicalUrl = `https://cueful.bio/u/${example.slug}`;
+    const canonicalUrl = publicProfileUrl(example.slug);
     return (
       <>
         <script
@@ -142,6 +169,8 @@ export default async function PublicProfilePage({
         <ProfileHub
           profile={example.profile}
           template={example.template}
+          themeConfig={defaultProfileTheme(example.template)}
+          mediaEmbeds={example.mediaEmbeds ?? []}
         />
       </>
     );
@@ -271,7 +300,7 @@ export default async function PublicProfilePage({
     })),
   };
 
-  const canonicalUrl = `https://cueful.bio/u/${encodeURIComponent(profile.username)}`;
+  const canonicalUrl = publicProfileUrl(profile.username);
 
   return (
     <>

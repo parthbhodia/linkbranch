@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BRAND_URL } from "@/lib/brand";
+import { BRAND_URL, publicProfileUrl } from "@/lib/brand";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { seoPages } from "@/lib/seo-pages";
 import { createClient } from "@/lib/supabase/server";
@@ -76,7 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .limit(5000);
 
     publishedProfiles = (data ?? []).map((profile) => ({
-      url: `${BRAND_URL}/u/${encodeURIComponent(profile.username)}`,
+      url: publicProfileUrl(profile.username),
       lastModified: new Date(profile.updated_at),
       changeFrequency: "weekly" as const,
       priority: 0.55,
@@ -89,7 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticPages,
     ...exampleProfiles.map((example) => ({
-      url: `${BRAND_URL}/u/${example.slug}`,
+      url: publicProfileUrl(example.slug),
       lastModified: updatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.6,

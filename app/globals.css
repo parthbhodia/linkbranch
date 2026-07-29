@@ -620,6 +620,46 @@ a {
   gap: 8px;
 }
 
+.mini-profile__music {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.mini-profile__music-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, #fff 0 18%, transparent 19%),
+    linear-gradient(135deg, #1db954, #191414);
+  flex: 0 0 auto;
+}
+
+.mini-profile__music span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mini-profile__music b {
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.mini-profile__music small {
+  font-size: 0.58rem;
+  opacity: 0.72;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .mini-profile__links span {
   min-height: 42px;
   padding: 0 13px;
@@ -2223,6 +2263,91 @@ a {
   gap: 8px;
 }
 
+.link-editor--booking {
+  border-color: color-mix(in srgb, #2f6fed 28%, transparent);
+  background: color-mix(in srgb, #2f6fed 6%, transparent);
+}
+
+.link-editor--music {
+  border-color: color-mix(in srgb, #1db954 28%, transparent);
+  background: color-mix(in srgb, #1db954 6%, transparent);
+}
+
+.link-card-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.link-card--booking,
+.link-card--music {
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.link-index--booking,
+.link-index--music {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 12%, transparent) !important;
+  color: inherit;
+}
+
+.booking-chip,
+.music-chip {
+  height: 22px !important;
+  font: 700 0.62rem var(--font-mono) !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase;
+}
+
+.booking-embed,
+.music-embed {
+  display: grid;
+  gap: 8px;
+}
+
+.booking-embed__toggle,
+.music-embed__toggle {
+  justify-self: start;
+  min-height: 34px;
+  border-radius: 999px !important;
+  font: 700 0.72rem var(--font-mono) !important;
+  letter-spacing: 0.05em;
+}
+
+.booking-embed__frame,
+.music-embed__frame {
+  width: 100%;
+  min-height: 152px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.booking-embed__frame {
+  min-height: 620px;
+}
+
+.commerce-editor__music-templates {
+  margin: 0 0 8px;
+  padding: 0 4px;
+}
+
+.commerce-editor__media-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 152px;
+  padding: 24px;
+  text-align: center;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: color-mix(in srgb, currentColor 55%, transparent);
+  font: 600 0.86rem/1.4 var(--font-body, inherit);
+}
+
+.commerce-editor__media-placeholder svg {
+  font-size: 1.6rem;
+}
+
 .profile-view-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3023,6 +3148,101 @@ a {
   background-image: radial-gradient(circle at 75% 25%, var(--choice-accent), transparent 58%);
 }
 
+.workspace-background-choice--mesh i {
+  background-image:
+    radial-gradient(circle at 20% 20%, var(--choice-accent), transparent 48%),
+    radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--choice-accent) 70%, white), transparent 42%);
+}
+
+.workspace-background-choice--stripes i {
+  background-image: repeating-linear-gradient(
+    -28deg,
+    color-mix(in srgb, var(--choice-accent) 45%, transparent) 0 5px,
+    transparent 5px 11px
+  );
+}
+
+.workspace-background-choice--paper i {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--choice-accent) 55%, transparent) 0.7px,
+    transparent 0.8px
+  );
+  background-size: 4px 4px;
+}
+
+.workspace-background-choice--aurora i {
+  background-image:
+    radial-gradient(circle at 18% 0%, var(--choice-accent), transparent 46%),
+    radial-gradient(circle at 88% 20%, color-mix(in srgb, var(--choice-accent) 65%, white), transparent 40%);
+}
+
+.workspace-background-choice--grain i {
+  background-image: repeating-radial-gradient(
+    circle at 0 0,
+    color-mix(in srgb, var(--choice-accent) 50%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  background-size: 5px 5px;
+}
+
+.workspace-background-choice span {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.workspace-background-choice span b {
+  font-size: 0.78rem;
+}
+
+.workspace-background-choice span small {
+  color: #75796f;
+  font-size: 0.66rem;
+}
+
+.workspace-choice-grid--wallpapers {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workspace-branding-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #d7d9cf;
+  border-radius: 18px;
+  background: #fafaf6;
+}
+
+.workspace-branding-row__preview {
+  width: 96px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px dashed #aeb2a5;
+  background: #fff;
+  color: #6e7267;
+}
+
+.workspace-branding-row__preview--wallpaper {
+  height: 64px;
+}
+
+.workspace-branding-row__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.workspace-branding-row__preview--wallpaper img {
+  object-fit: cover;
+}
+
 /* Saved creator theme. This block intentionally follows the fixed templates
    so a creator's explicit choices win without disturbing example profiles. */
 .profile-theme-custom {
@@ -3071,6 +3291,65 @@ a {
     color-mix(in srgb, var(--profile-accent) 35%, transparent),
     transparent 35rem
   );
+}
+
+.public-template.profile-theme-background--mesh.app-shell {
+  background-image:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--profile-accent) 28%, transparent), transparent 42%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--profile-button) 34%, transparent), transparent 38%),
+    radial-gradient(circle at 50% 88%, color-mix(in srgb, var(--profile-accent) 18%, transparent), transparent 46%);
+}
+
+.public-template.profile-theme-background--stripes.app-shell {
+  background-image: repeating-linear-gradient(
+    -28deg,
+    color-mix(in srgb, var(--profile-accent) 12%, transparent) 0 10px,
+    transparent 10px 22px
+  );
+}
+
+.public-template.profile-theme-background--paper.app-shell {
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--profile-text) 8%, transparent) 0.6px, transparent 0.7px),
+    linear-gradient(180deg, color-mix(in srgb, var(--profile-accent) 6%, transparent), transparent 40%);
+  background-size: 3px 3px, auto;
+}
+
+.public-template.profile-theme-background--aurora.app-shell {
+  background-image:
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--profile-accent) 40%, transparent), transparent 34%),
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--profile-button) 36%, transparent), transparent 30%),
+    linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--profile-bg) 70%, transparent));
+}
+
+.public-template.profile-theme-background--grain.app-shell {
+  background-image:
+    repeating-radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--profile-text) 10%, transparent) 0 1px,
+      transparent 1px 3px
+    );
+  background-size: 6px 6px;
+}
+
+.public-template.profile-theme-has-wallpaper.app-shell {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-bg) 62%, transparent),
+      color-mix(in srgb, var(--profile-bg) 78%, transparent)
+    ),
+    var(--profile-wallpaper);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.profile-brand-logo {
+  width: min(168px, 54%);
+  max-height: 56px;
+  margin: 0 auto 14px;
+  display: block;
+  object-fit: contain;
 }
 
 .public-template.profile-theme-custom .creator-card {
@@ -3200,6 +3479,70 @@ a {
     color-mix(in srgb, var(--profile-accent) 34%, transparent),
     transparent 260px
   );
+}
+
+.workspace-phone.profile-theme-background--mesh .workspace-phone__body {
+  background-image:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--profile-accent) 28%, transparent), transparent 46%),
+    radial-gradient(circle at 84% 10%, color-mix(in srgb, var(--profile-button) 30%, transparent), transparent 40%);
+}
+
+.workspace-phone.profile-theme-background--stripes .workspace-phone__body {
+  background-image: repeating-linear-gradient(
+    -28deg,
+    color-mix(in srgb, var(--profile-accent) 12%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+}
+
+.workspace-phone.profile-theme-background--paper .workspace-phone__body {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--profile-text) 9%, transparent) 0.55px,
+    transparent 0.65px
+  );
+  background-size: 3px 3px;
+}
+
+.workspace-phone.profile-theme-background--aurora .workspace-phone__body {
+  background-image:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--profile-accent) 38%, transparent), transparent 42%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--profile-button) 32%, transparent), transparent 36%);
+}
+
+.workspace-phone.profile-theme-background--grain .workspace-phone__body {
+  background-image: repeating-radial-gradient(
+    circle at 0 0,
+    color-mix(in srgb, var(--profile-text) 10%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  background-size: 5px 5px;
+}
+
+.workspace-phone.profile-theme-has-wallpaper .workspace-phone__body {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-bg) 58%, transparent),
+      color-mix(in srgb, var(--profile-bg) 76%, transparent)
+    ),
+    var(--profile-wallpaper);
+  background-size: cover, cover;
+  background-position: center, center;
+}
+
+.workspace-phone__brand-logo {
+  width: min(118px, 58%);
+  max-height: 36px;
+  margin: 0 auto 10px;
+  display: block;
+  object-fit: contain;
+}
+
+.workspace-background-choice--mesh i,
+.workspace-background-choice--stripes i,
+.workspace-background-choice--paper i,
+.workspace-background-choice--aurora i,
+.workspace-background-choice--grain i {
+  background-color: var(--choice-bg);
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__body > h2,
@@ -3490,8 +3833,13 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .workspace-choice-grid {
+  .workspace-choice-grid,
+  .workspace-choice-grid--wallpapers {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .workspace-branding-row {
+    grid-template-columns: 1fr;
   }
 
   .workspace-analytics__toolbar {
@@ -5499,6 +5847,40 @@ a {
   gap: 16px 12px;
 }
 
+.referral-editor__color {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.referral-editor__color > span:first-child {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.referral-editor__color > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.referral-editor__color input[type="color"] {
+  width: 44px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #c9cbc2;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.referral-editor__color code {
+  color: #4f534a;
+  font: 700 0.76rem var(--font-mono);
+}
+
 .referral-editor__empty {
   min-height: 112px;
   display: grid;
@@ -5686,7 +6068,7 @@ a {
   padding: 5px 7px;
   border-radius: 6px;
   color: #1b1c18;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.92);
   font: 800 0.5rem var(--font-mono), monospace;
 }
 
@@ -6764,6 +7146,37 @@ a {
   border-radius: 11px;
 }
 
+.example-profile__link {
+  display: grid !important;
+  gap: 2px;
+  align-content: center;
+  height: auto !important;
+  min-height: 48px;
+  padding: 8px 10px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.example-profile__link strong {
+  overflow: hidden;
+  color: #191a17;
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.example-profile__link em {
+  overflow: hidden;
+  color: #75796f;
+  font-size: 0.52rem;
+  font-style: normal;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .example-profile > div:last-child h3 {
   font-size: 1.25rem;
 }
@@ -6788,6 +7201,19 @@ a {
   color: #4c3345;
   background: #ffb7d0;
   transform: rotate(-4deg);
+}
+
+.example-profile--after-dark .example-profile__link {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.example-profile--after-dark .example-profile__link strong {
+  color: #f2f6eb;
+}
+
+.example-profile--after-dark .example-profile__link em {
+  color: #b8c1af;
 }
 
 .example-profile--after-dark {
@@ -7943,6 +8369,155 @@ a {
   height: 42px;
 }
 
+.example-profile__music {
+  display: grid !important;
+  align-content: center;
+  gap: 2px;
+  height: auto !important;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.example-profile__music strong,
+.example-profile__music em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.example-profile__music em {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  font-style: normal;
+}
+
+.marketing-templates {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  gap: 28px;
+}
+
+.marketing-templates__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.marketing-templates__heading h2 {
+  margin-top: 10px;
+  max-width: 760px;
+  font-size: clamp(2.4rem, 4.4vw, 4.2rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.marketing-templates__heading > .MuiTypography-root {
+  max-width: 360px;
+  color: color-mix(in srgb, currentColor 68%, transparent);
+}
+
+.marketing-templates__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.marketing-template-card {
+  display: grid;
+  gap: 10px;
+  min-height: 220px;
+  padding: 22px 20px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.marketing-template-card:hover,
+.marketing-template-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, currentColor 34%, transparent);
+}
+
+.marketing-template-card > span {
+  font: 750 0.68rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.marketing-template-card h3 {
+  font-size: 1.35rem;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.marketing-template-card > .MuiTypography-root:last-of-type {
+  color: color-mix(in srgb, currentColor 68%, transparent);
+}
+
+.marketing-template-card > em {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 750 0.72rem var(--font-mono);
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.marketing-template-card--after-dark {
+  color: #f4ffe4;
+  background:
+    radial-gradient(circle at 85% 0%, rgba(185, 255, 102, 0.24), transparent 40%),
+    #151710;
+}
+
+.marketing-template-card--field-notes {
+  background:
+    linear-gradient(rgba(43, 47, 38, 0.05) 1px, transparent 1px),
+    #faf9f1;
+  background-size: 16px 16px;
+}
+
+.marketing-template-card--soft-studio {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 183, 208, 0.35), transparent 42%),
+    #fff8f4;
+}
+
+.marketing-templates__footer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .marketing-templates__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .marketing-templates__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-templates__heading {
+    align-items: start;
+  }
+}
+
 .marketing-evidence {
   width: 100%;
   padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
@@ -9032,6 +9607,167 @@ a {
   text-align: center;
 }
 
+.seo-live-preview {
+  display: grid;
+  gap: 14px;
+}
+
+.seo-live-preview__panel {
+  display: grid;
+  gap: 8px;
+}
+
+.seo-live-preview__label {
+  color: #8a8d83;
+  font: 800 0.63rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.seo-serp-card,
+.seo-social-card {
+  overflow: hidden;
+  border: 1px solid #d7d9cf;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.seo-serp-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+}
+
+.seo-serp-card__site {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.seo-serp-card__favicon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, #dfe8ff, #f4f6fb),
+    #eef1f8;
+  border: 1px solid #d9deea;
+}
+
+.seo-serp-card__site strong {
+  display: block;
+  color: #202124;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.seo-serp-card__site small {
+  display: block;
+  overflow: hidden;
+  color: #4d5156;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seo-serp-card__site small span {
+  color: #70757a;
+}
+
+.seo-serp-card__title {
+  margin: 0 !important;
+  color: #1a0dab !important;
+  font-size: 1.14rem !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+}
+
+.seo-serp-card__snippet {
+  color: #4d5156 !important;
+  font-size: 0.86rem !important;
+  line-height: 1.45 !important;
+}
+
+.seo-social-card__media {
+  aspect-ratio: 1200 / 630;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(183, 72, 37, 0.16), transparent),
+    #eceee4;
+  color: #6e7267;
+  font: 800 0.78rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.seo-social-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.seo-social-card__copy {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px 16px;
+}
+
+.seo-social-card__copy small {
+  color: #8a8d83;
+  font: 800 0.62rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.seo-social-card__copy h4 {
+  margin: 0;
+  color: #191a17;
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.seo-social-card__copy p {
+  margin: 0;
+  color: #5f6359;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.workspace-favicon-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid #d7d9cf;
+  border-radius: 18px;
+  background: #fafaf6;
+}
+
+.workspace-favicon-row__preview {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px dashed #aeb2a5;
+  background: #fff;
+  color: #6e7267;
+}
+
+.workspace-favicon-row__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .workspace-growth-loop {
   background:
     radial-gradient(circle at 92% 8%, rgba(201, 239, 105, 0.72), transparent 34%),
@@ -9155,9 +9891,15 @@ a {
 
 @media (max-width: 700px) {
   .workspace-seo-image,
+  .workspace-favicon-row,
   .workspace-growth-loop__header,
   .workspace-growth-loop__invite {
     grid-template-columns: 1fr;
+  }
+
+  .workspace-favicon-row__preview {
+    width: 72px;
+    height: 72px;
   }
 
   .workspace-growth-loop__score {
@@ -9655,6 +10397,60 @@ a {
 
 .workspace-settings-basic {
   max-width: 900px;
+}
+
+.settings-jump {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-jump__label {
+  color: #8a8d83;
+  font: 800 0.63rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-jump__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-jump__list .MuiButtonBase-root {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 2px solid #1b1c18;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 3px 3px 0 #1b1c18;
+  font: 800 0.72rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-jump__list .MuiButtonBase-root.is-active,
+.settings-jump__list .MuiButtonBase-root:hover {
+  background: #dff56d;
+}
+
+.workspace-settings-card--danger {
+  border-color: #f0c4c4 !important;
+  background: #fff8f8 !important;
+}
+
+.workspace-settings-card--danger .workspace-settings-card__heading > svg {
+  color: #b42318;
+  background: #ffe4e1;
+  border-color: #b42318;
+}
+
+.workspace-settings-danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .workspace-settings-card {

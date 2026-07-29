@@ -42,7 +42,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
-import { PUBLIC_PROFILE_PREFIX } from "@/lib/brand";
+import { PUBLIC_PROFILE_PREFIX, publicProfilePath } from "@/lib/brand";
 import { useRouter } from "next/navigation";
 import {
   getSocialPlatformIcon,
@@ -54,6 +54,15 @@ import {
   IMPORT_DRAFT_STORAGE_KEY,
   readImportedProfileDraft,
 } from "@/lib/import-draft";
+import {
+  bookingProviders,
+  detectBookingProvider,
+} from "@/lib/booking-providers";
+import {
+  detectMusicProvider,
+  musicQuickAdds,
+  type MusicProviderId,
+} from "@/lib/music-providers";
 import {
   clearReferralAttribution,
   readReferralAttribution,
@@ -97,6 +106,7 @@ type ReferralDraft = {
   offer: string;
   url: string;
   code: string;
+  color: string;
   is_active: boolean;
 };
 
@@ -192,16 +202,27 @@ export type OnboardingInitialData = {
     offer: string;
     url: string;
     code: string | null;
+    color?: string | null;
     is_active: boolean;
   }>;
   socials: Array<{ platform: string; url: string }>;
 };
 
-const templateNames: Record<string, string> = {
-  "field-notes": "Field Notes",
-  "after-dark": "After Dark",
-  "soft-studio": "Soft Studio",
-};
+const DEFAULT_REFERRAL_COLORS = [
+  "#e8347d",
+  "#20221f",
+  "#3659d9",
+  "#a33b20",
+  "#2e7d59",
+  "#7d45df",
+];
+
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+
+function normalizeReferralColor(value: string | null | undefined, index = 0) {
+  if (value && HEX_COLOR.test(value)) return value.toLowerCase();
+  return DEFAULT_REFERRAL_COLORS[index % DEFAULT_REFERRAL_COLORS.length];
+}
 
 function normalizeHttpUrl(value: string) {
   const trimmed = value.trim();
@@ -255,10 +276,17 @@ function SortableLinkEditor({
     isDragging,
   } = useSortable({ id: item.id });
 
+  const booking = detectBookingProvider(item.url);
+  const music = booking ? null : detectMusicProvider(item.url);
+  const special = music ?? booking;
+  const urlPlaceholder = special?.placeholder ?? "https://example.com";
+
   return (
     <Box
       ref={setNodeRef}
-      className={`link-editor${isDragging ? " is-dragging" : ""}`}
+      className={`link-editor${isDragging ? " is-dragging" : ""}${
+        music ? " link-editor--music" : ""
+      }${booking ? " link-editor--booking" : ""}`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -284,9 +312,22 @@ function SortableLinkEditor({
           size="small"
         />
         <TextField
-          label="URL"
+          label={
+            music
+              ? `${music.label} URL`
+              : booking
+                ? `${booking.label} booking URL`
+                : "URL"
+          }
           type="url"
-          placeholder="https://example.com"
+          placeholder={urlPlaceholder}
+          helperText={
+            music
+              ? `Paste your full ${music.label} link — Cueful shows an inline player.`
+              : booking
+                ? `Paste your full ${booking.label} event link so people can schedule.`
+                : undefined
+          }
           value={item.url}
           onChange={(event) => onUpdate(item.id, "url", event.target.value)}
           onBlur={() => {
@@ -301,7 +342,7 @@ function SortableLinkEditor({
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <LinkRounded fontSize="small" />
+                  {special?.icon ?? <LinkRounded fontSize="small" />}
                 </InputAdornment>
               ),
             },
@@ -437,7 +478,11 @@ export function OnboardingWizard({
       }],
   );
   const [referrals, setReferrals] = useState<ReferralDraft[]>(
-    initialData.referrals.map((item) => ({ ...item, code: item.code ?? "" })),
+    initialData.referrals.map((item, index) => ({
+      ...item,
+      code: item.code ?? "",
+      color: normalizeReferralColor(item.color, index),
+    })),
   );
   const [saving, setSaving] = useState(false);
   const [uploadingThumbnailId, setUploadingThumbnailId] = useState<number | null>(
@@ -526,13 +571,13 @@ export function OnboardingWizard({
     );
   }
 
-  function addLink(title = "") {
+  function addLink(title = "", url = "") {
     setLinks((current) => [
       ...current,
       {
         id: Math.max(0, ...current.map((item) => item.id)) + 1,
         title,
-        url: "",
+        url,
         is_active: true,
         is_featured: false,
         thumbnail_path: null,
@@ -544,19 +589,77 @@ export function OnboardingWizard({
     });
   }
 
+  function addBookingLink(providerId: (typeof bookingProviders)[number]["id"]) {
+    const provider = bookingProviders.find((item) => item.id === providerId);
+    if (!provider) return;
+    const starterUrl = provider.placeholder.split("/").slice(0, 3).join("/") + "/";
+    setLinks((current) => [
+      ...current,
+      {
+        id: Math.max(0, ...current.map((item) => item.id)) + 1,
+        title: provider.title,
+        url: starterUrl,
+        is_active: true,
+        is_featured: true,
+        thumbnail_path: null,
+      },
+    ]);
+    setNotice({
+      message: `${provider.label} booking link added — paste your full scheduling URL.`,
+      severity: "success",
+    });
+  }
+
+  function addMusicLink(providerId: MusicProviderId) {
+    const provider = musicQuickAdds.find((item) => item.id === providerId);
+    if (!provider) return;
+    const starterUrl = `https://${provider.hostPatterns[0]}/`;
+    setLinks((current) => [
+      ...current,
+      {
+        id: Math.max(0, ...current.map((item) => item.id)) + 1,
+        title: provider.title,
+        url: starterUrl,
+        is_active: true,
+        is_featured: true,
+        thumbnail_path: null,
+      },
+    ]);
+    setNotice({
+      message: `${provider.label} music link added — paste your full track or album URL.`,
+      severity: "success",
+    });
+  }
+
   function applyStarterPurpose(purpose: StarterPurpose) {
     const preset = starterPurposes.find((item) => item.id === purpose);
     if (!preset) return;
     setStarterPurpose(purpose);
     setLinks(
-      preset.links.map((title, index) => ({
-        id: index + 1,
-        title,
-        url: "",
-        is_active: true,
-        is_featured: index === 0,
-        thumbnail_path: null,
-      })),
+      preset.links.map((title, index) => {
+        const lower = title.toLowerCase();
+        const isBooking =
+          lower.includes("book") ||
+          lower.includes("consultation") ||
+          lower.includes("availability") ||
+          lower.includes("collaboration call");
+        const isMusic =
+          lower.includes("listen") ||
+          lower.includes("release") ||
+          lower.includes("stream");
+        return {
+          id: index + 1,
+          title,
+          url: isBooking
+            ? "https://calendly.com/"
+            : isMusic
+              ? "https://open.spotify.com/"
+              : "",
+          is_active: true,
+          is_featured: index === 0,
+          thumbnail_path: null,
+        };
+      }),
     );
     setNotice({
       message: `${preset.name} starter links added. Replace the blank URLs with yours.`,
@@ -713,7 +816,7 @@ export function OnboardingWizard({
 
   function updateReferral(
     id: number,
-    field: "provider" | "offer" | "url" | "code",
+    field: "provider" | "offer" | "url" | "code" | "color",
     value: string,
   ) {
     setReferrals((current) =>
@@ -730,6 +833,7 @@ export function OnboardingWizard({
         offer: "",
         url: "",
         code: "",
+        color: normalizeReferralColor(null, current.length),
         is_active: true,
       },
     ]);
@@ -907,7 +1011,6 @@ export function OnboardingWizard({
 
     setSaving(true);
     const supabase = createClient();
-    const referralColors = ["#e8347d", "#20221f", "#3659d9", "#a33b20"];
 
     const { error } = await supabase.rpc("save_profile_bundle", {
       profile_data: {
@@ -924,8 +1027,12 @@ export function OnboardingWizard({
       },
       links_data: normalizedLinks,
       referrals_data: normalizedReferrals.map((item, index) => ({
-        ...item,
-        color: referralColors[index % referralColors.length],
+        provider: item.provider.trim(),
+        offer: item.offer.trim(),
+        url: item.url,
+        code: item.code.trim() || null,
+        color: normalizeReferralColor(item.color, index),
+        is_active: item.is_active,
       })),
       socials_data: normalizedSocials.map((item) => ({
         platform: item.platform.trim(),
@@ -962,7 +1069,7 @@ export function OnboardingWizard({
     if (shouldImport) {
       window.sessionStorage.removeItem(IMPORT_DRAFT_STORAGE_KEY);
     }
-    router.push(`/u/${encodeURIComponent(username)}?published=1`);
+    router.push(`${publicProfilePath(username)}?published=1`);
     router.refresh();
   }
 
@@ -1317,22 +1424,61 @@ export function OnboardingWizard({
                 </Stack>
                 <div className="link-quick-add">
                   <Typography variant="caption" color="text.secondary">
+                    MUSIC EMBED
+                  </Typography>
+                  <div>
+                    {musicQuickAdds.map((provider) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={provider.id}
+                        startIcon={provider.icon}
+                        onClick={() => addMusicLink(provider.id)}
+                      >
+                        {provider.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1.25, display: "block" }}
+                  >
+                    BOOK A CALL
+                  </Typography>
+                  <div>
+                    {bookingProviders.map((provider) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={provider.id}
+                        startIcon={provider.icon}
+                        onClick={() => addBookingLink(provider.id)}
+                      >
+                        {provider.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1.25, display: "block" }}
+                  >
                     QUICK ADD
                   </Typography>
                   <div>
                     {[
-                      "Book a call",
-                      "WhatsApp me",
-                      "Watch my latest video",
-                      "Join my community",
-                    ].map((title) => (
+                      { title: "WhatsApp me", url: "https://wa.me/" },
+                      { title: "Watch my latest video", url: "" },
+                      { title: "Join my community", url: "" },
+                    ].map((item) => (
                       <Button
                         size="small"
                         variant="outlined"
-                        key={title}
-                        onClick={() => addLink(title)}
+                        key={item.title}
+                        onClick={() => addLink(item.title, item.url)}
                       >
-                        {title}
+                        {item.title}
                       </Button>
                     ))}
                   </div>
@@ -1468,6 +1614,20 @@ export function OnboardingWizard({
                           size="small"
                           helperText="Leave blank if the URL applies the offer automatically."
                         />
+                        <label className="referral-editor__color">
+                          <span>Card color</span>
+                          <span>
+                            <input
+                              type="color"
+                              value={item.color}
+                              onChange={(event) =>
+                                updateReferral(item.id, "color", event.target.value)
+                              }
+                              aria-label={`Color for ${item.provider || `referral ${index + 1}`}`}
+                            />
+                            <code>{item.color}</code>
+                          </span>
+                        </label>
                       </div>
                     </Box>
                   ))}
@@ -1589,7 +1749,11 @@ export function OnboardingWizard({
                   .filter((item) => item.is_active && (item.provider || item.offer))
                   .slice(0, 2)
                   .map((item) => (
-                    <span className="setup-phone__referral" key={item.id}>
+                    <span
+                      className="setup-phone__referral"
+                      style={{ background: item.color }}
+                      key={item.id}
+                    >
                       <span>
                         <b>{item.provider || "Provider"}</b>
                         <small>{item.offer || "Referral offer"}</small>

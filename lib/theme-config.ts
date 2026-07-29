@@ -1,6 +1,15 @@
 export type ThemeFont = "studio" | "editorial" | "rounded" | "mono";
 export type ThemeButtonShape = "soft" | "pill" | "sharp";
-export type ThemeBackground = "solid" | "grid" | "dots" | "bloom";
+export type ThemeBackground =
+  | "solid"
+  | "grid"
+  | "dots"
+  | "bloom"
+  | "mesh"
+  | "stripes"
+  | "paper"
+  | "aurora"
+  | "grain";
 export type ThemeDensity = "relaxed" | "compact";
 
 export type ProfileThemeConfig = {
@@ -18,6 +27,10 @@ export type ProfileThemeConfig = {
   buttonShape: ThemeButtonShape;
   background: ThemeBackground;
   density: ThemeDensity;
+  /** Optional custom brand mark shown above the profile intro. */
+  logoPath?: string | null;
+  /** Optional full-bleed wallpaper image layered under the page. */
+  wallpaperPath?: string | null;
 };
 
 export type ThemePalette = {
@@ -27,10 +40,28 @@ export type ThemePalette = {
   colors: ProfileThemeConfig["colors"];
 };
 
+export const themeBackgroundOptions: Array<{
+  id: ThemeBackground;
+  name: string;
+  note: string;
+}> = [
+  { id: "solid", name: "Solid", note: "Clean flat color" },
+  { id: "grid", name: "Grid", note: "Editorial notebook" },
+  { id: "dots", name: "Dots", note: "Soft dotted field" },
+  { id: "bloom", name: "Bloom", note: "Soft top glow" },
+  { id: "mesh", name: "Mesh", note: "Layered color wash" },
+  { id: "stripes", name: "Stripes", note: "Diagonal rhythm" },
+  { id: "paper", name: "Paper", note: "Subtle fiber grain" },
+  { id: "aurora", name: "Aurora", note: "Twin light washes" },
+  { id: "grain", name: "Grain", note: "Film texture" },
+];
+
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const fonts = new Set<ThemeFont>(["studio", "editorial", "rounded", "mono"]);
 const shapes = new Set<ThemeButtonShape>(["soft", "pill", "sharp"]);
-const backgrounds = new Set<ThemeBackground>(["solid", "grid", "dots", "bloom"]);
+const backgrounds = new Set<ThemeBackground>(
+  themeBackgroundOptions.map((item) => item.id),
+);
 const densities = new Set<ThemeDensity>(["relaxed", "compact"]);
 
 export const themePalettes: ThemePalette[] = [
@@ -104,6 +135,34 @@ export const themePalettes: ThemePalette[] = [
       buttonText: "#fffaf3",
     },
   },
+  {
+    id: "moss-garden",
+    name: "Moss garden",
+    note: "Quiet green, soft light",
+    colors: {
+      background: "#eef3ea",
+      surface: "#fbfcf8",
+      text: "#1c2618",
+      muted: "#66715f",
+      accent: "#3f6b3a",
+      button: "#cfe8b8",
+      buttonText: "#1c2618",
+    },
+  },
+  {
+    id: "ink-violet",
+    name: "Ink violet",
+    note: "Night studio energy",
+    colors: {
+      background: "#16121f",
+      surface: "#221b2e",
+      text: "#f4eefc",
+      muted: "#b7a8c9",
+      accent: "#c9a0ff",
+      button: "#c9a0ff",
+      buttonText: "#16121f",
+    },
+  },
 ];
 
 const templateDefaults: Record<string, ProfileThemeConfig> = {
@@ -145,6 +204,8 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
   return {
     ...theme,
     colors: { ...theme.colors },
+    logoPath: theme.logoPath ?? null,
+    wallpaperPath: theme.wallpaperPath ?? null,
   };
 }
 
@@ -196,6 +257,15 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
     buttonShape: candidate.buttonShape as ThemeButtonShape,
     background: candidate.background as ThemeBackground,
     density: candidate.density as ThemeDensity,
+    logoPath:
+      typeof (candidate as { logoPath?: unknown }).logoPath === "string"
+        ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)
+        : null,
+    wallpaperPath:
+      typeof (candidate as { wallpaperPath?: unknown }).wallpaperPath === "string"
+        ? ((candidate as { wallpaperPath: string }).wallpaperPath.slice(0, 512) ||
+          null)
+        : null,
   };
 }
 
@@ -225,7 +295,10 @@ const fontStacks: Record<ThemeFont, { display: string; body: string }> = {
   },
 };
 
-export function profileThemeStyle(theme: ProfileThemeConfig) {
+export function profileThemeStyle(
+  theme: ProfileThemeConfig,
+  options?: { wallpaperUrl?: string | null },
+) {
   const font = fontStacks[theme.font];
   return {
     "--profile-bg": theme.colors.background,
@@ -237,15 +310,24 @@ export function profileThemeStyle(theme: ProfileThemeConfig) {
     "--profile-button-text": theme.colors.buttonText,
     "--profile-display-font": font.display,
     "--profile-body-font": font.body,
+    ...(options?.wallpaperUrl
+      ? { "--profile-wallpaper": `url("${options.wallpaperUrl}")` }
+      : {}),
   };
 }
 
-export function profileThemeClassName(theme: ProfileThemeConfig) {
+export function profileThemeClassName(
+  theme: ProfileThemeConfig,
+  options?: { wallpaperUrl?: string | null },
+) {
   return [
     "profile-theme-custom",
     `profile-theme-font--${theme.font}`,
     `profile-theme-buttons--${theme.buttonShape}`,
     `profile-theme-background--${theme.background}`,
     `profile-theme-density--${theme.density}`,
-  ].join(" ");
+    options?.wallpaperUrl ? "profile-theme-has-wallpaper" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }

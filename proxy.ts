@@ -2,13 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Single-segment paths that belong to the app rather than to a creator.
-// Rewriting cueful.bio/<name> to /u/<name> puts app routes and usernames in one
-// namespace, and this list is what decides which side wins.
+// Rewriting cueful.bio/<name> → /u/<name> keeps the page under app/u/[username]
+// while public URLs stay clean at the root. /u/<name> 308s to /<name>.
 //
 // Doing it in middleware rather than moving app/u/[username] to app/[username]
-// has two advantages: /u/<name> keeps working, so links already shared stay
-// valid; and the exclusion list is one readable place instead of being implied
-// by the folder tree.
+// keeps the exclusion list in one readable place instead of the folder tree.
 //
 // This does NOT replace public.reserved_usernames. The collision is in the
 // namespace, not the routing — if someone registers "dashboard" and a
@@ -43,6 +41,15 @@ const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,29}$/;
 export async function proxy(request: NextRequest) {
   const sessionResponse = await updateSession(request);
   const segments = request.nextUrl.pathname.split("/").filter(Boolean);
+
+  if (segments.length === 2 && segments[0] === "u") {
+    const username = segments[1];
+    if (USERNAME_PATTERN.test(username)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = `/${username}`;
+      return NextResponse.redirect(redirectUrl, 308);
+    }
+  }
 
   if (segments.length !== 1) return sessionResponse;
 

@@ -770,16 +770,16 @@ export const seoPages: SeoPageConfig[] = [
     path: "/templates/link-in-bio-for-musicians",
     metaTitle: "Link-in-Bio Template for Musicians | Cueful",
     metaDescription:
-      "A fast musician link page for a new release, streaming links, live dates, videos, merch, and music gear—with a working mobile example.",
+      "Musician link-in-bio template with Spotify embeds, live dates, merch, and tour links—fans listen without leaving your page.",
     eyebrow: "TEMPLATE / MUSICIANS",
     title: "Let the newest release lead.",
     lead:
-      "A musician’s link page should answer the fan’s immediate question—where can I hear this?—before offering live dates, videos, merch, and the archive.",
+      "A musician’s link page should answer the fan’s immediate question—where can I hear this?—with an inline Spotify or Apple Music player, then offer live dates, videos, merch, and the archive.",
     theme: "ink",
     proof: [
-      { value: "01", label: "current release" },
+      { value: "01", label: "embedded player" },
       { value: "02", label: "watch or attend" },
-      { value: "03", label: "deeper catalogue" },
+      { value: "03", label: "merch & catalogue" },
     ],
     preview: {
       category: "MUSICIAN / AFTER DARK",
@@ -788,34 +788,39 @@ export const seoPages: SeoPageConfig[] = [
       headline: "New single:",
       accent: "Glass Houses.",
       bio: "Independent electronic songwriter. New York / everywhere after midnight.",
-      links: ["Stream Glass Houses", "Watch the live-room video", "Fall shows + tickets", "Browse the archive"],
+      links: [
+        "▶ Spotify player · Glass Houses",
+        "Watch the live-room video",
+        "Fall shows + tickets",
+        "Browse the archive",
+      ],
       referral: { provider: "GEAR", offer: "The compact interface used on the record", code: "LOOP10" },
     },
     sections: [
       {
-        heading: "Release mode",
+        heading: "Release mode with embeds",
         body:
-          "Feature the current single or album, use a supporting line to set context, and place the strongest listening or pre-save destination first. Keep the visual language connected to the release artwork.",
+          "Paste your Spotify, Apple Music, SoundCloud, or Bandcamp URL. Cueful detects it and renders an inline player—same idea as Linktree Music and Sociials smart embeds—so fans preview before they leave for tickets or merch.",
         bullets: [
+          "Spotify / Apple Music / SoundCloud players",
           "Release title above the fold",
-          "Primary streaming destination first",
           "Video and live dates immediately after",
         ],
       },
       {
         heading: "Between releases",
         body:
-          "Shift the page toward the live show, mailing list, catalogue, or process content. The URL stays the same while the page reflects what matters this month.",
+          "Shift the page toward the live show, mailing list, catalogue, or process content. Keep the evergreen streaming embed active while you rotate featured links.",
         bullets: [
           "Feature the current tour or session",
-          "Keep evergreen streaming links active",
+          "Keep the streaming embed live",
           "Deactivate expired ticket offers",
         ],
       },
       {
         heading: "Measure fan intent",
         body:
-          "Views tell you the page was reached. Link opens separate streaming interest from tickets, videos, and gear. Device and country signals help with campaign and touring decisions.",
+          "Views tell you the page was reached. Link opens and media opens separate streaming interest from tickets, videos, and gear.",
         bullets: [
           "Compare streaming and ticket clicks",
           "See top countries and devices",
@@ -825,36 +830,190 @@ export const seoPages: SeoPageConfig[] = [
     ],
     steps: [
       { title: "Choose After Dark", body: "Start with the high-contrast template built for release artwork." },
-      { title: "Feature the release", body: "Add the current title, listening link, video, and live dates." },
+      {
+        title: "Add a music embed",
+        body: "Use the Spotify or Apple Music template, paste your track or album URL, and keep layout on Full player.",
+      },
       { title: "Share everywhere", body: "Use the same URL in social bios, posters, and the downloadable QR." },
     ],
     faqs: [
       {
         question: "Should a musician use one link for every streaming service?",
         answer:
-          "A dedicated smart-music destination can be useful. On the profile itself, keep the label clear and avoid presenting several visually identical service links without context.",
+          "Lead with one embedded player (usually Spotify or Apple Music), then add secondary service links if needed. Avoid a wall of identical “Listen on…” buttons without a player.",
       },
       {
         question: "Can I add ticket links and merch?",
         answer:
-          "Yes. Add them as standard or featured links. Use specific labels such as the city, date, product, or collection.",
+          "Yes. Add them as standard or featured links under the embed. Use specific labels such as the city, date, product, or collection.",
       },
       {
-        question: "Does Cueful host music?",
+        question: "Does Cueful host music files?",
         answer:
-          "Not currently. Cueful organizes and measures links to the streaming, video, ticketing, store, and community destinations you already use.",
+          "No audio files are uploaded to Cueful. Cueful embeds official players from Spotify, Apple Music, SoundCloud, YouTube, Bandcamp, and more—so fans listen on your page without you hosting audio.",
       },
     ],
     related: [
-      { href: "/link-in-bio-for-tiktok", label: "TikTok link guide" },
+      { href: "/templates/spotify-embed-link-in-bio", label: "Spotify embed template" },
+      { href: "/templates/link-in-bio-for-podcasters", label: "Podcaster template" },
       { href: "/free-link-in-bio", label: "Free link-in-bio tool" },
-      {
-        href: "/templates/portfolio-link-page-for-freelancers",
-        label: "Freelancer portfolio template",
-      },
     ],
     primaryCta: "Use the musician template",
     primaryHref: "/templates?template=after-dark&utm_source=seo&utm_campaign=musician-template",
+  },
+  {
+    path: "/templates/spotify-embed-link-in-bio",
+    metaTitle: "Spotify Embed Link-in-Bio Template | Cueful",
+    metaDescription:
+      "Add a Spotify music player to your link in bio. Paste a track, album, or playlist URL and Cueful embeds it inline—Linktree-style, no autoplay.",
+    eyebrow: "TEMPLATE / SPOTIFY EMBED",
+    title: "Put the player on the page.",
+    lead:
+      "Fans shouldn’t bounce to Spotify just to decide if they care. Paste a Spotify URL, Cueful turns it into an inline player, then route them to tickets, merch, or your newsletter.",
+    theme: "ink",
+    proof: [
+      { value: "Paste", label: "Spotify URL" },
+      { value: "Play", label: "inline preview" },
+      { value: "Click", label: "tickets & merch" },
+    ],
+    preview: {
+      category: "MUSIC / SPOTIFY",
+      initials: "NS",
+      handle: "@nova-sounds",
+      headline: "Now playing:",
+      accent: "Midnight Signal.",
+      bio: "Indie electronic. Stream the single, then grab tour dates.",
+      links: ["Spotify player", "Tour tickets", "Merch drop", "Mailing list"],
+    },
+    sections: [
+      {
+        heading: "How Cueful Spotify embeds work",
+        body:
+          "Add a music embed from Shop & Media, or paste a Spotify link in Links. Cueful detects open.spotify.com URLs and renders the official Spotify embed player—lazy-loaded, no autoplay.",
+        bullets: [
+          "Tracks, albums, playlists, and artists",
+          "Full player or compact card layout",
+          "Open on Spotify still one tap away",
+        ],
+      },
+      {
+        heading: "Pair with Apple Music and YouTube",
+        body:
+          "The same music templates support Apple Music, SoundCloud, Bandcamp, Audiomack, and YouTube—so you can lead with Spotify and still cover every fan’s app.",
+        bullets: [
+          "Music templates for each major service",
+          "Live player preview while editing",
+          "Works on the After Dark musician layout",
+        ],
+      },
+    ],
+    steps: [
+      {
+        title: "Open Shop & Media",
+        body: "In the dashboard, choose the Spotify music template under Music and media embeds.",
+      },
+      {
+        title: "Paste your Spotify URL",
+        body: "Copy a track, album, or playlist link from Spotify and drop it into the URL field.",
+      },
+      {
+        title: "Publish and share",
+        body: "Keep Full player on, publish your page, and put cueful.bio/you in every bio.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Is this like Linktree’s Spotify preview?",
+        answer:
+          "Yes in spirit: paste a Spotify URL and visitors get an on-page player. Cueful uses Spotify’s official embed rather than a separate audio snippet host.",
+      },
+      {
+        question: "Does the player autoplay?",
+        answer: "No. Players load lazily and wait for the visitor to press play.",
+      },
+      {
+        question: "Can I also embed Apple Music?",
+        answer: "Yes. Use the Apple Music template in the same Music and media section.",
+      },
+    ],
+    related: [
+      { href: "/templates/link-in-bio-for-musicians", label: "Musician template" },
+      { href: "/templates/link-in-bio-for-podcasters", label: "Podcaster template" },
+      { href: "/free-linktree-alternative", label: "Linktree alternative" },
+    ],
+    primaryCta: "Add a Spotify embed",
+    primaryHref: "/templates?template=after-dark&utm_source=seo&utm_campaign=spotify-embed",
+  },
+  {
+    path: "/templates/link-in-bio-for-podcasters",
+    metaTitle: "Link-in-Bio Template for Podcasters | Cueful",
+    metaDescription:
+      "Podcaster link-in-bio template with Spotify and YouTube embeds, episode CTAs, guest links, and newsletter signup—built for show notes in one URL.",
+    eyebrow: "TEMPLATE / PODCASTERS",
+    title: "One link for every episode.",
+    lead:
+      "Put the latest episode player on your bio page, then stack guest links, transcripts, sponsorships, and the subscribe CTA underneath—without a separate show-notes site.",
+    theme: "sky",
+    proof: [
+      { value: "01", label: "episode player" },
+      { value: "02", label: "guest & notes" },
+      { value: "03", label: "subscribe" },
+    ],
+    preview: {
+      category: "PODCAST / FIELD NOTES",
+      initials: "HQ",
+      handle: "@house-queue",
+      headline: "This week:",
+      accent: "Shipping under pressure.",
+      bio: "Operator stories, one tight episode at a time.",
+      links: ["▶ Latest episode", "Guest’s toolkit", "Transcript", "Subscribe"],
+    },
+    sections: [
+      {
+        heading: "Lead with the episode",
+        body:
+          "Embed the Spotify episode or YouTube version so visitors can start listening immediately. Keep the title specific—episode number and hook—not just “Latest episode.”",
+        bullets: [
+          "Spotify episode or YouTube embed",
+          "Clear episode title and guest name",
+          "Subscribe link as a secondary CTA",
+        ],
+      },
+      {
+        heading: "Show notes without the clutter",
+        body:
+          "Use featured links for the guest’s site, tools mentioned, and transcript. Hide expired sponsorships instead of deleting history.",
+        bullets: [
+          "Guest link + disclosed affiliate tools",
+          "Transcript or newsletter capture",
+          "Archive older episodes as compact cards",
+        ],
+      },
+    ],
+    steps: [
+      { title: "Pick Field Notes or After Dark", body: "Field Notes for interview shows; After Dark for high-energy formats." },
+      { title: "Embed the episode", body: "Use the Spotify or YouTube music/media template and paste the episode URL." },
+      { title: "Add support links", body: "Guest, tools, merch, and subscribe—then publish one bio URL everywhere." },
+    ],
+    faqs: [
+      {
+        question: "Can I embed Spotify podcasts?",
+        answer:
+          "Yes. Paste a Spotify episode or show URL into Music and media embeds (or as a link) and Cueful renders the Spotify player.",
+      },
+      {
+        question: "What about YouTube versions of episodes?",
+        answer:
+          "Add a YouTube embed beside or below the audio player if you publish video episodes.",
+      },
+    ],
+    related: [
+      { href: "/templates/spotify-embed-link-in-bio", label: "Spotify embed template" },
+      { href: "/templates/link-in-bio-for-musicians", label: "Musician template" },
+      { href: "/free-link-in-bio", label: "Free link-in-bio tool" },
+    ],
+    primaryCta: "Use the podcast template",
+    primaryHref: "/templates?template=field-notes&utm_source=seo&utm_campaign=podcaster-template",
   },
   {
     path: "/templates/referral-links-for-creators",

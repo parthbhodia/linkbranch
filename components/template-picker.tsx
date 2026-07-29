@@ -46,8 +46,9 @@ const templates: Template[] = [
     id: "after-dark",
     number: "02",
     name: "After Dark",
-    description: "High-contrast and electric. A sharp home for musicians, streamers, and night owls.",
-    badge: "Bold",
+    description:
+      "High-contrast with room for Spotify embeds. Built for musicians, podcasters, and night owls.",
+    badge: "Music embeds",
     previewClass: "template-preview--dark",
     accent: "#b9ff66",
   },
@@ -63,6 +64,7 @@ const templates: Template[] = [
 ];
 
 function MiniProfile({ template }: { template: Template }) {
+  const isMusic = template.id === "after-dark";
   return (
     <div className={`template-preview ${template.previewClass}`}>
       <div className="mini-profile__bar">
@@ -71,16 +73,27 @@ function MiniProfile({ template }: { template: Template }) {
       </div>
       <div className="mini-profile__avatar">PB</div>
       <div className="mini-profile__name">@yourname</div>
-      <div className="mini-profile__bio">Making useful things for the web.</div>
+      <div className="mini-profile__bio">
+        {isMusic ? "New single out everywhere." : "Making useful things for the web."}
+      </div>
       <div className="mini-profile__socials">
         <i />
         <i />
         <i />
       </div>
+      {isMusic ? (
+        <div className="mini-profile__music" aria-hidden="true">
+          <span className="mini-profile__music-dot" />
+          <span>
+            <b>Now playing</b>
+            <small>Spotify embed</small>
+          </span>
+        </div>
+      ) : null}
       <div className="mini-profile__links">
-        <span>Latest project <b>↗</b></span>
-        <span>Field notes <b>↗</b></span>
-        <span>Creator stack <b>↗</b></span>
+        <span>{isMusic ? "Tour tickets" : "Latest project"} <b>↗</b></span>
+        <span>{isMusic ? "Merch drop" : "Field notes"} <b>↗</b></span>
+        <span>{isMusic ? "Mailing list" : "Creator stack"} <b>↗</b></span>
       </div>
     </div>
   );
@@ -89,7 +102,14 @@ function MiniProfile({ template }: { template: Template }) {
 export function TemplatePicker() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedId, setSelectedId] = useState<TemplateId>("field-notes");
+  const requested = searchParams.get("template");
+  const initialId =
+    requested === "after-dark" ||
+    requested === "soft-studio" ||
+    requested === "field-notes"
+      ? requested
+      : "field-notes";
+  const [selectedId, setSelectedId] = useState<TemplateId>(initialId);
   const isImportFlow = searchParams.get("import") === "1";
 
   const selected = useMemo(
@@ -239,6 +259,8 @@ export function TemplatePicker() {
           Explore a complete example
         </Typography>
         <Link href="/templates/link-in-bio-for-musicians">Musicians</Link>
+        <Link href="/templates/spotify-embed-link-in-bio">Spotify embed</Link>
+        <Link href="/templates/link-in-bio-for-podcasters">Podcasters</Link>
         <Link href="/templates/referral-links-for-creators">Referral creators</Link>
         <Link href="/templates/portfolio-link-page-for-freelancers">Freelancers</Link>
       </nav>

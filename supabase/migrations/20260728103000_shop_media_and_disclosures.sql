@@ -54,7 +54,7 @@ create table public.media_embeds (
     check (
       provider in (
         'spotify', 'apple_music', 'soundcloud', 'youtube',
-        'bandcamp', 'twitch', 'vimeo'
+        'bandcamp', 'twitch', 'vimeo', 'audiomack'
       )
     ),
   constraint media_embeds_url_format check (url ~* '^https?://'),

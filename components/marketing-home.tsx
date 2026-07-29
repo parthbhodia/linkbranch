@@ -14,10 +14,49 @@ import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
+import { publicProfilePath } from "@/lib/brand";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
+
+const homepageTemplates = [
+  {
+    href: "/templates/link-in-bio-for-musicians",
+    label: "Musicians",
+    title: "Release-first page",
+    note: "Spotify embed, tour dates, merch.",
+    template: "after-dark",
+  },
+  {
+    href: "/templates/spotify-embed-link-in-bio",
+    label: "Spotify embed",
+    title: "Put the player on the page",
+    note: "Paste a track, album, or playlist URL.",
+    template: "after-dark",
+  },
+  {
+    href: "/templates/link-in-bio-for-podcasters",
+    label: "Podcasters",
+    title: "One link for every episode",
+    note: "Episode player, guests, subscribe.",
+    template: "field-notes",
+  },
+  {
+    href: "/templates/referral-links-for-creators",
+    label: "Referral creators",
+    title: "Offers that stay clear",
+    note: "Codes, disclosures, copy actions.",
+    template: "field-notes",
+  },
+  {
+    href: "/templates/portfolio-link-page-for-freelancers",
+    label: "Freelancers",
+    title: "Portfolio that books work",
+    note: "Selected work, services, availability.",
+    template: "soft-studio",
+  },
+];
 
 const builderTabs: Array<{ id: BuilderStep; label: string }> = [
   { id: "profile", label: "Profile" },
@@ -154,6 +193,9 @@ export function MarketingHome() {
       <nav className="marketing-nav" aria-label="Primary navigation">
         <BrandMark className="brand marketing-nav__brand" />
         <div className="marketing-nav__links">
+          <Button component={Link} href="#templates" color="inherit">
+            Templates
+          </Button>
           <Button component={Link} href="/link-in-bio-tools" color="inherit">
             Compare tools
           </Button>
@@ -410,10 +452,12 @@ export function MarketingHome() {
       <section className="marketing-examples" id="examples">
         <div className="marketing-examples__heading">
           <div>
-            <p className="section-label">THREE STARTING POINTS</p>
+            <p className="section-label">SIX STARTING POINTS</p>
             <Typography component="h2">Pick the page that fits.</Typography>
           </div>
-          <Typography>Creator, freelancer, or referral curator.</Typography>
+          <Typography>
+            Creator, freelancer, curator, musician, coach, or shop.
+          </Typography>
         </div>
         <div className="example-carousel">
           <div className="example-carousel__toolbar">
@@ -456,7 +500,7 @@ export function MarketingHome() {
                 className={`example-profile example-profile--${example.template}${
                   activeExample === index ? " is-active" : ""
                 }`}
-                href={`/u/${example.slug}`}
+                href={publicProfilePath(example.slug)}
                 aria-label={`Open ${example.profile.displayName}'s ${example.role} profile`}
                 aria-current={activeExample === index ? "true" : undefined}
                 key={example.slug}
@@ -468,9 +512,22 @@ export function MarketingHome() {
                 <div className="example-profile__phone">
                   <i>{example.profile.initials}</i>
                   <small>@{example.profile.username}</small>
-                  <b>{example.profile.headline}<em> {example.profile.headlineAccent}</em></b>
-                  <span />
-                  <span />
+                  <b>
+                    {example.profile.headline}
+                    <em> {example.profile.headlineAccent}</em>
+                  </b>
+                  {example.mediaEmbeds?.[0] ? (
+                    <span className="example-profile__music">
+                      <strong>▶ {example.mediaEmbeds[0].title}</strong>
+                      <em>{example.mediaEmbeds[0].provider.replace("_", " ")} embed</em>
+                    </span>
+                  ) : null}
+                  {example.profile.links.slice(0, example.mediaEmbeds?.length ? 1 : 2).map((link) => (
+                    <span className="example-profile__link" key={link.id}>
+                      <strong>{link.title}</strong>
+                      <em>{link.subtitle}</em>
+                    </span>
+                  ))}
                 </div>
                 <div>
                   <Typography component="h3">{example.profile.displayName}</Typography>
@@ -491,6 +548,44 @@ export function MarketingHome() {
               />
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="marketing-templates" id="templates">
+        <div className="marketing-templates__heading">
+          <div>
+            <p className="section-label">TEMPLATES</p>
+            <Typography component="h2">Start with a finished layout.</Typography>
+          </div>
+          <Typography>
+            Musicians, Spotify embeds, podcasters, referral pages, and freelancer portfolios.
+          </Typography>
+        </div>
+        <div className="marketing-templates__grid">
+          {homepageTemplates.map((item) => (
+            <Link
+              className={`marketing-template-card marketing-template-card--${item.template}`}
+              href={item.href}
+              key={item.href}
+            >
+              <span>{item.label}</span>
+              <Typography component="h3">{item.title}</Typography>
+              <Typography>{item.note}</Typography>
+              <em>
+                Open template <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
+              </em>
+            </Link>
+          ))}
+        </div>
+        <div className="marketing-templates__footer">
+          <Button
+            component={Link}
+            href="/templates"
+            variant="outlined"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Browse all templates
+          </Button>
         </div>
       </section>
 
