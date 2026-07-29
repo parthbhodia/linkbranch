@@ -18,6 +18,8 @@ import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import WorkOutlineRounded from "@mui/icons-material/WorkOutlineRounded";
+import BusinessCenterRounded from "@mui/icons-material/BusinessCenterRounded";
+import WhatsApp from "@mui/icons-material/WhatsApp";
 import {
   Alert,
   Avatar,
@@ -122,7 +124,9 @@ type StarterPurpose =
   | "coach"
   | "musician"
   | "referral"
-  | "local-shop";
+  | "local-shop"
+  | "whatsapp-business"
+  | "business-links";
 
 const starterPurposes: Array<{
   id: StarterPurpose;
@@ -172,6 +176,27 @@ const starterPurposes: Array<{
     note: "Menu, ordering, and directions",
     icon: <StorefrontOutlined />,
     links: ["View our menu or catalog", "Order or book online", "Get directions"],
+  },
+  {
+    id: "whatsapp-business",
+    name: "WhatsApp Business",
+    note: "Chat, catalog, ordering, and directions",
+    icon: <WhatsApp />,
+    links: ["Chat with us on WhatsApp", "View our catalog", "Place an order", "Get directions"],
+  },
+  {
+    id: "business-links",
+    name: "Business link collection",
+    note: "Website, services, booking, reviews, and contact",
+    icon: <BusinessCenterRounded />,
+    links: [
+      "Visit our website",
+      "Explore our services",
+      "Book an appointment",
+      "Read customer reviews",
+      "Chat with us on WhatsApp",
+      "Get directions",
+    ],
   },
 ];
 
@@ -653,14 +678,17 @@ export function OnboardingWizard({
           lower.includes("listen") ||
           lower.includes("release") ||
           lower.includes("stream");
+        const isWhatsApp = lower.includes("whatsapp");
         return {
           id: index + 1,
           title,
-          url: isBooking
-            ? "https://calendly.com/"
-            : isMusic
-              ? "https://open.spotify.com/"
-              : "",
+          url: isWhatsApp
+            ? "https://wa.me/"
+            : isBooking
+              ? "https://calendly.com/"
+              : isMusic
+                ? "https://open.spotify.com/"
+                : "",
           is_active: true,
           is_featured: index === 0,
           thumbnail_path: null,
@@ -1474,7 +1502,7 @@ export function OnboardingWizard({
                   </Typography>
                   <div>
                     {[
-                      { title: "WhatsApp me", url: "https://wa.me/" },
+                      { title: "WhatsApp Business", url: "https://wa.me/" },
                       { title: "Watch my latest video", url: "" },
                       { title: "Join my community", url: "" },
                     ].map((item) => (

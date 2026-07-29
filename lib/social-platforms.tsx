@@ -10,6 +10,7 @@ import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
 import Pinterest from "@mui/icons-material/Pinterest";
 import X from "@mui/icons-material/X";
 import YouTube from "@mui/icons-material/YouTube";
+import WhatsApp from "@mui/icons-material/WhatsApp";
 
 export type SocialPlatformOption = {
   label: string;
@@ -77,6 +78,11 @@ export const socialPlatformOptions: SocialPlatformOption[] = [
     label: "Bluesky",
     placeholder: "https://bsky.app/profile/username",
     icon: <CloudOutlined />,
+  },
+  {
+    label: "WhatsApp Business",
+    placeholder: "https://wa.me/15551234567?text=Hello",
+    icon: <WhatsApp />,
   },
   {
     label: "Website",
