@@ -36,6 +36,13 @@ const homepageTemplates = [
     template: "after-dark",
   },
   {
+    href: "/templates/link-in-bio-shop",
+    label: "Shop",
+    title: "Mini shop in your bio",
+    note: "Product cards, prices, external checkout.",
+    template: "soft-studio",
+  },
+  {
     href: "/templates/link-in-bio-for-podcasters",
     label: "Podcasters",
     title: "One link for every episode",
@@ -456,7 +463,7 @@ export function MarketingHome() {
             <Typography component="h2">Start with a finished layout.</Typography>
           </div>
           <Typography>
-            Musicians, Spotify embeds, podcasters, referral pages, and freelancer portfolios.
+            Musicians, Spotify embeds, shop pages, podcasters, referrals, and freelancer portfolios.
           </Typography>
         </div>
         <div className="marketing-templates__grid">
@@ -560,8 +567,30 @@ export function MarketingHome() {
                       <em>{example.mediaEmbeds[0].provider.replace("_", " ")} embed</em>
                     </span>
                   ) : null}
+                  {example.products?.[0] ? (
+                    <span className="example-profile__shop">
+                      <strong>
+                        {example.products[0].badge
+                          ? `${example.products[0].badge} · `
+                          : ""}
+                        {example.products[0].title}
+                      </strong>
+                      <em>
+                        {example.products[0].price_amount != null
+                          ? `${example.products[0].currency} ${example.products[0].price_amount}`
+                          : "Shop"}
+                        {" · "}
+                        {example.products.length} products
+                      </em>
+                    </span>
+                  ) : null}
                   {example.profile.links
-                    .slice(0, example.mediaEmbeds?.length ? 1 : 2)
+                    .slice(
+                      0,
+                      example.mediaEmbeds?.length || example.products?.length
+                        ? 1
+                        : 2,
+                    )
                     .map((link) => {
                       const isBooking =
                         /calendly|cal\.com|tidycal|savvycal|hubspot|calendar\.google/i.test(

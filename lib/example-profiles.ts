@@ -8,12 +8,27 @@ export type ExampleMediaEmbed = {
   layout: string;
 };
 
+export type ExampleProduct = {
+  id: number;
+  title: string;
+  description: string;
+  price_amount: number | string | null;
+  currency: string;
+  category: string;
+  badge: string | null;
+  image_path: string | null;
+  destination_url: string;
+  cta_label: string;
+  is_featured: boolean;
+};
+
 export type ExampleProfile = {
   slug: string;
   role: string;
   template: "field-notes" | "after-dark" | "soft-studio";
   profile: CreatorProfile;
   mediaEmbeds?: ExampleMediaEmbed[];
+  products?: ExampleProduct[];
 };
 
 export const exampleProfiles: ExampleProfile[] = [
@@ -349,6 +364,47 @@ export const exampleProfiles: ExampleProfile[] = [
     slug: "lea-shop",
     role: "Shop owner",
     template: "soft-studio",
+    products: [
+      {
+        id: 1,
+        title: "Speckled mug",
+        description: "Hand-thrown stoneware. Holds 12 oz.",
+        price_amount: 48,
+        currency: "USD",
+        category: "merch",
+        badge: "New",
+        image_path: null,
+        destination_url: "https://shopify.com",
+        cta_label: "Buy now",
+        is_featured: true,
+      },
+      {
+        id: 2,
+        title: "One-off vase",
+        description: "Kiln drop — only two left.",
+        price_amount: 120,
+        currency: "USD",
+        category: "merch",
+        badge: "Limited",
+        image_path: null,
+        destination_url: "https://shopify.com",
+        cta_label: "Shop vase",
+        is_featured: false,
+      },
+      {
+        id: 3,
+        title: "Studio visit",
+        description: "Saturday morning tour for small groups.",
+        price_amount: 25,
+        currency: "USD",
+        category: "service",
+        badge: null,
+        image_path: null,
+        destination_url: "https://cal.com/lea/studio",
+        cta_label: "Book visit",
+        is_featured: false,
+      },
+    ],
     profile: {
       username: "lea-shop",
       initials: "LS",
@@ -368,7 +424,7 @@ export const exampleProfiles: ExampleProfile[] = [
           id: "lea-1",
           index: "01",
           title: "Shop the spring drop",
-          subtitle: "Mugs, bowls, and two one-off vases.",
+          subtitle: "Open the Shop tab for mugs, bowls, and vases.",
           url: "https://shopify.com",
           tags: ["shop", "ceramics"],
           visits: 3120,
@@ -390,7 +446,7 @@ export const exampleProfiles: ExampleProfile[] = [
           index: "03",
           title: "Studio visit booking",
           subtitle: "Small group tours on Saturday mornings.",
-          url: "https://cal.com",
+          url: "https://cal.com/lea/studio",
           tags: ["studio", "visit"],
           visits: 420,
           color: "#ffd166",
@@ -408,7 +464,7 @@ export const exampleProfiles: ExampleProfile[] = [
         },
       ],
     },
-  }
+  },
 ];
 
 export const exampleProfileBySlug = new Map(

@@ -1118,6 +1118,101 @@ export const seoPages: SeoPageConfig[] = [
     primaryHref: "/templates?template=field-notes&utm_source=seo&utm_campaign=referral-template",
   },
   {
+    path: "/templates/link-in-bio-shop",
+    metaTitle: "Link-in-Bio Shop Template | Cueful",
+    metaDescription:
+      "Sell from your bio with a mini shop: product cards, external checkout, featured drops, and clear CTAs—no payment processing on Cueful.",
+    eyebrow: "TEMPLATE / SHOP",
+    title: "A mini shop inside your bio link.",
+    lead:
+      "Put your current drop on the page as product cards. Visitors see price, badge, and a buy button that opens your existing Shopify, Gumroad, or Stripe checkout—Cueful never takes payment.",
+    theme: "rose",
+    proof: [
+      { value: "Shop", label: "product cards" },
+      { value: "Buy", label: "external checkout" },
+      { value: "Track", label: "product opens" },
+    ],
+    preview: {
+      category: "SHOP / SOFT STUDIO",
+      initials: "LS",
+      handle: "@lea-shop",
+      headline: "Handmade goods with a",
+      accent: "soft finish.",
+      bio: "New kiln drops, restock alerts, and the story behind each piece.",
+      links: ["Ceramic mug · $48", "One-off vase · $120", "Restock alerts", "Studio visit"],
+    },
+    sections: [
+      {
+        heading: "Lead with the drop",
+        body:
+          "Use Cueful’s mini shop for the products you want people to buy this week. Feature one hero item, keep prices honest, and send checkout to the store you already run.",
+        bullets: [
+          "Product name, price, and short description",
+          "Badge for New, Sale, or Limited",
+          "CTA that opens your existing checkout",
+        ],
+      },
+      {
+        heading: "Keep trust next to commerce",
+        body:
+          "Pair the shop with restock alerts, studio booking, or brand story links. The Shop tab holds products; Links keeps support destinations from competing with the grid.",
+        bullets: [
+          "Shop tab for products",
+          "Links for newsletter and visits",
+          "Disclosed packaging or tool referrals if you share them",
+        ],
+      },
+      {
+        heading: "Measure what sells interest",
+        body:
+          "Product opens show which cards earn attention before checkout. Compare them with link opens to see whether visitors browse, buy, or bounce to the mailing list.",
+        bullets: [
+          "Product open events per item",
+          "Featured vs standard performance",
+          "Device and country context for drops",
+        ],
+      },
+    ],
+    steps: [
+      {
+        title: "Choose Soft Studio",
+        body: "Start with the image-forward template that suits product photography and handmade brands.",
+      },
+      {
+        title: "Add shop products",
+        body: "In Shop & Media, add each product with price, badge, image, and destination URL to your checkout.",
+      },
+      {
+        title: "Publish one bio URL",
+        body: "Share cueful.bio/you everywhere. Visitors open the Shop tab to browse without leaving your hub first.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Does Cueful process payments?",
+        answer:
+          "No. Cueful shows product cards and sends buyers to your Shopify, Gumroad, Stripe Payment Link, or other checkout. You keep your existing payment stack.",
+      },
+      {
+        question: "Can I feature a limited drop?",
+        answer:
+          "Yes. Mark a product as featured, add a Limited or New badge, and deactivate it when the drop sells out.",
+      },
+      {
+        question: "Is this the same as a full storefront?",
+        answer:
+          "It is a bio-native mini shop for the products you want to push now—not a replacement for inventory, shipping, or tax tools in your main store.",
+      },
+    ],
+    related: [
+      { href: "/templates/link-in-bio-for-musicians", label: "Musician template" },
+      { href: "/templates/portfolio-link-page-for-freelancers", label: "Freelancer template" },
+      { href: "/free-link-in-bio", label: "Free link-in-bio tool" },
+    ],
+    primaryCta: "Use the shop template",
+    primaryHref: "/templates?template=soft-studio&utm_source=seo&utm_campaign=shop-template",
+  },
+  {
     path: "/templates/portfolio-link-page-for-freelancers",
     metaTitle: "Portfolio Link Page Template for Freelancers | Cueful",
     metaDescription:

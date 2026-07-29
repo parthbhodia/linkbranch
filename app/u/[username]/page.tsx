@@ -171,6 +171,7 @@ export default async function PublicProfilePage({
           template={example.template}
           themeConfig={defaultProfileTheme(example.template)}
           mediaEmbeds={example.mediaEmbeds ?? []}
+          products={example.products ?? []}
         />
       </>
     );

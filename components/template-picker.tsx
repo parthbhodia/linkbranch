@@ -56,8 +56,9 @@ const templates: Template[] = [
     id: "soft-studio",
     number: "03",
     name: "Soft Studio",
-    description: "Airy, calm, and image-forward. Designed for photographers, artists, and quiet brands.",
-    badge: "New",
+    description:
+      "Airy and image-forward. Made for shops, photographers, artists, and quiet brands.",
+    badge: "Shop ready",
     previewClass: "template-preview--soft",
     accent: "#ffb7d0",
   },
@@ -260,6 +261,7 @@ export function TemplatePicker() {
         </Typography>
         <Link href="/templates/link-in-bio-for-musicians">Musicians</Link>
         <Link href="/templates/spotify-embed-link-in-bio">Spotify embed</Link>
+        <Link href="/templates/link-in-bio-shop">Shop</Link>
         <Link href="/templates/link-in-bio-for-podcasters">Podcasters</Link>
         <Link href="/templates/referral-links-for-creators">Referral creators</Link>
         <Link href="/templates/portfolio-link-page-for-freelancers">Freelancers</Link>
