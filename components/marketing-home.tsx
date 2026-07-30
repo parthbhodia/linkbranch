@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
@@ -19,6 +20,30 @@ import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
 type BuilderStep = "profile" | "links" | "referrals" | "analytics";
+
+const homepageFeatures = [
+  {
+    href: "/templates/referral-links-for-creators",
+    label: "Referral cards",
+    note: "Share offers & codes — free forever.",
+    image: "/marketing/feature-referrals.png",
+    alt: "Cueful referral card with a one-tap copy code on a mobile profile",
+  },
+  {
+    href: "/templates/spotify-embed-link-in-bio",
+    label: "Music embeds",
+    note: "Play on your page — free forever.",
+    image: "/marketing/feature-music.png",
+    alt: "Cueful Spotify music embed playing on a mobile profile",
+  },
+  {
+    href: "/templates/link-in-bio-shop",
+    label: "Shop cards",
+    note: "Sell from your bio — free forever.",
+    image: "/marketing/feature-shop.png",
+    alt: "Cueful shop cards with product images, prices, and buy buttons",
+  },
+];
 
 const builderTabs: Array<{ id: BuilderStep; label: string }> = [
   { id: "profile", label: "Profile" },
@@ -155,6 +180,12 @@ export function MarketingHome() {
       <nav className="marketing-nav" aria-label="Primary navigation">
         <BrandMark className="brand marketing-nav__brand" />
         <div className="marketing-nav__links">
+          <Button component={Link} href="#features" color="inherit">
+            Features
+          </Button>
+          <Button component={Link} href="#examples" color="inherit">
+            Examples
+          </Button>
           <Button component={Link} href="/link-in-bio-tools" color="inherit">
             Compare tools
           </Button>
@@ -407,6 +438,50 @@ export function MarketingHome() {
           </div>
         </div>
       </section>
+
+      <section className="marketing-features" id="features">
+        <div className="marketing-features__heading">
+          <div>
+            <p className="section-label">FREE FOREVER</p>
+            <Typography component="h2">
+              Referral cards. Music embeds. Shop cards.
+            </Typography>
+          </div>
+          <Typography>
+            The same features from our Instagram — live on your bio page, no
+            paywall.
+          </Typography>
+        </div>
+        <div className="marketing-features__grid">
+          {homepageFeatures.map((feature) => (
+            <Link
+              className="marketing-feature-poster"
+              href={feature.href}
+              key={feature.href}
+            >
+              <span className="marketing-feature-poster__media">
+                <Image
+                  src={feature.image}
+                  alt={feature.alt}
+                  width={1080}
+                  height={1350}
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  priority={feature.label === "Referral cards"}
+                />
+              </span>
+              <span className="marketing-feature-poster__copy">
+                <b>{feature.label}</b>
+                <small>{feature.note}</small>
+                <em>
+                  See template{" "}
+                  <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
+                </em>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="marketing-examples" id="examples">
         <div className="marketing-examples__heading">
           <div>

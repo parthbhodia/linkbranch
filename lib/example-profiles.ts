@@ -464,7 +464,7 @@ export const exampleProfiles: ExampleProfile[] = [
         },
       ],
     },
-  },,
+  },
   {
     slug: "harbor-whatsapp",
     role: "WhatsApp Business",
