@@ -1787,11 +1787,29 @@ a {
 .public-template--signal-deck.app-shell {
   color: #f3f6fb;
   background: #0f141c;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .public-template--signal-deck .creator-card {
-  border-color: rgba(185, 255, 102, 0.14);
-  background: #141b27;
+  width: min(480px, 100%);
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.public-template--signal-deck .profile-panel {
+  padding-top: 18px;
+  padding-inline: 20px;
+}
+
+.public-template--signal-deck .hub-panel {
+  padding-inline: 20px;
+  padding-bottom: 48px;
 }
 
 .public-template--signal-deck .avatar {
@@ -1836,15 +1854,38 @@ a {
   background-color: #243044;
 }
 
-.public-template--signal-deck .profile-cover {
-  margin-bottom: -36px;
-  border-radius: 18px 18px 0 0;
+.profile-cover--bleed {
+  width: 100%;
+  max-width: none;
+  height: clamp(160px, 28vw, 240px);
+  margin: 0;
+  border-radius: 0;
+  flex: 0 0 auto;
+}
+
+.profile-cover--fallback {
+  background:
+    radial-gradient(circle at 18% 30%, rgba(64, 140, 255, 0.55), transparent 42%),
+    radial-gradient(circle at 78% 20%, rgba(185, 255, 102, 0.18), transparent 36%),
+    linear-gradient(145deg, #1a2a44 0%, #0f141c 62%, #162033 100%);
+}
+
+.public-template--signal-deck .profile-brand-row {
+  position: relative;
+  z-index: 2;
+  margin-top: -42px;
+  justify-content: space-between;
+}
+
+.public-template--signal-deck .profile-copy {
+  margin-top: 8px;
 }
 
 .public-template--signal-deck .profile-copy > .avatar {
   position: relative;
   z-index: 1;
-  margin-top: 8px;
+  margin-top: -64px;
+  margin-inline: auto;
 }
 
 .profile-tags {
@@ -1875,6 +1916,16 @@ a {
 .link-index--icon {
   display: grid;
   place-items: center;
+}
+
+@media (min-width: 901px) {
+  .public-template--signal-deck .profile-cover--bleed {
+    height: 220px;
+  }
+
+  .public-template--signal-deck .creator-card {
+    width: min(440px, 100%);
+  }
 }
 
 /* Dashboard phone now mirrors the public creator card */

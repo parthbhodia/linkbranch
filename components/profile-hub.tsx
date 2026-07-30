@@ -538,6 +538,13 @@ export function ProfileHub({
           : undefined
       }
     >
+      {template === "signal-deck" ? (
+        <Box
+          className={`profile-cover profile-cover--bleed${coverUrl ? "" : " profile-cover--fallback"}`}
+          style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
+          aria-hidden="true"
+        />
+      ) : null}
       <article className="creator-card">
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
@@ -574,7 +581,7 @@ export function ProfileHub({
                 alt={`${profile.displayName} logo`}
               />
             )}
-            {coverUrl ? (
+            {template !== "signal-deck" && coverUrl ? (
               <Box
                 className="profile-cover"
                 style={{ backgroundImage: `url("${coverUrl}")` }}
