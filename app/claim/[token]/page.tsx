@@ -18,6 +18,11 @@ export const metadata = {
 type DraftPayload = {
   display_name?: string;
   bio?: string;
+  greeting?: string;
+  headline?: string;
+  headline_accent?: string;
+  eyebrow?: string;
+  tags?: string[];
   template?: string;
   links?: Array<{ title: string; subtitle?: string; url: string }>;
   socials?: Array<{ platform: string; url: string }>;
@@ -67,12 +72,16 @@ export default async function ClaimPage({
     username: draft.suggested_username ?? "your-page",
     initials,
     displayName,
-    // Drafts carry no greeting/headline of their own, so fall back to the same
-    // defaults public.profiles uses for a fresh account.
-    greeting: "Hey, I’m",
-    headline: "I make useful",
-    headlineAccent: "things.",
-    eyebrow: draft.suggested_username ? `@${draft.suggested_username}` : "Preview",
+    // A draft is pitched to one business, so its own intro copy comes first.
+    // The fallbacks are the same defaults public.profiles uses for a fresh
+    // account, for drafts written before the payload carried intro copy.
+    greeting: payload.greeting || "Hey, I’m",
+    headline: payload.headline || "I make useful",
+    headlineAccent: payload.headline_accent || "things.",
+    eyebrow:
+      payload.eyebrow ||
+      (draft.suggested_username ? `@${draft.suggested_username}` : "Preview"),
+    tags: payload.tags ?? [],
     bio: payload.bio ?? "",
     socials: (payload.socials ?? []).map((item) => ({
       platform: item.platform,

@@ -42,6 +42,41 @@ Run the SQL files in `supabase/migrations` in filename order. They create:
 Never expose a Supabase secret or service-role key through a `NEXT_PUBLIC_`
 environment variable.
 
+### Supabase MCP server
+
+`.mcp.json` is checked in, so Claude Code picks the server up on clone and
+nobody has to re-add it. It holds only the URL and the project ref — the server
+authenticates per developer over OAuth, which is why no token belongs in it.
+
+Authenticate once, in a regular terminal rather than an IDE extension:
+
+```bash
+claude /mcp
+```
+
+Select `supabase`, then Authenticate. Until that finishes the server is
+configured but unreachable, and calls come back as a permission error rather
+than a connection failure — the misleading part is that it looks like the wrong
+project rather than a missing login.
+
+To re-add the server by hand, or to point it at a different project:
+
+```bash
+claude mcp add --scope project --transport http supabase \
+  "https://mcp.supabase.com/mcp?project_ref=<ref>&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+```
+
+That feature list includes `database`, `development` and `branching`, all of
+which can write. Append `&read_only=true` for a session that should only be
+able to read production.
+
+Optional, and local to your machine rather than the repo — ready-made Supabase
+instructions for the agent:
+
+```bash
+npx skills add supabase/agent-skills
+```
+
 ## Hosting
 
 Deploy the Next.js app to Vercel and keep Supabase as the backend. GitHub Pages

@@ -15,6 +15,14 @@ const states = {
     primaryHref: "/auth/forgot-password",
     primaryLabel: "Request another reset link",
   },
+  claim_failed: {
+    eyebrow: "PAGE ALREADY CLAIMED",
+    title: "That prepared page could not be applied",
+    description:
+      "The link was valid, but the page behind it has expired or has already been claimed by another account. Your account is fine — sign in and build your page from a template.",
+    primaryHref: "/templates",
+    primaryLabel: "Pick a template",
+  },
   link_invalid: {
     eyebrow: "LINK NO LONGER ACTIVE",
     title: "That link has expired",

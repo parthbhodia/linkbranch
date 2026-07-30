@@ -1796,6 +1796,11 @@ a {
 .public-template--signal-deck .creator-card {
   width: min(480px, 100%);
   margin: 0 auto;
+  /* .creator-card clips to its 38px radius. This template has no radius and no
+     background to clip, and it lifts the handle row and avatar above its own
+     top edge with negative margins so they sit on the full-bleed cover —
+     inheriting the clip sliced both of them in half along that edge. */
+  overflow: visible;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -2697,7 +2702,7 @@ a {
 
 .product-card__copy > span,
 .media-embed-card > div > span {
-  color: var(--profile-muted, #6d7167);
+  color: var(--profile-muted-readable, var(--profile-muted, #6d7167));
   font: 750 0.62rem var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2797,7 +2802,7 @@ a {
   margin: 4px clamp(20px, 5vw, 58px) 26px;
   padding-top: 18px;
   border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  color: var(--profile-muted, #6d7167);
+  color: var(--profile-muted-readable, var(--profile-muted, #6d7167));
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -3835,7 +3840,23 @@ a {
 .public-template.profile-theme-custom .section-heading .MuiTypography-caption,
 .public-template.profile-theme-custom .link-card .MuiTypography-body2,
 .public-template.profile-theme-custom .profile-supporter-badge a {
-  color: var(--profile-muted) !important;
+  color: var(--profile-muted-readable, var(--profile-muted)) !important;
+}
+
+/* These are MUI outlined buttons, so without an override they keep painting
+   themselves in the app palette (#496800) on a surface the creator chose --
+   the one control on the page that ignores the theme entirely. Olive on cream
+   measures 3.2:1, already under AA, and on a dark custom background it all but
+   disappears. !important matches the base rule: MUI's injected styles outrank
+   a plain class selector here. */
+.public-template.profile-theme-custom .booking-embed__toggle,
+.public-template.profile-theme-custom .music-embed__toggle {
+  color: var(--profile-text) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--profile-text) 38%,
+    transparent
+  ) !important;
 }
 
 .public-template.profile-theme-custom .headline-accent {
@@ -3871,7 +3892,7 @@ a {
 }
 
 .public-template.profile-theme-custom .search-field input::placeholder {
-  color: var(--profile-muted);
+  color: var(--profile-muted-readable, var(--profile-muted));
   opacity: 1;
 }
 
@@ -4149,7 +4170,7 @@ a {
 .workspace-phone.profile-theme-custom .workspace-phone__link small,
 .workspace-phone.profile-theme-custom .workspace-phone__section-heading .section-label,
 .workspace-phone.profile-theme-custom .workspace-phone__section-heading small {
-  color: var(--profile-muted) !important;
+  color: var(--profile-muted-readable, var(--profile-muted)) !important;
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__socials {
@@ -11256,7 +11277,7 @@ a {
 
 .profile-faq details > div {
   padding: 0 18px 18px;
-  color: var(--profile-muted, var(--muted));
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
   white-space: pre-wrap;
 }
 
