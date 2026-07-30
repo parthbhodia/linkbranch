@@ -157,6 +157,7 @@ export const seoPages: SeoPageConfig[] = [
       },
     ],
     related: [
+      { href: "/cueful-vs-linktree", label: "Cueful vs Linktree" },
       { href: "/free-link-in-bio", label: "Free link-in-bio tool" },
       { href: "/best-link-in-bio-tools", label: "Best link-in-bio tools" },
       {
@@ -937,9 +938,9 @@ export const seoPages: SeoPageConfig[] = [
       },
     ],
     related: [
+      { href: "/cueful-vs-linktree", label: "Cueful vs Linktree" },
       { href: "/templates/link-in-bio-for-musicians", label: "Musician template" },
       { href: "/templates/link-in-bio-for-podcasters", label: "Podcaster template" },
-      { href: "/free-linktree-alternative", label: "Linktree alternative" },
     ],
     primaryCta: "Add a Spotify embed",
     primaryHref: "/templates?template=after-dark&utm_source=seo&utm_campaign=spotify-embed",
@@ -1107,12 +1108,9 @@ export const seoPages: SeoPageConfig[] = [
       },
     ],
     related: [
+      { href: "/cueful-vs-linktree", label: "Cueful vs Linktree" },
       { href: "/free-linktree-alternative", label: "Import a Linktree" },
       { href: "/link-in-bio-tools", label: "Compare link-in-bio tools" },
-      {
-        href: "/templates/link-in-bio-for-musicians",
-        label: "Musician template",
-      },
     ],
     primaryCta: "Build a referral page",
     primaryHref: "/templates?template=field-notes&utm_source=seo&utm_campaign=referral-template",
@@ -1205,8 +1203,8 @@ export const seoPages: SeoPageConfig[] = [
       },
     ],
     related: [
+      { href: "/cueful-vs-linktree", label: "Cueful vs Linktree" },
       { href: "/templates/link-in-bio-for-musicians", label: "Musician template" },
-      { href: "/templates/portfolio-link-page-for-freelancers", label: "Freelancer template" },
       { href: "/free-link-in-bio", label: "Free link-in-bio tool" },
     ],
     primaryCta: "Use the shop template",
@@ -1300,6 +1298,129 @@ export const seoPages: SeoPageConfig[] = [
     ],
     primaryCta: "Use the portfolio template",
     primaryHref: "/templates?template=soft-studio&utm_source=seo&utm_campaign=freelancer-template",
+  },
+  {
+    path: "/cueful-vs-linktree",
+    metaTitle: "Cueful vs Linktree: Referral, Music & Shop Templates | Cueful",
+    metaDescription:
+      "Compare Cueful and Linktree on referral cards, Spotify music embeds, and shop product cards—what’s free, what takes a fee, and which template fits.",
+    eyebrow: "CUEFUL VS LINKTREE / TEMPLATES",
+    title: "Three bio jobs. Two different approaches.",
+    lead:
+      "Linktree popularized the link list. Cueful ships opinionated templates for the three jobs creators actually run from a bio: referral cards, music embeds, and shop cards—without visitor ads or a forced badge.",
+    theme: "acid",
+    proof: [
+      { value: "Cards", label: "referral offers" },
+      { value: "Play", label: "music embeds" },
+      { value: "Shop", label: "product cards" },
+    ],
+    preview: {
+      category: "COMPARE / TEMPLATES",
+      initials: "VS",
+      handle: "@cueful-vs-linktree",
+      headline: "Same bio job,",
+      accent: "clearer blocks.",
+      bio: "Referral codes, Spotify players, and product cards—side by side with Linktree.",
+      links: ["Referral cards", "Music embeds", "Shop cards", "Import Linktree"],
+      referral: { provider: "CUEFUL", offer: "Free forever templates", code: "START" },
+    },
+    sections: [
+      {
+        heading: "Referral cards vs a plain affiliate link",
+        body:
+          "Linktree can list an affiliate URL like any other button. Cueful’s referral template treats the offer as its own block: provider, benefit, one-tap code copy, and separate open vs copy analytics. That matches how discount audiences actually decide.",
+        bullets: [
+          "Cueful: dedicated referral cards with copy actions",
+          "Linktree: affiliate destinations as standard links or shop/affiliate tools on eligible plans",
+          "Cueful tracks referral opens and code copies for free",
+        ],
+      },
+      {
+        heading: "Music embeds vs Music Links",
+        body:
+          "Linktree’s Music Links can surface streaming services and Spotify-style previews. Cueful’s musician and Spotify templates paste an official Spotify, Apple Music, SoundCloud, or YouTube URL and render an inline player on the page—lazy-loaded, no autoplay—then stack tour and merch underneath.",
+        bullets: [
+          "Cueful: official embed players on free profiles",
+          "Linktree: Music Links and audio previews in its music toolkit",
+          "Cueful pairs Listen & watch with tour, merch, and mailing-list CTAs",
+        ],
+      },
+      {
+        heading: "Shop cards vs Linktree Shops",
+        body:
+          "Linktree Shops can sell digital products inside Linktree and may charge a seller fee on free and mid-tier plans (commonly cited at 12% free / 9% Starter–Pro / 0% Premium—confirm on Linktree’s pricing). Cueful’s shop template shows product cards with price and image, then sends buyers to your existing Shopify, Gumroad, or Stripe checkout. Cueful never processes payment and never takes a sale cut.",
+        bullets: [
+          "Cueful: mini shop cards → your checkout (keep 100%)",
+          "Linktree: built-in shops with plan-based seller fees on platform sales",
+          "Cueful Soft Studio template is built for product photography and drops",
+        ],
+      },
+    ],
+    steps: [
+      {
+        title: "Pick the job",
+        body: "Referral curator, musician release, or product drop—open the matching Cueful template.",
+      },
+      {
+        title: "Import if you already use Linktree",
+        body: "Paste your public Linktree URL, then upgrade blank buttons into referral, music, or shop blocks.",
+      },
+      {
+        title: "Publish cueful.bio/you",
+        body: "Swap the Instagram or TikTok bio link. No card required to keep the page live.",
+      },
+    ],
+    comparison: {
+      heading: "Cueful templates vs Linktree",
+      intro:
+        "Feature notes reflect Cueful’s free product and publicly described Linktree capabilities as of July 2026. Always confirm Linktree plan limits on linktr.ee/s/pricing.",
+      columns: ["Job", "Cueful", "Linktree"],
+      rows: [
+        ["Referral / coupon codes", "Dedicated cards + code copy analytics", "Usually a link; affiliate tools vary by plan/eligibility"],
+        ["Music on the page", "Spotify/Apple/SoundCloud/YouTube embeds free", "Music Links / Spotify previews in music toolkit"],
+        ["Selling products", "Cards → external checkout, 0% Cueful fee", "Shops with seller fees on many plans"],
+        ["Forced branding / ads", "No forced badge, no visitor ads", "Branding and limits tighten on free tier"],
+        ["Analytics depth", "Lifetime views, opens, code copies", "History and depth expand on paid plans"],
+        ["Moving over", "Public Linktree import", "Export/rebuild depends on your workflow"],
+        ["Price to publish", "$0 forever for core templates", "Free tier available; advanced features paid"],
+      ],
+    },
+    faqs: [
+      {
+        question: "Is Cueful just a free Linktree clone?",
+        answer:
+          "No. Cueful is narrower on purpose: referral cards, music embeds, shop cards, clean analytics, and an importer for people leaving Linktree—without selling a full creator-business suite.",
+      },
+      {
+        question: "Can I keep my Linktree until I switch?",
+        answer:
+          "Yes. Import into Cueful, review the page, then change the bio URL when ready. Your old Linktree is unchanged until you edit it.",
+      },
+      {
+        question: "Does Cueful take a cut of shop sales?",
+        answer:
+          "No. Product cards open your existing checkout. Payment processors may still charge their normal fees; Cueful does not add a seller fee.",
+      },
+      {
+        question: "Where do I see the Cueful templates?",
+        answer:
+          "Start from the homepage Features strip, or open /templates/referral-links-for-creators, /templates/spotify-embed-link-in-bio, and /templates/link-in-bio-shop.",
+      },
+    ],
+    related: [
+      { href: "/templates/referral-links-for-creators", label: "Referral template" },
+      { href: "/templates/spotify-embed-link-in-bio", label: "Spotify embed template" },
+      { href: "/templates/link-in-bio-shop", label: "Shop template" },
+      { href: "/free-linktree-alternative", label: "Import from Linktree" },
+    ],
+    primaryCta: "Compare live templates",
+    primaryHref: "/#features",
+    secondaryCta: "Import your Linktree",
+    secondaryHref: importLinktree,
+    sourceLinks: [
+      { label: "Linktree pricing", href: "https://linktr.ee/s/pricing" },
+      { label: "Cueful free Linktree alternative", href: "/free-linktree-alternative" },
+    ],
   },
   {
     path: "/cueful-vs-beacons",

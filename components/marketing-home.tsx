@@ -448,8 +448,8 @@ export function MarketingHome() {
             </Typography>
           </div>
           <Typography>
-            The same features from our Instagram — live on your bio page, no
-            paywall.
+            See how Cueful’s referral, music, and shop templates stack up against
+            Linktree—then open the matching guide.
           </Typography>
         </div>
         <div className="marketing-features__grid">
@@ -479,6 +479,16 @@ export function MarketingHome() {
               </span>
             </Link>
           ))}
+        </div>
+        <div className="marketing-features__footer">
+          <Button
+            component={Link}
+            href="/cueful-vs-linktree"
+            variant="outlined"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Cueful vs Linktree
+          </Button>
         </div>
       </section>
 
@@ -697,6 +707,7 @@ export function MarketingHome() {
         <BrandMark />
         <Typography>Clear links. Useful signals.</Typography>
         <div>
+          <Link href="/cueful-vs-linktree">Cueful vs Linktree</Link>
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>
           <Link href="/templates">Templates</Link>
