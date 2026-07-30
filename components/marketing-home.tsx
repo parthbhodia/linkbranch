@@ -480,60 +480,93 @@ export function MarketingHome() {
                       <em>{example.mediaEmbeds[0].provider.replace("_", " ")} embed</em>
                     </span>
                   ) : null}
-                  {example.products?.[0] ? (
-                    <span className="example-profile__shop">
-                      <strong>
-                        {example.products[0].badge
-                          ? `${example.products[0].badge} · `
-                          : ""}
-                        {example.products[0].title}
-                      </strong>
-                      <em>
-                        {example.products[0].price_amount != null
-                          ? `${example.products[0].currency} ${example.products[0].price_amount}`
-                          : "Shop"}
-                        {" · "}
-                        {example.products.length} products
-                      </em>
-                    </span>
-                  ) : null}
-                  {example.profile.links
-                    .slice(
-                      0,
-                      example.mediaEmbeds?.length || example.products?.length
-                        ? 1
-                        : 2,
-                    )
-                    .map((link) => {
-                      const isBooking =
-                        /calendly|cal\.com|tidycal|savvycal|hubspot|calendar\.google/i.test(
-                          link.url,
-                        );
-                      const isMusic =
-                        /spotify|music\.apple|soundcloud|youtube|bandcamp|audiomack/i.test(
-                          link.url,
-                        );
-                      return (
+                  {example.products?.length
+                    ? example.products.slice(0, 2).map((product) => (
                         <span
-                          className={`example-profile__link${
-                            isBooking ? " example-profile__link--booking" : ""
-                          }${isMusic ? " example-profile__link--music" : ""}`}
-                          key={link.id}
+                          className={`example-profile__shop${
+                            product.is_featured
+                              ? " example-profile__shop--featured"
+                              : ""
+                          }`}
+                          key={product.id}
                         >
-                          <strong>
-                            {isBooking ? "📅 " : isMusic ? "♪ " : ""}
-                            {link.title}
-                          </strong>
                           <em>
-                            {isBooking
-                              ? "Book a call"
-                              : isMusic
-                                ? "Music / video"
-                                : link.subtitle}
+                            {product.badge ? `${product.badge} · ` : ""}
+                            {product.category}
                           </em>
+                          <strong>{product.title}</strong>
+                          <span className="example-profile__shop-meta">
+                            <b>
+                              {product.price_amount != null
+                                ? `${product.currency} ${product.price_amount}`
+                                : "See details"}
+                            </b>
+                            <i>{product.cta_label || "Buy"}</i>
+                          </span>
                         </span>
-                      );
-                    })}
+                      ))
+                    : null}
+                  {!example.products?.length &&
+                  /referral/i.test(example.role) &&
+                  example.profile.referrals?.length
+                    ? example.profile.referrals.slice(0, 2).map((referral) => (
+                        <span
+                          className="example-profile__referral"
+                          style={{
+                            background: referral.color || undefined,
+                          }}
+                          key={referral.id}
+                        >
+                          <em>{referral.provider.toUpperCase()} / REFERRAL</em>
+                          <strong>{referral.perk}</strong>
+                          <span className="example-profile__referral-meta">
+                            {referral.code ? (
+                              <i>Copy · {referral.code}</i>
+                            ) : (
+                              <i>Open offer</i>
+                            )}
+                          </span>
+                        </span>
+                      ))
+                    : null}
+                  {!example.products?.length &&
+                  !(/referral/i.test(example.role) &&
+                    example.profile.referrals?.length)
+                    ? example.profile.links
+                        .slice(0, example.mediaEmbeds?.length ? 1 : 2)
+                        .map((link) => {
+                          const isBooking =
+                            /calendly|cal\.com|tidycal|savvycal|hubspot|calendar\.google/i.test(
+                              link.url,
+                            );
+                          const isMusic =
+                            /spotify|music\.apple|soundcloud|youtube|bandcamp|audiomack/i.test(
+                              link.url,
+                            );
+                          return (
+                            <span
+                              className={`example-profile__link${
+                                isBooking
+                                  ? " example-profile__link--booking"
+                                  : ""
+                              }${isMusic ? " example-profile__link--music" : ""}`}
+                              key={link.id}
+                            >
+                              <strong>
+                                {isBooking ? "📅 " : isMusic ? "♪ " : ""}
+                                {link.title}
+                              </strong>
+                              <em>
+                                {isBooking
+                                  ? "Book a call"
+                                  : isMusic
+                                    ? "Music / video"
+                                    : link.subtitle}
+                              </em>
+                            </span>
+                          );
+                        })
+                    : null}
                 </div>
                 <div>
                   <Typography component="h3">{example.profile.displayName}</Typography>
