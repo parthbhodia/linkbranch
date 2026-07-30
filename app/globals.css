@@ -3816,6 +3816,12 @@ a {
   background: color-mix(in srgb, var(--profile-surface) 94%, transparent);
 }
 
+.public-template--signal-deck.profile-theme-custom .creator-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .public-template.profile-theme-custom .profile-copy h1,
 .public-template.profile-theme-custom .profile-headline,
 .public-template.profile-theme-custom .link-card h3 {
