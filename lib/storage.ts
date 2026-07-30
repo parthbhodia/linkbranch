@@ -7,8 +7,23 @@ export const SUPPORTED_IMAGE_TYPES = [
 ] as const;
 
 export function publicAssetUrl(path?: string | null) {
+  if (!path) {
+    return undefined;
+  }
+
+  // Absolute or app-public paths (example profiles, marketing assets).
+  if (
+    path.startsWith("/") ||
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:") ||
+    path.startsWith("data:")
+  ) {
+    return path;
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!baseUrl || !path) {
+  if (!baseUrl) {
     return undefined;
   }
 

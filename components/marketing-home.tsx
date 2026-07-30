@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import BarChartRounded from "@mui/icons-material/BarChartRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
-import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
@@ -19,61 +17,64 @@ import { publicProfilePath } from "@/lib/brand";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
-type BuilderStep = "profile" | "links" | "referrals" | "analytics";
-
 const homepageFeatures = [
   {
     href: "/templates/referral-links-for-creators",
-    label: "Referral cards",
-    note: "Share offers & codes — free forever.",
+    theme: "ink",
+    title: "Grow with referral cards.",
+    body: "Put offers and codes in one tap-friendly block—copy tracking included, free forever.",
     image: "/marketing/feature-referrals.png",
     alt: "Cueful referral card with a one-tap copy code on a mobile profile",
-  },
-  {
-    href: "/templates/spotify-embed-link-in-bio",
-    label: "Music embeds",
-    note: "Play on your page — free forever.",
-    image: "/marketing/feature-music.png",
-    alt: "Cueful Spotify music embed playing on a mobile profile",
+    cta: "Referral template",
   },
   {
     href: "/templates/link-in-bio-shop",
-    label: "Shop cards",
-    note: "Sell from your bio — free forever.",
+    theme: "lagoon",
+    title: "Earn income from your bio.",
+    body: "Image-forward shop cards with price and buy buttons that open your own checkout—Cueful takes 0%.",
     image: "/marketing/feature-shop.png",
     alt: "Cueful shop cards with product images, prices, and buy buttons",
+    cta: "Shop template",
+  },
+  {
+    href: "/templates/spotify-embed-link-in-bio",
+    theme: "lilac",
+    title: "Play music. Embed video.",
+    body: "Spotify players and YouTube embeds sit on the page so fans listen and watch without leaving.",
+    image: "/marketing/feature-music.png",
+    alt: "Cueful Spotify music embed playing on a mobile profile",
+    cta: "Music template",
   },
 ];
 
-const builderTabs: Array<{ id: BuilderStep; label: string }> = [
-  { id: "profile", label: "Profile" },
-  { id: "links", label: "Links" },
-  { id: "referrals", label: "Referrals" },
-  { id: "analytics", label: "Analytics" },
-];
-
-const demoLinks = [
+const heroCollage = [
   {
-    id: "project",
-    title: "Latest side-project",
-    note: "A small open-source experiment",
+    src: "/marketing/hero-collage-friends.jpg",
+    alt: "Creators laughing together outdoors",
+    className: "marketing-hero-collage__tile--friends",
   },
   {
-    id: "notes",
-    title: "Field notes",
-    note: "Practical ideas from recent work",
+    src: "/marketing/hero-collage-portrait-round.jpg",
+    alt: "Creator wearing a mustard beanie",
+    className: "marketing-hero-collage__tile--round",
   },
   {
-    id: "tools",
-    title: "Favorite tools",
-    note: "A short, maintained collection",
+    src: "/marketing/hero-collage-portrait-tall.jpg",
+    alt: "Creator outdoors in a purple beanie",
+    className: "marketing-hero-collage__tile--tall",
+  },
+  {
+    src: "/marketing/hero-collage-statement.jpg",
+    alt: "Creator with blue braids blowing bubblegum",
+    className: "marketing-hero-collage__tile--statement",
   },
 ];
 
 export function MarketingHome() {
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [builderStep, setBuilderStep] = useState<BuilderStep>("profile");
   const [importOpen, setImportOpen] = useState(false);
+  const [activeExample, setActiveExample] = useState(0);
+  const examplesRailRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     captureReferralFromLocation();
@@ -87,53 +88,6 @@ export function MarketingHome() {
       active = false;
     };
   }, []);
-  const [demoName, setDemoName] = useState("Avery");
-  const [demoHeadline, setDemoHeadline] = useState(
-    "Useful things, thoughtfully arranged.",
-  );
-  const [selectedLink, setSelectedLink] = useState(demoLinks[0].id);
-  const [demoOffer, setDemoOffer] = useState("Templates for your next idea");
-  const [demoCode, setDemoCode] = useState("AVERY20");
-  const [linkOpens, setLinkOpens] = useState(184);
-  const [codeCopies, setCodeCopies] = useState(67);
-  const [copied, setCopied] = useState(false);
-  const [demoStatus, setDemoStatus] = useState("Demo ready");
-  const [activeExample, setActiveExample] = useState(0);
-  const examplesRailRef = useRef<HTMLDivElement>(null);
-
-  const initials = useMemo(
-    () =>
-      demoName
-        .trim()
-        .split(/\s+/)
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "CF",
-    [demoName],
-  );
-  const headlineWords = demoHeadline.trim().split(/\s+/);
-  const accentWord = headlineWords.pop() || "arranged.";
-  const headlineLead = headlineWords.join(" ");
-  const copyRate = Math.round((codeCopies / Math.max(1, linkOpens)) * 100);
-
-  function recordLinkOpen(linkId: string) {
-    setSelectedLink(linkId);
-    setLinkOpens((count) => count + 1);
-    setDemoStatus("Link open recorded");
-  }
-
-  async function copyDemoCode() {
-    try {
-      await navigator.clipboard.writeText(demoCode);
-    } catch {
-      // The demo still records the intent when clipboard access is unavailable.
-    }
-    setCodeCopies((count) => count + 1);
-    setCopied(true);
-    setDemoStatus(`${demoCode || "Referral"} copied`);
-    window.setTimeout(() => setCopied(false), 1600);
-  }
 
   function showExample(index: number) {
     const nextIndex =
@@ -254,188 +208,33 @@ export function MarketingHome() {
             )}
           </div>
           <div className="marketing-hero__trust" aria-label="Signup benefits">
-            <span><CheckRounded aria-hidden="true" /> Free username</span>
-            <span><CheckRounded aria-hidden="true" /> No forced branding</span>
+            <span>
+              <CheckRounded aria-hidden="true" /> Free username
+            </span>
+            <span>
+              <CheckRounded aria-hidden="true" /> No forced branding
+            </span>
           </div>
         </div>
 
         <div
-          className={`builder-demo builder-demo--${builderStep}`}
-          aria-label="Interactive Cueful builder demo"
+          className="marketing-hero-collage"
+          aria-label="Creators growing with Cueful"
         >
-          <div className="builder-demo__editor">
-            <div className="builder-demo__window">
-              <i />
-              <i />
-              <i />
-              <span>LIVE BUILDER</span>
-            </div>
-
-            <div className="builder-demo__tabs" role="tablist" aria-label="Demo editor sections">
-              {builderTabs.map((tab) => (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={builderStep === tab.id}
-                  className={builderStep === tab.id ? "is-active" : ""}
-                  onClick={() => setBuilderStep(tab.id)}
-                  key={tab.id}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="builder-demo__controls" key={builderStep}>
-              {builderStep === "profile" && (
-                <>
-                  <div className="builder-demo__intro">
-                    <p>Edit the introduction</p>
-                    <span>The preview updates as you type.</span>
-                  </div>
-                  <label>
-                    <small>DISPLAY NAME</small>
-                    <input
-                      name="demo-display-name"
-                      value={demoName}
-                      onChange={(event) => setDemoName(event.target.value)}
-                      maxLength={24}
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label>
-                    <small>HEADLINE</small>
-                    <input
-                      name="demo-headline"
-                      value={demoHeadline}
-                      onChange={(event) => setDemoHeadline(event.target.value)}
-                      maxLength={64}
-                      autoComplete="off"
-                    />
-                  </label>
-                </>
-              )}
-
-              {builderStep === "links" && (
-                <>
-                  <div className="builder-demo__intro">
-                    <p>Choose the spotlight</p>
-                    <span>One clear priority beats a crowded list.</span>
-                  </div>
-                  <div className="builder-demo__choice-list">
-                    {demoLinks.map((link) => (
-                      <button
-                        type="button"
-                        className={selectedLink === link.id ? "is-selected" : ""}
-                        onClick={() => setSelectedLink(link.id)}
-                        key={link.id}
-                      >
-                        <span><b>{link.title}</b><small>{link.note}</small></span>
-                        {selectedLink === link.id && <CheckRounded aria-hidden="true" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {builderStep === "referrals" && (
-                <>
-                  <div className="builder-demo__intro">
-                    <p>Give the offer context</p>
-                    <span>Benefit and code stay together.</span>
-                  </div>
-                  <label>
-                    <small>OFFER</small>
-                    <input
-                      name="demo-offer"
-                      value={demoOffer}
-                      onChange={(event) => setDemoOffer(event.target.value)}
-                      maxLength={56}
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label>
-                    <small>CODE</small>
-                    <input
-                      name="demo-code"
-                      value={demoCode}
-                      onChange={(event) =>
-                        setDemoCode(event.target.value.toUpperCase().replace(/\s/g, ""))
-                      }
-                      maxLength={20}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </label>
-                </>
-              )}
-
-              {builderStep === "analytics" && (
-                <>
-                  <div className="builder-demo__intro">
-                    <p>See the useful signals</p>
-                    <span>Try a link or copy the code in the preview.</span>
-                  </div>
-                  <div className="builder-demo__metrics">
-                    <div><small>LINK OPENS</small><b>{linkOpens}</b></div>
-                    <div><small>CODE COPIES</small><b>{codeCopies}</b></div>
-                    <div><small>COPY RATE</small><b>{copyRate}%</b></div>
-                  </div>
-                  <div className="builder-demo__mini-chart" aria-label="Demo activity chart">
-                    {[38, 55, 46, 72, 64, 88, 78].map((height, index) => (
-                      <i
-                        key={index}
-                        style={{ "--demo-height": `${height}%` } as React.CSSProperties}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="builder-demo__stage">
-            <span className="builder-demo__live">● LIVE PREVIEW</span>
-            <article className="builder-phone" aria-label="Public profile preview">
-              <div className="builder-phone__avatar">{initials}</div>
-              <small>@avery-makes</small>
-              <h2>
-                {headlineLead || "Useful things"}{" "}
-                <em>{accentWord}</em>
-              </h2>
-              <p>{demoName || "Your name"} shares a small, useful collection.</p>
-              <div className="builder-phone__socials" aria-label="Social profile preview">
-                <i>ig</i><i>yt</i><i>gh</i>
-              </div>
-              <div className="builder-phone__offer">
-                <span>NOTION / REFERRAL</span>
-                <b>{demoOffer || "A useful referral offer"}</b>
-                <button type="button" onClick={copyDemoCode}>
-                  <ContentCopyRounded aria-hidden="true" />
-                  {copied ? "Copied" : `Copy · ${demoCode || "CODE"}`}
-                </button>
-              </div>
-              <div className="builder-phone__links">
-                {demoLinks.slice(0, 2).map((link) => (
-                  <button
-                    type="button"
-                    className={selectedLink === link.id ? "is-spotlight" : ""}
-                    onClick={() => recordLinkOpen(link.id)}
-                    key={link.id}
-                  >
-                    <span><b>{link.title}</b><small>{link.note}</small></span>
-                    <ArrowOutwardRounded aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-              <div className="builder-phone__signals">
-                <span><b>{linkOpens}</b><small>opens</small></span>
-                <span><b>{codeCopies}</b><small>copies</small></span>
-                <BarChartRounded aria-hidden="true" />
-              </div>
-              <span className="sr-only" aria-live="polite">{demoStatus}</span>
-            </article>
-          </div>
+          {heroCollage.map((tile) => (
+            <figure
+              className={`marketing-hero-collage__tile ${tile.className}`}
+              key={tile.src}
+            >
+              <Image
+                src={tile.src}
+                alt={tile.alt}
+                fill
+                sizes="(max-width: 900px) 45vw, 280px"
+                priority
+              />
+            </figure>
+          ))}
         </div>
       </section>
 
@@ -444,36 +243,36 @@ export function MarketingHome() {
           <div>
             <p className="section-label">FREE FOREVER</p>
             <Typography component="h2">
-              Referral cards. Music embeds. Shop cards.
+              Built for the jobs in your bio.
             </Typography>
           </div>
           <Typography>
-            See how Cueful’s referral, music, and shop templates stack up against
-            Linktree—then open the matching guide.
+            Referral cards, shop grids, music and video embeds—without visitor
+            ads or a Cueful cut of sales.
           </Typography>
         </div>
         <div className="marketing-features__grid">
           {homepageFeatures.map((feature) => (
             <Link
-              className="marketing-feature-poster"
+              className={`marketing-feature-card marketing-feature-card--${feature.theme}`}
               href={feature.href}
               key={feature.href}
             >
-              <span className="marketing-feature-poster__media">
+              <span className="marketing-feature-card__media">
                 <Image
                   src={feature.image}
                   alt={feature.alt}
-                  width={1080}
-                  height={1350}
-                  sizes="(max-width: 900px) 100vw, 33vw"
-                  priority={feature.label === "Referral cards"}
+                  width={720}
+                  height={720}
+                  sizes="(max-width: 900px) 80vw, 280px"
+                  priority={feature.theme === "ink"}
                 />
               </span>
-              <span className="marketing-feature-poster__copy">
-                <b>{feature.label}</b>
-                <small>{feature.note}</small>
+              <span className="marketing-feature-card__copy">
+                <b>{feature.title}</b>
+                <small>{feature.body}</small>
                 <em>
-                  See template{" "}
+                  {feature.cta}{" "}
                   <ArrowOutwardRounded fontSize="inherit" aria-hidden="true" />
                 </em>
               </span>
@@ -572,21 +371,35 @@ export function MarketingHome() {
                             product.is_featured
                               ? " example-profile__shop--featured"
                               : ""
+                          }${
+                            product.image_path
+                              ? " example-profile__shop--media"
+                              : ""
                           }`}
                           key={product.id}
                         >
-                          <em>
-                            {product.badge ? `${product.badge} · ` : ""}
-                            {product.category}
-                          </em>
-                          <strong>{product.title}</strong>
-                          <span className="example-profile__shop-meta">
-                            <b>
-                              {product.price_amount != null
-                                ? `${product.currency} ${product.price_amount}`
-                                : "See details"}
-                            </b>
-                            <i>{product.cta_label || "Buy"}</i>
+                          {product.image_path ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              className="example-profile__shop-photo"
+                              src={product.image_path}
+                              alt=""
+                            />
+                          ) : null}
+                          <span className="example-profile__shop-copy">
+                            <em>
+                              {product.badge ? `${product.badge} · ` : ""}
+                              {product.category}
+                            </em>
+                            <strong>{product.title}</strong>
+                            <span className="example-profile__shop-meta">
+                              <b>
+                                {product.price_amount != null
+                                  ? `${product.currency} ${product.price_amount}`
+                                  : "See details"}
+                              </b>
+                              <i>{product.cta_label || "Buy"}</i>
+                            </span>
                           </span>
                         </span>
                       ))

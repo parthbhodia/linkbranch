@@ -20,7 +20,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { readImportedProfileDraft } from "@/lib/import-draft";
 
-type TemplateId = "field-notes" | "after-dark" | "soft-studio";
+type TemplateId = "field-notes" | "after-dark" | "soft-studio" | "signal-deck";
 
 type Template = {
   id: TemplateId;
@@ -61,6 +61,16 @@ const templates: Template[] = [
     badge: "Shop ready",
     previewClass: "template-preview--soft",
     accent: "#ffb7d0",
+  },
+  {
+    id: "signal-deck",
+    number: "04",
+    name: "Signal Deck",
+    description:
+      "Dark charcoal with lime signals, skill tags, and icon-forward links. Built for builders and operators.",
+    badge: "New",
+    previewClass: "template-preview--signal",
+    accent: "#b9ff66",
   },
 ];
 
@@ -107,7 +117,8 @@ export function TemplatePicker() {
   const initialId =
     requested === "after-dark" ||
     requested === "soft-studio" ||
-    requested === "field-notes"
+    requested === "field-notes" ||
+    requested === "signal-deck"
       ? requested
       : "field-notes";
   const [selectedId, setSelectedId] = useState<TemplateId>(initialId);

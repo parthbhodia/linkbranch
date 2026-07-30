@@ -110,6 +110,7 @@ export type DashboardProfile = {
   bio: string;
   location: string;
   show_location: boolean;
+  tags: string[];
   template: string;
   avatar_path: string | null;
   seo_title: string | null;
@@ -276,6 +277,12 @@ const templateOptions = [
     color: "#f1d9ee",
     accent: "#9b3c78",
   },
+  {
+    id: "signal-deck",
+    name: "Signal Deck",
+    color: "#0f141c",
+    accent: "#b9ff66",
+  },
 ];
 
 const themeFontOptions: Array<{
@@ -391,6 +398,7 @@ export function Dashboard({
   const router = useRouter();
   const [draft, setDraft] = useState(() => ({
     ...profile,
+    tags: Array.isArray(profile.tags) ? profile.tags : [],
     seo_og_title: profile.seo_og_title ?? null,
     seo_og_description: profile.seo_og_description ?? null,
     seo_keywords: profile.seo_keywords ?? null,
@@ -786,6 +794,10 @@ export function Dashboard({
         bio: draft.bio.trim(),
         location: draft.location.trim(),
         show_location: draft.show_location,
+        tags: draft.tags
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+          .slice(0, 16),
         template: draft.template,
         theme_config: activeTheme,
         seo_title: draft.seo_title?.trim() || null,
@@ -1513,6 +1525,22 @@ export function Dashboard({
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
+                label="Skill tags"
+                value={draft.tags.join(", ")}
+                onChange={(event) =>
+                  update(
+                    "tags",
+                    event.target.value
+                      .split(",")
+                      .map((tag) => tag.trim())
+                      .filter(Boolean)
+                      .slice(0, 16),
+                  )
+                }
+                helperText="Comma-separated chips under your intro (AWS, DevOps, Design…)"
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <TextField
                 label="Location"
                 value={draft.location}
                 onChange={(event) => update("location", event.target.value)}
@@ -1969,7 +1997,8 @@ export function Dashboard({
                 <div className="workspace-design-group">
                   <Typography variant="h3">Button shape</Typography>
                   <div className="workspace-segmented">
-                    {(["soft", "pill", "sharp"] as const).map((shape) => (
+                    {(["soft", "pill", "sharp", "glass", "outline"] as const).map(
+                      (shape) => (
                       <ButtonBase
                         className={activeTheme.buttonShape === shape ? "is-selected" : ""}
                         onClick={() =>
@@ -2008,7 +2037,7 @@ export function Dashboard({
                   <Box>
                     <Typography variant="h3">Wallpapers</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Pick a texture, or upload your own full-bleed wallpaper.
+                      Prism, graph, flare, and other textures — or upload your own full-bleed image.
                     </Typography>
                   </Box>
                 </div>
@@ -2021,10 +2050,25 @@ export function Dashboard({
                           : ""
                       }`}
                       onClick={() =>
-                        updateTheme((current) => ({
-                          ...current,
-                          background: background.id,
-                        }))
+                        updateTheme((current) => {
+                          const blockPalettes: Record<
+                            string,
+                            (typeof themePalettes)[number]["colors"]
+                          > = {
+                            ink: themePalettes.find((p) => p.id === "charcoal-block")!
+                              .colors,
+                            lagoon: themePalettes.find((p) => p.id === "teal-block")!
+                              .colors,
+                            lilac: themePalettes.find((p) => p.id === "lavender-block")!
+                              .colors,
+                          };
+                          const colors = blockPalettes[background.id];
+                          return {
+                            ...current,
+                            background: background.id,
+                            ...(colors ? { colors: { ...colors } } : {}),
+                          };
+                        })
                       }
                       key={background.id}
                     >
@@ -2096,6 +2140,36 @@ export function Dashboard({
                       )}
                     </Stack>
                   </Box>
+                </div>
+                <div className="workspace-design-group" style={{ marginTop: 18 }}>
+                  <Typography variant="h3">Contact form</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.25 }}
+                  >
+                    Let visitors send you a name, email, and message from your page.
+                  </Typography>
+                  <div className="workspace-segmented">
+                    {([true, false] as const).map((enabled) => (
+                      <ButtonBase
+                        className={
+                          Boolean(activeTheme.contactForm) === enabled
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            contactForm: enabled,
+                          }))
+                        }
+                        key={String(enabled)}
+                      >
+                        {enabled ? "On" : "Off"}
+                      </ButtonBase>
+                    ))}
+                  </div>
                 </div>
               </div>
 

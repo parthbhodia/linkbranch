@@ -266,6 +266,9 @@ export default async function PublicProfilePage({
         : `@${profile.username}`,
     bio: profile.bio,
     avatarUrl: publicAssetUrl(profile.avatar_path),
+    tags: Array.isArray(profile.tags)
+      ? profile.tags.filter((tag: unknown): tag is string => typeof tag === "string")
+      : [],
     socials: (socials ?? []).map((item) => ({
       platform: item.platform,
       url: item.url,

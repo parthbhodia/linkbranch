@@ -456,7 +456,7 @@ a {
 
 .template-card-rail {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -729,6 +729,23 @@ a {
   box-shadow: 0 5px 16px rgba(80, 53, 72, 0.08);
 }
 
+.template-preview--signal {
+  color: #edf4ff;
+  background: linear-gradient(180deg, #1a2433 0%, #0f141c 100%);
+}
+
+.template-preview--signal .mini-profile__avatar {
+  color: #10151d;
+  background: #b9ff66;
+  border-radius: 50%;
+}
+
+.template-preview--signal .mini-profile__links span {
+  color: #b9ff66;
+  background: #1a2230;
+  border-color: rgba(185, 255, 102, 0.22);
+}
+
 @media (max-width: 1050px) {
   .template-workspace {
     grid-template-columns: 1fr;
@@ -873,6 +890,95 @@ a {
   color: #555a4e;
   font-size: clamp(1rem, 1.4vw, 1.22rem) !important;
   line-height: 1.65 !important;
+}
+
+.marketing-hero-collage {
+  position: relative;
+  width: min(560px, 100%);
+  min-height: 520px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  grid-template-rows: 180px minmax(300px, 1fr);
+  gap: 14px;
+  align-self: center;
+  animation: marketing-hero-collage-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.marketing-hero-collage__tile {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, #c9ef69 28%, #fff);
+}
+
+.marketing-hero-collage__tile img {
+  object-fit: cover;
+}
+
+.marketing-hero-collage__tile--friends {
+  grid-column: 1;
+  grid-row: 1;
+  border-radius: 999px;
+}
+
+.marketing-hero-collage__tile--round {
+  grid-column: 2;
+  grid-row: 1;
+  width: min(100%, 180px);
+  aspect-ratio: 1;
+  justify-self: end;
+  align-self: start;
+  border-radius: 50%;
+  animation: marketing-hero-collage-float 5.5s ease-in-out infinite;
+}
+
+.marketing-hero-collage__tile--tall {
+  grid-column: 1;
+  grid-row: 2;
+  border-radius: 999px;
+  animation: marketing-hero-collage-float 6.5s ease-in-out 0.4s infinite;
+}
+
+.marketing-hero-collage__tile--statement {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  width: 100%;
+  min-height: 240px;
+  border-radius: 42% 28% 36% 48% / 34% 42% 28% 46%;
+  box-shadow: 0 18px 40px rgba(28, 30, 24, 0.16);
+  animation: marketing-hero-collage-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+}
+
+@keyframes marketing-hero-collage-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes marketing-hero-collage-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-hero-collage,
+  .marketing-hero-collage__tile--round,
+  .marketing-hero-collage__tile--tall,
+  .marketing-hero-collage__tile--statement {
+    animation: none;
+  }
 }
 
 .marketing-hero__actions {
@@ -1678,6 +1784,99 @@ a {
   transform: rotate(-4deg);
 }
 
+.public-template--signal-deck.app-shell {
+  color: #f3f6fb;
+  background: #0f141c;
+}
+
+.public-template--signal-deck .creator-card {
+  border-color: rgba(185, 255, 102, 0.14);
+  background: #141b27;
+}
+
+.public-template--signal-deck .avatar {
+  color: #10151d;
+  background: #b9ff66;
+  border: 3px solid #b9ff66;
+}
+
+.public-template--signal-deck .profile-handle,
+.public-template--signal-deck .profile-bio,
+.public-template--signal-deck .section-heading .MuiTypography-caption,
+.public-template--signal-deck .link-card .MuiTypography-body2,
+.public-template--signal-deck .hub-footer .MuiTypography-root {
+  color: #9aa7b8 !important;
+}
+
+.public-template--signal-deck .link-card h3,
+.public-template--signal-deck .headline-accent {
+  color: #b9ff66;
+}
+
+.public-template--signal-deck .link-card,
+.public-template--signal-deck .social-rail .MuiIconButton-root,
+.public-template--signal-deck .search-field .MuiOutlinedInput-root {
+  color: #f3f6fb;
+  border-color: rgba(185, 255, 102, 0.16);
+  background: #1a2230;
+}
+
+.public-template--signal-deck .link-index {
+  color: #b9ff66;
+  background: #243044;
+}
+
+.profile-cover {
+  width: 100%;
+  height: 148px;
+  margin: 0 0 18px;
+  border-radius: 18px;
+  background-size: cover;
+  background-position: center;
+  background-color: #243044;
+}
+
+.public-template--signal-deck .profile-cover {
+  margin-bottom: -36px;
+  border-radius: 18px 18px 0 0;
+}
+
+.public-template--signal-deck .profile-copy > .avatar {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+}
+
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-tags li {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  font: 750 0.72rem var(--font-mono), monospace;
+  letter-spacing: 0.02em;
+}
+
+.public-template--signal-deck .profile-tags li {
+  color: #e8eef8;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #243044;
+}
+
+.link-index--icon {
+  display: grid;
+  place-items: center;
+}
+
 /* Dashboard phone now mirrors the public creator card */
 
 .workspace-phone {
@@ -2379,10 +2578,13 @@ a {
 
 .product-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .product-card {
   overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
   border: 1px solid color-mix(in srgb, currentColor 17%, transparent);
   border-radius: var(--profile-card-radius, 24px);
   background: var(--profile-surface, #fff);
@@ -2394,7 +2596,8 @@ a {
 
 .product-card__media {
   position: relative;
-  min-height: 160px;
+  aspect-ratio: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -2405,7 +2608,7 @@ a {
 
 .product-card__media > img {
   width: 100%;
-  height: 190px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -2423,28 +2626,49 @@ a {
 
 .product-card__copy {
   display: grid;
-  gap: 9px;
-  padding: 18px;
+  align-content: start;
+  gap: 4px;
+  padding: 12px 14px 14px;
+}
+
+.product-card__copy > .MuiTypography-h3 {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.product-card__copy > .MuiTypography-body2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.78rem;
 }
 
 .product-card__copy > span,
 .media-embed-card > div > span {
   color: var(--profile-muted, #6d7167);
-  font: 750 0.68rem var(--font-mono);
+  font: 750 0.62rem var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .product-card__copy > div {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 8px;
+}
+
+.product-card__copy > div > strong {
+  font-size: 0.92rem;
 }
 
 .product-card__copy .MuiButton-root {
   min-width: 0;
+  min-height: 34px;
+  padding-inline: 12px;
+  font-size: 0.72rem;
 }
 
 .media-embed-card {
@@ -2452,6 +2676,16 @@ a {
   border: 1px solid color-mix(in srgb, currentColor 17%, transparent);
   border-radius: var(--profile-card-radius, 24px);
   background: var(--profile-surface, #fff);
+}
+
+.media-embed-card--video iframe {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  height: auto;
+}
+
+.media-embed-list--video {
+  gap: 16px;
 }
 
 .media-embed-card iframe {
@@ -2481,6 +2715,30 @@ a {
   font-size: 1rem;
 }
 
+.profile-contact-form {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, currentColor 17%, transparent);
+  border-radius: var(--profile-card-radius, 24px);
+  background: var(--profile-surface, #fff);
+}
+
+.profile-contact-form__fields {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-contact-form .MuiTextField-root .MuiOutlinedInput-root {
+  border-radius: calc(var(--profile-radius, 18px) * 0.7);
+  background: color-mix(in srgb, var(--profile-bg, #faf9f1) 55%, transparent);
+}
+
+.profile-contact-form .MuiButton-root {
+  min-height: 46px;
+  border-radius: var(--profile-radius, 18px);
+}
+
 .profile-disclosure {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -2500,9 +2758,29 @@ a {
 @media (max-width: 700px) {
   .commerce-editor__heading,
   .commerce-editor__composer-layout,
-  .commerce-editor__form,
-  .product-grid {
+  .commerce-editor__form {
     grid-template-columns: 1fr;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .product-card__copy {
+    padding: 10px 11px 12px;
+  }
+
+  .product-card__copy > .MuiTypography-body2 {
+    display: none;
+  }
+
+  .product-card__copy > span {
+    display: none;
+  }
+
+  .product-card__copy .MuiButton-root {
+    padding-inline: 8px;
   }
 
   .commerce-editor__preview {
@@ -3099,6 +3377,7 @@ a {
 .workspace-segmented {
   padding: 3px;
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   border: 1px solid #d8dad1;
   border-radius: 11px;
@@ -3185,6 +3464,48 @@ a {
   background-size: 5px 5px;
 }
 
+.workspace-background-choice--prism i {
+  background-color: #1d1833;
+  background-image:
+    radial-gradient(circle at 18% 28%, #8b6cff, transparent 48%),
+    radial-gradient(circle at 82% 18%, #ff7040, transparent 46%),
+    radial-gradient(circle at 55% 88%, #2ec4b6, transparent 50%),
+    linear-gradient(145deg, #2a1b45, #16384a);
+}
+
+.workspace-background-choice--graph i {
+  background-color: color-mix(in srgb, var(--choice-bg) 82%, #d9f36a);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--choice-accent) 34%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--choice-accent) 34%, transparent) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+.workspace-background-choice--flare i {
+  background-image:
+    radial-gradient(
+      circle at 50% 45%,
+      color-mix(in srgb, var(--choice-accent) 90%, #ffb347) 0%,
+      color-mix(in srgb, var(--choice-accent) 50%, #ff7a59) 34%,
+      color-mix(in srgb, var(--choice-bg) 40%, #7f8c6f) 100%
+    );
+}
+
+.workspace-background-choice--ink i {
+  background-color: #1c2330;
+  background-image: none;
+}
+
+.workspace-background-choice--lagoon i {
+  background-color: #00a8a8;
+  background-image: none;
+}
+
+.workspace-background-choice--lilac i {
+  background-color: #efc8ef;
+  background-image: none;
+}
+
 .workspace-background-choice span {
   display: grid;
   gap: 2px;
@@ -3260,6 +3581,14 @@ a {
   --profile-radius: 3px;
 }
 
+.profile-theme-buttons--glass {
+  --profile-radius: 999px;
+}
+
+.profile-theme-buttons--outline {
+  --profile-radius: 999px;
+}
+
 .profile-theme-density--compact {
   --profile-link-height: 68px;
 }
@@ -3330,6 +3659,84 @@ a {
       transparent 1px 3px
     );
   background-size: 6px 6px;
+}
+
+.public-template.profile-theme-background--prism.app-shell {
+  background-color: color-mix(in srgb, var(--profile-bg) 55%, #1a1630);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(
+      120% 80% at 18% 22%,
+      color-mix(in srgb, var(--profile-accent) 72%, #7c5cff),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 70% at 82% 18%,
+      color-mix(in srgb, var(--profile-button) 68%, #ff6b3d),
+      transparent 52%
+    ),
+    radial-gradient(
+      110% 90% at 58% 88%,
+      color-mix(in srgb, #2ec4b6 70%, var(--profile-accent)),
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 70% at 8% 78%,
+      color-mix(in srgb, #5b3dff 55%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--profile-bg) 40%, #24183a),
+      color-mix(in srgb, var(--profile-bg) 35%, #12384a)
+    );
+  background-size: 180px 180px, auto, auto, auto, auto, auto;
+  background-blend-mode: soft-light, normal, normal, normal, normal, normal;
+}
+
+.public-template.profile-theme-background--graph.app-shell {
+  background-color: color-mix(in srgb, var(--profile-bg) 88%, #d9f36a);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-accent) 18%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--profile-accent) 18%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 18px 18px;
+}
+
+.public-template.profile-theme-background--flare.app-shell {
+  background-color: color-mix(in srgb, var(--profile-bg) 70%, #5f6b55);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--profile-accent) 88%, #ffb347) 0%,
+      color-mix(in srgb, var(--profile-button) 55%, #ff7a59) 28%,
+      color-mix(in srgb, var(--profile-bg) 45%, #8b9a7a) 62%,
+      color-mix(in srgb, var(--profile-bg) 55%, #5d6a52) 100%
+    );
+  background-size: 160px 160px, auto;
+  background-blend-mode: soft-light, normal;
+}
+
+.public-template.profile-theme-background--ink.app-shell {
+  background-color: #1c2330;
+  background-image: none;
+}
+
+.public-template.profile-theme-background--lagoon.app-shell {
+  background-color: #00a8a8;
+  background-image: none;
+}
+
+.public-template.profile-theme-background--lilac.app-shell {
+  background-color: #efc8ef;
+  background-image: none;
 }
 
 .public-template.profile-theme-has-wallpaper.app-shell {
@@ -3421,6 +3828,48 @@ a {
   color: var(--profile-button-text);
   border-radius: var(--profile-radius);
   background: var(--profile-button);
+}
+
+.public-template.profile-theme-buttons--glass .link-card,
+.public-template.profile-theme-buttons--glass .social-rail .MuiIconButton-root,
+.public-template.profile-theme-buttons--glass .search-field .MuiOutlinedInput-root,
+.public-template.profile-theme-buttons--glass .product-card,
+.public-template.profile-theme-buttons--glass .referral-card {
+  color: var(--profile-text);
+  border-color: color-mix(in srgb, #fff 42%, transparent);
+  background: color-mix(in srgb, var(--profile-surface) 28%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 28%, transparent);
+}
+
+.public-template.profile-theme-buttons--glass .link-card__arrow,
+.public-template.profile-theme-buttons--glass .link-index,
+.public-template.profile-theme-buttons--glass .perk-action {
+  color: var(--profile-text);
+  border: 1px solid color-mix(in srgb, #fff 35%, transparent);
+  background: color-mix(in srgb, var(--profile-surface) 34%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.public-template.profile-theme-buttons--outline .link-card,
+.public-template.profile-theme-buttons--outline .social-rail .MuiIconButton-root,
+.public-template.profile-theme-buttons--outline .search-field .MuiOutlinedInput-root,
+.public-template.profile-theme-buttons--outline .product-card,
+.public-template.profile-theme-buttons--outline .referral-card {
+  color: var(--profile-text);
+  border: 1.5px solid color-mix(in srgb, var(--profile-text) 58%, transparent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.public-template.profile-theme-buttons--outline .link-card__arrow,
+.public-template.profile-theme-buttons--outline .link-index,
+.public-template.profile-theme-buttons--outline .perk-action {
+  color: var(--profile-text);
+  border: 1.5px solid color-mix(in srgb, var(--profile-text) 58%, transparent);
+  background: transparent;
 }
 
 .public-template.profile-theme-custom .perk-action {
@@ -3518,6 +3967,72 @@ a {
   background-size: 5px 5px;
 }
 
+.workspace-phone.profile-theme-background--prism .workspace-phone__body {
+  background-color: color-mix(in srgb, var(--profile-bg) 55%, #1a1630);
+  background-image:
+    radial-gradient(
+      120% 80% at 18% 22%,
+      color-mix(in srgb, var(--profile-accent) 72%, #7c5cff),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 70% at 82% 18%,
+      color-mix(in srgb, var(--profile-button) 68%, #ff6b3d),
+      transparent 52%
+    ),
+    radial-gradient(
+      110% 90% at 58% 88%,
+      color-mix(in srgb, #2ec4b6 70%, var(--profile-accent)),
+      transparent 58%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--profile-bg) 40%, #24183a),
+      color-mix(in srgb, var(--profile-bg) 35%, #12384a)
+    );
+}
+
+.workspace-phone.profile-theme-background--graph .workspace-phone__body {
+  background-color: color-mix(in srgb, var(--profile-bg) 88%, #d9f36a);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-accent) 16%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--profile-accent) 16%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 12px 12px;
+}
+
+.workspace-phone.profile-theme-background--flare .workspace-phone__body {
+  background-color: color-mix(in srgb, var(--profile-bg) 70%, #5f6b55);
+  background-image: radial-gradient(
+    circle at 50% 42%,
+    color-mix(in srgb, var(--profile-accent) 88%, #ffb347) 0%,
+    color-mix(in srgb, var(--profile-button) 55%, #ff7a59) 28%,
+    color-mix(in srgb, var(--profile-bg) 45%, #8b9a7a) 62%,
+    color-mix(in srgb, var(--profile-bg) 55%, #5d6a52) 100%
+  );
+}
+
+.workspace-phone.profile-theme-background--ink .workspace-phone__body {
+  background-color: #1c2330;
+  background-image: none;
+}
+
+.workspace-phone.profile-theme-background--lagoon .workspace-phone__body {
+  background-color: #00a8a8;
+  background-image: none;
+}
+
+.workspace-phone.profile-theme-background--lilac .workspace-phone__body {
+  background-color: #efc8ef;
+  background-image: none;
+}
+
 .workspace-phone.profile-theme-has-wallpaper .workspace-phone__body {
   background-image:
     linear-gradient(
@@ -3541,8 +4056,14 @@ a {
 .workspace-background-choice--stripes i,
 .workspace-background-choice--paper i,
 .workspace-background-choice--aurora i,
-.workspace-background-choice--grain i {
+.workspace-background-choice--grain i,
+.workspace-background-choice--graph i,
+.workspace-background-choice--flare i {
   background-color: var(--choice-bg);
+}
+
+.workspace-background-choice--prism i {
+  background-color: #1d1833;
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__body > h2,
@@ -3589,6 +4110,22 @@ a {
 .workspace-phone.profile-theme-custom .workspace-phone__link,
 .workspace-phone.profile-theme-custom .workspace-phone__search {
   border-radius: var(--profile-radius);
+}
+
+.workspace-phone.profile-theme-buttons--glass .workspace-phone__link {
+  color: var(--profile-text);
+  border-color: color-mix(in srgb, #fff 42%, transparent);
+  background: color-mix(in srgb, var(--profile-surface) 28%, transparent);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 24%, transparent);
+}
+
+.workspace-phone.profile-theme-buttons--outline .workspace-phone__link {
+  color: var(--profile-text);
+  border: 1.5px solid color-mix(in srgb, var(--profile-text) 55%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .workspace-phone.profile-theme-density--compact .workspace-phone__body {
@@ -7794,6 +8331,11 @@ a {
     margin: 0 auto;
   }
 
+  .marketing-hero-collage {
+    width: min(520px, 100%);
+    min-height: 480px;
+  }
+
   .marketing-referrals {
     grid-template-columns: 1fr;
   }
@@ -7877,6 +8419,21 @@ a {
   .builder-demo {
     min-height: 610px;
     grid-template-columns: 1fr;
+  }
+
+  .marketing-hero-collage {
+    width: 100%;
+    min-height: 420px;
+    grid-template-rows: 140px minmax(240px, 1fr);
+    gap: 10px;
+  }
+
+  .marketing-hero-collage__tile--round {
+    width: min(100%, 140px);
+  }
+
+  .marketing-hero-collage__tile--statement {
+    min-height: 200px;
   }
 
   .builder-demo__editor {
@@ -8399,12 +8956,40 @@ a {
   color: #3a2a33;
 }
 
+.example-profile__shop--media {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.example-profile__shop-photo {
+  width: 100%;
+  height: 56px;
+  object-fit: cover;
+  display: block;
+  background: color-mix(in srgb, #f0c5e1 35%, #fff);
+}
+
+.example-profile__shop-copy {
+  display: grid !important;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 8px 10px 9px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
 .example-profile__shop--featured {
   border-color: color-mix(in srgb, #b74825 45%, transparent);
   box-shadow: 0 0 0 1px color-mix(in srgb, #b74825 28%, transparent);
 }
 
-.example-profile__shop > em {
+.example-profile__shop > em,
+.example-profile__shop-copy > em {
   font-size: 0.58rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -8412,7 +8997,8 @@ a {
   font-style: normal;
 }
 
-.example-profile__shop > strong {
+.example-profile__shop > strong,
+.example-profile__shop-copy > strong {
   font-size: 0.84rem;
   line-height: 1.2;
 }
@@ -8497,6 +9083,8 @@ a {
 .example-profile__music em,
 .example-profile__shop strong,
 .example-profile__shop em,
+.example-profile__shop-copy strong,
+.example-profile__shop-copy em,
 .example-profile__referral strong,
 .example-profile__referral em {
   display: block;
@@ -8582,6 +9170,88 @@ a {
   gap: 18px;
 }
 
+.marketing-feature-card {
+  min-height: 520px;
+  padding: 22px;
+  display: grid;
+  grid-template-rows: minmax(220px, 1.1fr) auto;
+  gap: 22px;
+  border-radius: 32px;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.marketing-feature-card:hover,
+.marketing-feature-card:focus-visible {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 48px rgba(24, 26, 20, 0.14);
+}
+
+.marketing-feature-card--ink {
+  color: #f4f6f8;
+  background: #1c2330;
+}
+
+.marketing-feature-card--lagoon {
+  color: #102628;
+  background: #00a8a8;
+}
+
+.marketing-feature-card--lilac {
+  color: #2a1830;
+  background: #efc8ef;
+}
+
+.marketing-feature-card__media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 24px;
+  background: color-mix(in srgb, #fff 16%, transparent);
+}
+
+.marketing-feature-card__media img {
+  width: min(100%, 280px);
+  height: auto;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 16px 28px rgba(16, 18, 14, 0.22));
+}
+
+.marketing-feature-card__copy {
+  display: grid;
+  gap: 10px;
+  align-content: end;
+}
+
+.marketing-feature-card__copy b {
+  font-size: clamp(1.55rem, 2.2vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.marketing-feature-card__copy small {
+  color: color-mix(in srgb, currentColor 78%, transparent);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.marketing-feature-card__copy em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font: 800 0.72rem var(--font-mono), monospace;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+
 .marketing-feature-poster {
   display: grid;
   gap: 14px;
@@ -8648,7 +9318,11 @@ a {
 @media (max-width: 980px) {
   .marketing-features__grid {
     grid-template-columns: 1fr;
-    max-width: 460px;
+    max-width: 520px;
+  }
+
+  .marketing-feature-card {
+    min-height: 460px;
   }
 }
 
@@ -11075,4 +11749,38 @@ a {
   .workspace-settings-switch {
     align-items: flex-start;
   }
+}
+
+/* Outreach radar (Reddit + X targeting) */
+.outreach-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, color-mix(in srgb, #c4d66a 22%, transparent), transparent 50%),
+    var(--mui-palette-background-default);
+}
+
+.outreach-hero {
+  padding: 28px 28px 24px;
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--mui-palette-background-paper) 92%, white);
+}
+
+.outreach-hero .MuiTypography-h2 {
+  margin-top: 10px;
+  letter-spacing: -0.04em;
+}
+
+.outreach-card {
+  padding: 20px 22px;
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: 18px;
+  background: var(--mui-palette-background-paper);
+}
+
+.outreach-card .MuiTypography-h3 {
+  font-size: 1.05rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
 }

@@ -25,7 +25,7 @@ export type ExampleProduct = {
 export type ExampleProfile = {
   slug: string;
   role: string;
-  template: "field-notes" | "after-dark" | "soft-studio";
+  template: "field-notes" | "after-dark" | "soft-studio" | "signal-deck";
   profile: CreatorProfile;
   mediaEmbeds?: ExampleMediaEmbed[];
   products?: ExampleProduct[];
@@ -42,6 +42,13 @@ export const exampleProfiles: ExampleProfile[] = [
         title: "Midnight Signal",
         provider: "spotify",
         url: "https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl",
+        layout: "player",
+      },
+      {
+        id: 2,
+        title: "Live session",
+        provider: "youtube",
+        url: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
         layout: "player",
       },
     ],
@@ -373,7 +380,7 @@ export const exampleProfiles: ExampleProfile[] = [
         currency: "USD",
         category: "merch",
         badge: "New",
-        image_path: null,
+        image_path: "/examples/lea-speckled-mug.jpg",
         destination_url: "https://shopify.com",
         cta_label: "Buy now",
         is_featured: true,
@@ -386,7 +393,7 @@ export const exampleProfiles: ExampleProfile[] = [
         currency: "USD",
         category: "merch",
         badge: "Limited",
-        image_path: null,
+        image_path: "/examples/lea-one-off-vase.jpg",
         destination_url: "https://shopify.com",
         cta_label: "Shop vase",
         is_featured: false,
@@ -588,7 +595,72 @@ export const exampleProfiles: ExampleProfile[] = [
       ],
       referrals: [],
     },
-  }
+  },
+  {
+    slug: "loft-ops",
+    role: "Builder",
+    template: "signal-deck",
+    profile: {
+      username: "loft-ops",
+      initials: "LO",
+      displayName: "Loft",
+      greeting: "I’m",
+      headline: "Cloud, open source, and",
+      headlineAccent: "operator notes.",
+      eyebrow: "DevOps · Open Source · Cloud",
+      tags: [
+        "AWS",
+        "DevOps",
+        "Docker",
+        "GitHub",
+        "Linux",
+        "Open Source",
+        "Ruby",
+        "Terraform",
+      ],
+      bio: "Building useful infra, shipping open source, and keeping the signal clear.",
+      socials: [
+        { platform: "GitHub", url: "https://github.com" },
+        { platform: "X / Twitter", url: "https://x.com" },
+        { platform: "LinkedIn", url: "https://linkedin.com" },
+        { platform: "Instagram", url: "https://instagram.com" },
+      ],
+      links: [
+        {
+          id: "loft-1",
+          index: "01",
+          title: "Featured project",
+          subtitle: "The thing I’m shipping this month.",
+          url: "https://github.com",
+          tags: ["project", "featured"],
+          visits: 2200,
+          color: "#243044",
+          featured: true,
+        },
+        {
+          id: "loft-2",
+          index: "02",
+          title: "Now playing",
+          subtitle: "A track for deep work sessions.",
+          url: "https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl",
+          tags: ["music"],
+          visits: 980,
+          color: "#243044",
+        },
+        {
+          id: "loft-3",
+          index: "03",
+          title: "Office hours",
+          subtitle: "Book a 20-minute ops chat.",
+          url: "https://cal.com/loft/ops",
+          tags: ["booking"],
+          visits: 640,
+          color: "#243044",
+        },
+      ],
+      referrals: [],
+    },
+  },
 ];
 
 export const exampleProfileBySlug = new Map(

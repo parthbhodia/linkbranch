@@ -36,6 +36,8 @@ export type CreatorProfile = {
   headline: string;
   headlineAccent: string;
   eyebrow: string;
+  /** Skill / topic chips shown under the intro (e.g. AWS, DevOps). */
+  tags?: string[];
   bio: string;
   socials: SocialLink[];
   links: LinkItem[];

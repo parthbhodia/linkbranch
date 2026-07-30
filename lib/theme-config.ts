@@ -1,5 +1,5 @@
 export type ThemeFont = "studio" | "editorial" | "rounded" | "mono";
-export type ThemeButtonShape = "soft" | "pill" | "sharp";
+export type ThemeButtonShape = "soft" | "pill" | "sharp" | "glass" | "outline";
 export type ThemeBackground =
   | "solid"
   | "grid"
@@ -9,7 +9,13 @@ export type ThemeBackground =
   | "stripes"
   | "paper"
   | "aurora"
-  | "grain";
+  | "grain"
+  | "prism"
+  | "graph"
+  | "flare"
+  | "ink"
+  | "lagoon"
+  | "lilac";
 export type ThemeDensity = "relaxed" | "compact";
 
 export type ProfileThemeConfig = {
@@ -27,6 +33,8 @@ export type ProfileThemeConfig = {
   buttonShape: ThemeButtonShape;
   background: ThemeBackground;
   density: ThemeDensity;
+  /** Show the public contact/subscribe form on the profile. */
+  contactForm?: boolean;
   /** Optional custom brand mark shown above the profile intro. */
   logoPath?: string | null;
   /** Optional full-bleed wallpaper image layered under the page. */
@@ -46,6 +54,12 @@ export const themeBackgroundOptions: Array<{
   note: string;
 }> = [
   { id: "solid", name: "Solid", note: "Clean flat color" },
+  { id: "ink", name: "Ink", note: "Bold charcoal block" },
+  { id: "lagoon", name: "Lagoon", note: "Bold teal block" },
+  { id: "lilac", name: "Lilac", note: "Bold lavender block" },
+  { id: "prism", name: "Prism", note: "Oil-slick color wash" },
+  { id: "graph", name: "Graph", note: "Fine notebook grid" },
+  { id: "flare", name: "Flare", note: "Soft radial glow" },
   { id: "grid", name: "Grid", note: "Editorial notebook" },
   { id: "dots", name: "Dots", note: "Soft dotted field" },
   { id: "bloom", name: "Bloom", note: "Soft top glow" },
@@ -58,7 +72,13 @@ export const themeBackgroundOptions: Array<{
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const fonts = new Set<ThemeFont>(["studio", "editorial", "rounded", "mono"]);
-const shapes = new Set<ThemeButtonShape>(["soft", "pill", "sharp"]);
+const shapes = new Set<ThemeButtonShape>([
+  "soft",
+  "pill",
+  "sharp",
+  "glass",
+  "outline",
+]);
 const backgrounds = new Set<ThemeBackground>(
   themeBackgroundOptions.map((item) => item.id),
 );
@@ -163,6 +183,48 @@ export const themePalettes: ThemePalette[] = [
       buttonText: "#16121f",
     },
   },
+  {
+    id: "charcoal-block",
+    name: "Charcoal block",
+    note: "Bold dark stage",
+    colors: {
+      background: "#1c2330",
+      surface: "#2a3344",
+      text: "#f4f6f8",
+      muted: "#a7b0bd",
+      accent: "#d9f36a",
+      button: "#d9f36a",
+      buttonText: "#1c2330",
+    },
+  },
+  {
+    id: "teal-block",
+    name: "Teal block",
+    note: "Bright commerce energy",
+    colors: {
+      background: "#00a8a8",
+      surface: "#ffffff",
+      text: "#102628",
+      muted: "#2f5557",
+      accent: "#102628",
+      button: "#102628",
+      buttonText: "#ffffff",
+    },
+  },
+  {
+    id: "lavender-block",
+    name: "Lavender block",
+    note: "Soft analytics pastel",
+    colors: {
+      background: "#efc8ef",
+      surface: "#fff8ff",
+      text: "#2a1830",
+      muted: "#6f5674",
+      accent: "#6b3d9b",
+      button: "#2a1830",
+      buttonText: "#fff8ff",
+    },
+  },
 ];
 
 const templateDefaults: Record<string, ProfileThemeConfig> = {
@@ -197,6 +259,24 @@ const templateDefaults: Record<string, ProfileThemeConfig> = {
     buttonShape: "pill",
     background: "bloom",
     density: "relaxed",
+    contactForm: true,
+  },
+  "signal-deck": {
+    version: 1,
+    colors: {
+      background: "#0f141c",
+      surface: "#1a2230",
+      text: "#f3f6fb",
+      muted: "#9aa7b8",
+      accent: "#b9ff66",
+      button: "#243044",
+      buttonText: "#b9ff66",
+    },
+    font: "mono",
+    buttonShape: "soft",
+    background: "ink",
+    density: "compact",
+    contactForm: false,
   },
 };
 
@@ -204,6 +284,7 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
   return {
     ...theme,
     colors: { ...theme.colors },
+    contactForm: theme.contactForm ?? false,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
   };
@@ -257,6 +338,7 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
     buttonShape: candidate.buttonShape as ThemeButtonShape,
     background: candidate.background as ThemeBackground,
     density: candidate.density as ThemeDensity,
+    contactForm: candidate.contactForm === true,
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
         ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)

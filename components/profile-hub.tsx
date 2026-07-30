@@ -7,7 +7,9 @@ import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
+import LinkRounded from "@mui/icons-material/LinkRounded";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
+import PlayCircleOutlineRounded from "@mui/icons-material/PlayCircleOutlineRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
@@ -29,6 +31,7 @@ import {
   detectBookingProvider,
   isLikelyCompleteBookingUrl,
 } from "@/lib/booking-providers";
+import { ProfileContactForm } from "@/components/profile-contact-form";
 import {
   detectMusicProvider,
   isLikelyCompleteMusicUrl,
@@ -42,9 +45,9 @@ import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import {
-  parseProfileTheme,
   profileThemeClassName,
   profileThemeStyle,
+  resolveProfileTheme,
 } from "@/lib/theme-config";
 
 type TrackTarget = {
@@ -180,7 +183,7 @@ const LinkCard = memo(function LinkCard({
                 ? " link-index--music"
                 : booking
                   ? " link-index--booking"
-                  : ""
+                  : " link-index--icon"
           }`}
           style={{
             background: music || booking ? undefined : link.color,
@@ -197,8 +200,10 @@ const LinkCard = memo(function LinkCard({
             <MusicNoteRounded fontSize="small" />
           ) : booking ? (
             <CalendarMonthRounded fontSize="small" />
+          ) : link.featured ? (
+            <StarRounded fontSize="small" />
           ) : (
-            link.index
+            <LinkRounded fontSize="small" />
           )}
         </span>
         <span>
@@ -494,27 +499,41 @@ export function ProfileHub({
     filtered.referrals.length +
     filtered.products.length +
     filtered.faqs.length;
+  const spotlightLinks = filtered.links.filter((link) => link.featured);
+  const standardLinks = filtered.links.filter((link) => !link.featured);
+  const customTheme = resolveProfileTheme(themeConfig, template);
+  const brandingLogoUrl = publicAssetUrl(customTheme.logoPath);
+  const wallpaperUrl = publicAssetUrl(customTheme.wallpaperPath);
+  const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
+  const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
+  const showContactForm = customTheme.contactForm === true;
+  const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
+  const videoEmbeds = mediaEmbeds.filter((item) =>
+    videoProviders.has(item.provider),
+  );
+  const audioEmbeds = mediaEmbeds.filter(
+    (item) => !videoProviders.has(item.provider),
+  );
   const currentResultsCount =
     publicView === "shop"
       ? filtered.products.length
-      : filtered.links.length + filtered.referrals.length + filtered.faqs.length;
-  const spotlightLinks = filtered.links.filter((link) => link.featured);
-  const standardLinks = filtered.links.filter((link) => !link.featured);
-  const customTheme = parseProfileTheme(themeConfig);
-  const brandingLogoUrl = publicAssetUrl(customTheme?.logoPath);
-  const wallpaperUrl = publicAssetUrl(customTheme?.wallpaperPath);
+      : filtered.links.length +
+        filtered.referrals.length +
+        filtered.faqs.length +
+        mediaEmbeds.length +
+        (showContactForm ? 1 : 0);
 
   return (
     <main
       className={`app-shell public-template public-template--${template}${
         customTheme
-          ? ` ${profileThemeClassName(customTheme, { wallpaperUrl })}`
+          ? ` ${profileThemeClassName(customTheme, { wallpaperUrl: pageWallpaperUrl })}`
           : ""
       }`}
       style={
         customTheme
           ? (profileThemeStyle(customTheme, {
-              wallpaperUrl,
+              wallpaperUrl: pageWallpaperUrl,
             }) as React.CSSProperties)
           : undefined
       }
@@ -555,6 +574,13 @@ export function ProfileHub({
                 alt={`${profile.displayName} logo`}
               />
             )}
+            {coverUrl ? (
+              <Box
+                className="profile-cover"
+                style={{ backgroundImage: `url("${coverUrl}")` }}
+                aria-hidden="true"
+              />
+            ) : null}
             <Box
               className={`avatar${profile.avatarUrl ? " avatar--image" : ""}`}
               aria-label={
@@ -583,6 +609,13 @@ export function ProfileHub({
               {profile.headline}{" "}
               <span className="headline-accent">{profile.headlineAccent}</span>
             </Typography>
+            {(profile.tags?.length ?? 0) > 0 && (
+              <ul className="profile-tags" aria-label="Skills and topics">
+                {profile.tags!.map((tag) => (
+                  <li key={tag}>{tag}</li>
+                ))}
+              </ul>
+            )}
             <Typography className="profile-bio" color="text.secondary">
               {profile.bio}
             </Typography>
@@ -706,7 +739,73 @@ export function ProfileHub({
 
           {publicView === "links" ? (
             <>
-              {mediaEmbeds.length > 0 && (
+              {videoEmbeds.length > 0 && (
+                <section className="content-section" aria-labelledby="video-heading">
+                  <div className="section-heading">
+                    <Typography
+                      id="video-heading"
+                      component="h2"
+                      className="section-label"
+                    >
+                      Watch
+                    </Typography>
+                    <PlayCircleOutlineRounded fontSize="small" />
+                  </div>
+                  <div className="media-embed-list media-embed-list--video">
+                    {videoEmbeds.map((item) => {
+                      const playerUrl =
+                        item.layout === "compact"
+                          ? null
+                          : mediaPlayerUrl({ ...item, layout: "player" });
+                      const height = musicEmbedHeight(
+                        item.provider as Parameters<typeof musicEmbedHeight>[0],
+                        "player",
+                      );
+                      return (
+                        <article
+                          className="media-embed-card media-embed-card--video"
+                          key={item.id}
+                        >
+                          {playerUrl && (
+                            <iframe
+                              src={playerUrl}
+                              title={item.title}
+                              loading="lazy"
+                              allow="encrypted-media; picture-in-picture; fullscreen"
+                              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                              style={{ minHeight: height }}
+                            />
+                          )}
+                          <div>
+                            <span>
+                              <PlayCircleOutlineRounded />
+                              {musicProviderLabel(item.provider)}
+                            </span>
+                            <Typography variant="h3">{item.title}</Typography>
+                            <Button
+                              component="a"
+                              href={item.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              endIcon={<ArrowOutwardRounded />}
+                              onClick={() =>
+                                track(`Opened ${item.title}`, {
+                                  eventType: "media_open",
+                                  mediaEmbedId: item.id,
+                                })
+                              }
+                            >
+                              Open
+                            </Button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {audioEmbeds.length > 0 && (
                 <section className="content-section" aria-labelledby="media-heading">
                   <div className="section-heading">
                     <Typography
@@ -714,12 +813,12 @@ export function ProfileHub({
                       component="h2"
                       className="section-label"
                     >
-                      Listen & watch
+                      Listen
                     </Typography>
                     <MusicNoteRounded fontSize="small" />
                   </div>
                   <div className="media-embed-list">
-                    {mediaEmbeds.map((item) => {
+                    {audioEmbeds.map((item) => {
                       const playerUrl =
                         item.layout === "player" ? mediaPlayerUrl(item) : null;
                       const height = musicEmbedHeight(
@@ -840,6 +939,30 @@ export function ProfileHub({
                       <LinkCard key={link.id} link={link} onOpen={track} />
                     ))}
                   </div>
+                </section>
+              )}
+
+              {showContactForm && (
+                <section
+                  className="content-section"
+                  aria-labelledby="contact-heading"
+                >
+                  <div className="section-heading">
+                    <Typography
+                      id="contact-heading"
+                      component="h2"
+                      className="section-label"
+                    >
+                      Forms
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Get in touch
+                    </Typography>
+                  </div>
+                  <ProfileContactForm
+                    profileId={databaseProfileId}
+                    displayName={profile.displayName}
+                  />
                 </section>
               )}
 

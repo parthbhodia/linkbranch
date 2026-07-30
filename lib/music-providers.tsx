@@ -273,7 +273,7 @@ export function musicEmbedHeight(providerId: MusicProviderId, layout = "player")
   if (providerId === "audiomack") return 252;
   if (providerId === "bandcamp") return 120;
   if (providerId === "youtube" || providerId === "vimeo" || providerId === "twitch") {
-    return 220;
+    return 280;
   }
   return 152;
 }

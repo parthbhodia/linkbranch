@@ -531,6 +531,7 @@ export function OnboardingWizard({
     "field-notes": "Field Notes",
     "after-dark": "After Dark",
     "soft-studio": "Soft Studio",
+    "signal-deck": "Signal Deck",
   };
   const templateName =
     templateNames[initialTemplate] ?? templateNames["field-notes"];
