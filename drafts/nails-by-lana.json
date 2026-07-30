@@ -1,0 +1,40 @@
+{
+  "source_url": "https://www.instagram.com/nails.by.lana/",
+  "suggested_username": "nailsbylana",
+  "display_name": "Nails by Lana",
+  "template": "soft-studio",
+  "eyebrow": "Nail salon · Brighton Beach, Brooklyn",
+  "greeting": "Welcome to",
+  "headline": "Brooklyn’s best",
+  "headline_accent": "gel manicure.",
+  "bio": "Manicure, pedicure, certified podology and brows on Brighton Beach Ave. 10% off your first visit — book online in a few taps.",
+  "tags": ["Manicure", "Pedicure", "Podology", "Brows", "4 hands service"],
+  "links": [
+    {
+      "title": "Book an appointment",
+      "subtitle": "Live availability, every service",
+      "url": "https://n1222363.alteg.io"
+    },
+    {
+      "title": "10% off your first visit",
+      "subtitle": "Send the word NAILS to claim it",
+      "url": "https://ig.me/m/nails.by.lana"
+    },
+    {
+      "title": "Certified podology",
+      "subtitle": "Medical pedicure by trained specialists",
+      "url": "https://n1222363.alteg.io"
+    },
+    {
+      "title": "Find the studio",
+      "subtitle": "271 Brighton Beach Ave, Brooklyn",
+      "url": "https://www.google.com/maps/search/?api=1&query=271+Brighton+Beach+Ave%2C+Brooklyn%2C+NY"
+    }
+  ],
+  "socials": [
+    {
+      "platform": "Instagram",
+      "url": "https://www.instagram.com/nails.by.lana/"
+    }
+  ]
+}
