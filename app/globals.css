@@ -3843,6 +3843,22 @@ a {
   color: var(--profile-muted) !important;
 }
 
+/* These are MUI outlined buttons, so without an override they keep painting
+   themselves in the app palette (#496800) on a surface the creator chose --
+   the one control on the page that ignores the theme entirely. Olive on cream
+   measures 3.2:1, already under AA, and on a dark custom background it all but
+   disappears. !important matches the base rule: MUI's injected styles outrank
+   a plain class selector here. */
+.public-template.profile-theme-custom .booking-embed__toggle,
+.public-template.profile-theme-custom .music-embed__toggle {
+  color: var(--profile-text) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--profile-text) 38%,
+    transparent
+  ) !important;
+}
+
 .public-template.profile-theme-custom .headline-accent {
   color: var(--profile-accent);
   font-family: var(--profile-display-font);
