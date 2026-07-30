@@ -1796,6 +1796,11 @@ a {
 .public-template--signal-deck .creator-card {
   width: min(480px, 100%);
   margin: 0 auto;
+  /* .creator-card clips to its 38px radius. This template has no radius and no
+     background to clip, and it lifts the handle row and avatar above its own
+     top edge with negative margins so they sit on the full-bleed cover —
+     inheriting the clip sliced both of them in half along that edge. */
+  overflow: visible;
   border: 0;
   border-radius: 0;
   background: transparent;
