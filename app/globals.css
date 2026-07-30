@@ -7672,7 +7672,12 @@ a {
   min-height: 660px;
   padding: 20px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  /* The rail is a flex row, so every card stretches to the tallest one (the
+     shop example, which carries product photos). The phone used to be the 1fr
+     row and swallowed that difference, which is what left the frame looking
+     half-empty. Let the copy block take the slack instead: the phone then hugs
+     its content and the leftover reads as ordinary card padding. */
+  grid-template-rows: auto auto 1fr;
   border: 1px solid #c7c9bf;
   border-radius: 28px;
   color: #20221c;
@@ -7714,9 +7719,13 @@ a {
   min-height: 390px;
   margin: 24px auto;
   padding: 28px 16px;
-  display: grid;
-  justify-items: center;
-  align-content: start;
+  /* Flex rather than grid so the stats strip can take margin-top: auto and sit
+     on the floor of the frame. Under grid with align-content: start the tracks
+     pack upward and an auto margin only moves the item inside its own track,
+     which left the bottom third of the phone blank. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 11px;
   border: 5px solid #fff;
   border-radius: 27px;
@@ -7725,7 +7734,9 @@ a {
   box-shadow: 0 20px 48px rgba(38, 41, 33, 0.18);
 }
 
-.example-profile__phone i {
+/* Direct child only: this is the avatar. The socials strip below also uses <i>
+   per icon, and an unscoped selector turned each one into a 58px avatar disc. */
+.example-profile__phone > i {
   width: 58px;
   height: 58px;
   display: grid;
@@ -7743,9 +7754,11 @@ a {
 }
 
 .example-profile__phone b {
-  margin: 5px 0 10px;
-  font-size: 1rem;
-  line-height: 1.05;
+  /* Was 1rem, which let a long headline (Loft's runs four lines) eat a third of
+     the frame and push the link rows out of the preview entirely. */
+  margin: 3px 0 4px;
+  font-size: 0.86rem;
+  line-height: 1.12;
 }
 
 .example-profile__phone b em {
@@ -7757,8 +7770,53 @@ a {
 .example-profile__phone > span {
   width: 100%;
   height: 48px;
+  flex: 0 0 auto;
   border: 1px solid #d5d7cd;
   border-radius: 11px;
+}
+
+/* The two strips below are direct spans of the phone, so they have to opt out
+   of the 48px link-row box above rather than inherit a card's worth of height.
+   Selector is qualified by the parent to outrank `.example-profile__phone >
+   span`, which is one element more specific than a bare class. */
+.example-profile__phone > .example-profile__socials,
+.example-profile__phone > .example-profile__stats {
+  width: auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+}
+
+.example-profile__socials {
+  gap: 9px;
+  margin-bottom: 2px;
+  color: #8a8e82;
+}
+
+.example-profile__socials svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.example-profile__stats {
+  width: 100%;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  justify-content: center;
+}
+
+.example-profile__stats b {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(89, 99, 63, 0.09);
+  color: #5d6353;
+  font: 800 0.47rem var(--font-mono), monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .example-profile__link {
@@ -7792,6 +7850,13 @@ a {
   white-space: nowrap;
 }
 
+/* Takes the leftover height from the equal-height rail (the shop example runs
+   ~130px taller than the shortest card). Centring splits that remainder above
+   and below the copy so it reads as spacing rather than a hole under the bio. */
+.example-profile > div:last-child {
+  align-self: center;
+}
+
 .example-profile > div:last-child h3 {
   font-size: 1.25rem;
 }
@@ -7811,7 +7876,7 @@ a {
   background: #fff8fc;
 }
 
-.example-profile--soft-studio .example-profile__phone i {
+.example-profile--soft-studio .example-profile__phone > i {
   border-radius: 17px;
   color: #4c3345;
   background: #ffb7d0;
@@ -7848,7 +7913,7 @@ a {
   background: #10120e;
 }
 
-.example-profile--after-dark .example-profile__phone i {
+.example-profile--after-dark .example-profile__phone > i {
   color: #11130f;
   background: #b9ff66;
 }
@@ -7859,6 +7924,20 @@ a {
 
 .example-profile--after-dark .example-profile__phone > span {
   border-color: #3d4437;
+}
+
+.example-profile--after-dark .example-profile__socials {
+  color: #97a08c;
+}
+
+.example-profile--after-dark .example-profile__stats b {
+  background: rgba(185, 255, 102, 0.13);
+  color: #c3d1b4;
+}
+
+.example-profile--soft-studio .example-profile__stats b {
+  background: rgba(122, 74, 104, 0.1);
+  color: #6d5265;
 }
 
 .example-carousel__dots {
