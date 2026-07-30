@@ -2702,7 +2702,7 @@ a {
 
 .product-card__copy > span,
 .media-embed-card > div > span {
-  color: var(--profile-muted, #6d7167);
+  color: var(--profile-muted-readable, var(--profile-muted, #6d7167));
   font: 750 0.62rem var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2802,7 +2802,7 @@ a {
   margin: 4px clamp(20px, 5vw, 58px) 26px;
   padding-top: 18px;
   border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  color: var(--profile-muted, #6d7167);
+  color: var(--profile-muted-readable, var(--profile-muted, #6d7167));
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -3840,7 +3840,7 @@ a {
 .public-template.profile-theme-custom .section-heading .MuiTypography-caption,
 .public-template.profile-theme-custom .link-card .MuiTypography-body2,
 .public-template.profile-theme-custom .profile-supporter-badge a {
-  color: var(--profile-muted) !important;
+  color: var(--profile-muted-readable, var(--profile-muted)) !important;
 }
 
 /* These are MUI outlined buttons, so without an override they keep painting
@@ -3892,7 +3892,7 @@ a {
 }
 
 .public-template.profile-theme-custom .search-field input::placeholder {
-  color: var(--profile-muted);
+  color: var(--profile-muted-readable, var(--profile-muted));
   opacity: 1;
 }
 
@@ -4170,7 +4170,7 @@ a {
 .workspace-phone.profile-theme-custom .workspace-phone__link small,
 .workspace-phone.profile-theme-custom .workspace-phone__section-heading .section-label,
 .workspace-phone.profile-theme-custom .workspace-phone__section-heading small {
-  color: var(--profile-muted) !important;
+  color: var(--profile-muted-readable, var(--profile-muted)) !important;
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__socials {
@@ -11277,7 +11277,7 @@ a {
 
 .profile-faq details > div {
   padding: 0 18px 18px;
-  color: var(--profile-muted, var(--muted));
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
   white-space: pre-wrap;
 }
 

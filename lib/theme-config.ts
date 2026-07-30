@@ -377,6 +377,67 @@ const fontStacks: Record<ThemeFont, { display: string; body: string }> = {
   },
 };
 
+/** WCAG relative luminance. Colors are validated as #rrggbb before they land
+ *  in a theme, so parsing can assume that shape. */
+function luminance(hex: string) {
+  const channel = (offset: number) => {
+    const value = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.03928
+      ? value / 12.92
+      : Math.pow((value + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+function contrast(a: string, b: string) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function blend(from: string, to: string, amount: number) {
+  const channel = (offset: number) => {
+    const start = parseInt(from.slice(offset, offset + 2), 16);
+    const end = parseInt(to.slice(offset, offset + 2), 16);
+    return Math.round(start + (end - start) * amount)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
+
+/**
+ * Secondary text colour that stays legible on the creator's own page.
+ *
+ * The theme editor accepts any muted colour, and a pale one is a perfectly
+ * good choice against a dark background — but the same value on a light
+ * surface disappears. A pale lime on cream measures about 1.6:1, which is how
+ * section headings and the supporter badge became invisible in practice.
+ *
+ * A fixed blend in CSS cannot fix this: it would have to be strong enough for
+ * the worst theme, which would flatten every well-chosen one. So walk the
+ * creator's muted colour toward their text colour only as far as AA requires,
+ * and leave a theme that already passes exactly as authored. Measured against
+ * whichever of surface/background is worse, because muted text appears on
+ * both.
+ */
+export function readableMuted(colors: ProfileThemeConfig["colors"]) {
+  const { muted, surface, background, text } = colors;
+  const worst = (candidate: string) =>
+    Math.min(contrast(candidate, surface), contrast(candidate, background));
+
+  if (worst(muted) >= 4.5) return muted;
+
+  for (let amount = 0.05; amount < 1; amount += 0.05) {
+    const candidate = blend(muted, text, amount);
+    if (worst(candidate) >= 4.5) return candidate;
+  }
+
+  // Even the text colour can fail this when the creator picks a surface close
+  // to their text. Returning it anyway is the most legible value available,
+  // and matches what the rest of the page already uses.
+  return text;
+}
+
 export function profileThemeStyle(
   theme: ProfileThemeConfig,
   options?: { wallpaperUrl?: string | null },
@@ -386,7 +447,10 @@ export function profileThemeStyle(
     "--profile-bg": theme.colors.background,
     "--profile-surface": theme.colors.surface,
     "--profile-text": theme.colors.text,
+    // Authored value stays for borders and decoration, which are drawn at low
+    // alpha and were never the legibility problem.
     "--profile-muted": theme.colors.muted,
+    "--profile-muted-readable": readableMuted(theme.colors),
     "--profile-accent": theme.colors.accent,
     "--profile-button": theme.colors.button,
     "--profile-button-text": theme.colors.buttonText,
