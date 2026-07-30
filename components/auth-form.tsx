@@ -3,11 +3,13 @@
 import { useState } from "react";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
+import GoogleIcon from "@mui/icons-material/Google";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
   Tab,
@@ -32,9 +34,15 @@ export function AuthForm() {
   const initialError = searchParams.get("error");
   const isImportFlow = searchParams.get("import") === "1";
   const selectedTemplate = searchParams.get("template") ?? "field-notes";
-  const nextPath = isImportFlow
-    ? `/onboarding?template=${encodeURIComponent(selectedTemplate)}&import=1`
-    : "/templates";
+  // Set when the visitor arrived from an outreach page at /claim/[token].
+  // It has to survive every branch below: whichever way they authenticate,
+  // the draft is only applied once they land back with a session.
+  const claimToken = searchParams.get("claim")?.trim() ?? "";
+  const nextPath = claimToken
+    ? `/claim/apply?token=${encodeURIComponent(claimToken)}`
+    : isImportFlow
+      ? `/onboarding?template=${encodeURIComponent(selectedTemplate)}&import=1`
+      : "/templates";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [displayName, setDisplayName] = useState(
     searchParams.get("display_name")?.trim() ?? "",
@@ -45,6 +53,7 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState<{
     severity: "success" | "error";
     text: string;
@@ -115,7 +124,7 @@ export function AuthForm() {
           text: "Email or password is incorrect.",
         });
       } else {
-        if (isImportFlow) {
+        if (claimToken || isImportFlow) {
           router.push(nextPath);
         } else {
           const { data: profile } = await supabase
@@ -129,6 +138,28 @@ export function AuthForm() {
     }
 
     setLoading(false);
+  }
+
+  async function signInWithGoogle() {
+    setGoogleLoading(true);
+    setMessage(null);
+
+    // Same callback the email links use: it exchanges the code for a session
+    // and forwards to `next`, so the claim and import flows work identically
+    // whichever way the account was created.
+    const { error } = await createClient().auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
+    });
+
+    // On success the browser has already left for Google, so only the failure
+    // path needs to put the button back.
+    if (error) {
+      setMessage({ severity: "error", text: error.message });
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -154,6 +185,26 @@ export function AuthForm() {
             <Tab label="Create account" value="signup" />
             <Tab label="Sign in" value="login" />
           </Tabs>
+
+          <Button
+            onClick={signInWithGoogle}
+            variant="outlined"
+            size="large"
+            fullWidth
+            disabled={loading || googleLoading}
+            startIcon={
+              googleLoading ? <CircularProgress size={18} /> : <GoogleIcon />
+            }
+            sx={{ mt: 3 }}
+          >
+            {googleLoading ? "Redirecting" : "Continue with Google"}
+          </Button>
+
+          <Divider sx={{ mt: 2.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              or
+            </Typography>
+          </Divider>
 
           <Stack component="form" spacing={2.25} sx={{ mt: 3 }} onSubmit={submit}>
             {mode === "signup" && (
@@ -220,7 +271,7 @@ export function AuthForm() {
               type="submit"
               variant="contained"
               size="large"
-              disabled={loading}
+              disabled={loading || googleLoading}
               endIcon={loading ? <CircularProgress size={18} /> : <ArrowForwardRounded />}
             >
               {loading
