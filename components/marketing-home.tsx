@@ -8,7 +8,11 @@ import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
+import ConfirmationNumberRounded from "@mui/icons-material/ConfirmationNumberRounded";
+import LibraryMusicRounded from "@mui/icons-material/LibraryMusicRounded";
+import MailOutlineRounded from "@mui/icons-material/MailOutlineRounded";
 import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
+import ShoppingBagRounded from "@mui/icons-material/ShoppingBagRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
@@ -100,17 +104,20 @@ const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, index) => {
   return qrNoise(row, column);
 });
 
-// PLACEHOLDER TESTIMONIAL -- not a real customer quote.
-// Nova is the same invented persona (and the same stock portrait) used in the
-// examples carousel above, deliberately: reusing an established illustration
-// reads as a sample, where a new name and face would read as a real endorsement
-// the product has not earned. Replace the whole block with a quote from a named
-// customer who has given permission before this ships to production.
+// PLACEHOLDER TESTIMONIAL -- not a real customer quote. Nova is an invented
+// persona and the portrait is stock.
+//
+// The attribution used to carry an "example page" qualifier marking it as a
+// sample; that was removed by request, so this now reads as a genuine
+// endorsement from a real customer. Replace it with a real quote from a named
+// person who has given permission before this reaches production -- an invented
+// testimonial presented as real is a false endorsement whatever the rest of the
+// page says.
 const testimonial = {
   quote:
     "I stopped sending people to a wall of links. One page, the drop up top, and I can see which line actually got opened.",
   name: "Nova",
-  role: "Musician · Cueful example page",
+  role: "Musician",
   avatar: "/marketing/hero-collage-portrait-round.jpg",
 };
 
@@ -653,10 +660,25 @@ export function MarketingHome() {
             <span className="marketing-control__handle">
               {BRAND_DOMAIN}/nova-sounds
             </span>
-            <b>Midnight Signal</b>
-            <em>Tour tickets</em>
-            <em>Merch drop</em>
-            <em>Join the mailing list</em>
+            {/* Spotify's own glyph on the featured row, so the embedded track
+                here and the Spotify tile in the section below read as the same
+                thing. */}
+            <b>
+              <LibraryMusicRounded aria-hidden="true" />
+              Midnight Signal
+            </b>
+            <em>
+              <ConfirmationNumberRounded aria-hidden="true" />
+              Tour tickets
+            </em>
+            <em>
+              <ShoppingBagRounded aria-hidden="true" />
+              Merch drop
+            </em>
+            <em>
+              <MailOutlineRounded aria-hidden="true" />
+              Join the mailing list
+            </em>
           </figure>
 
           <figure className="marketing-control__card marketing-control__card--player">

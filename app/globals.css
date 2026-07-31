@@ -9727,19 +9727,34 @@ a {
 .marketing-control__card--phone b {
   margin-top: 4px;
   padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border-radius: 12px;
   background: var(--lime);
   font-size: 0.74rem;
-  text-align: center;
 }
 
 .marketing-control__card--phone em {
   padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   font-size: 0.7rem;
   font-style: normal;
+}
+
+.marketing-control__card--phone .MuiSvgIcon-root {
+  flex: none;
+  font-size: 1rem;
+}
+
+.marketing-control__card--phone em .MuiSvgIcon-root {
+  color: var(--muted);
 }
 
 .marketing-control__card--shop {
