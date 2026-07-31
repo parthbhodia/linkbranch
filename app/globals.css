@@ -7667,6 +7667,15 @@ a {
   display: none;
 }
 
+/* Set while the marquee runs. Mandatory snapping would drag the rail back to a
+   card edge every frame, and a smooth scroll-behavior would animate each of
+   those per-frame writes on top of the one already in flight. Both stay on for
+   reduced-motion visitors, who never get the marquee. */
+.example-profile-grid[data-marquee="on"] {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
 .example-profile {
   flex: 0 0 clamp(360px, 42vw, 540px);
   min-height: 660px;

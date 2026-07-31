@@ -34,6 +34,10 @@ function formatTaps(total: number) {
   return String(total);
 }
 
+// Pixels per second the examples rail creeps at. Slow enough to read a card
+// while it passes, rather than a ticker.
+const MARQUEE_SPEED = 26;
+
 // Tiles pull their glyphs from the real provider registries rather than from a
 // separate set of brand logos, so the row can only ever show something the
 // product actually embeds or links.
@@ -179,6 +183,83 @@ export function MarketingHome() {
   const [importOpen, setImportOpen] = useState(false);
   const [activeExample, setActiveExample] = useState(0);
   const examplesRailRef = useRef<HTMLDivElement>(null);
+  const marqueePausedRef = useRef(false);
+  const marqueeResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hold the rail still for a beat -- used while an arrow's smooth scroll plays
+  // out, since the per-frame scrollLeft write below would otherwise fight it.
+  function pauseMarquee(resumeAfter?: number) {
+    marqueePausedRef.current = true;
+    if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    marqueeResumeRef.current = resumeAfter
+      ? setTimeout(() => {
+          marqueePausedRef.current = false;
+        }, resumeAfter)
+      : null;
+  }
+
+  function resumeMarquee() {
+    if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    marqueeResumeRef.current = null;
+    marqueePausedRef.current = false;
+  }
+
+  // The rail renders the examples twice; creeping scrollLeft forward and
+  // subtracting a lap on the wrap makes that read as one endless row. Driving
+  // the scroll position rather than a transform keeps the arrows, the pagination
+  // readout, and ordinary swiping working on the same element.
+  useEffect(() => {
+    const rail = examplesRailRef.current;
+    if (!rail) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Scroll snapping would fight a scroll position that never settles.
+    rail.dataset.marquee = "on";
+
+    let frame = 0;
+    let last = performance.now();
+    // Carried separately because the browser snaps scrollLeft to whole pixels:
+    // writing scrollLeft += 0.4 sixty times a second rounds every step away and
+    // the rail never moves. Accumulate here, write the total.
+    let position = rail.scrollLeft;
+
+    const step = (now: number) => {
+      const elapsed = now - last;
+      last = now;
+      const lap = rail.scrollWidth / 2;
+
+      // Something else moved the rail -- a swipe, a wheel, an arrow. Take its
+      // position as the new truth instead of yanking it back.
+      if (Math.abs(rail.scrollLeft - position) > 2) position = rail.scrollLeft;
+
+      if (lap > 0) {
+        if (!marqueePausedRef.current && !document.hidden) {
+          position += (MARQUEE_SPEED * elapsed) / 1000;
+          rail.scrollLeft = position;
+        }
+        // Checked even while paused, so a manual swipe past the seam wraps too.
+        if (rail.scrollLeft >= lap) {
+          rail.scrollLeft -= lap;
+          position = rail.scrollLeft;
+        }
+      }
+
+      frame = requestAnimationFrame(step);
+    };
+
+    frame = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(frame);
+      delete rail.dataset.marquee;
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     captureReferralFromLocation();
@@ -197,9 +278,19 @@ export function MarketingHome() {
     const nextIndex =
       (index + exampleProfiles.length) % exampleProfiles.length;
     const rail = examplesRailRef.current;
-    const card = rail?.children.item(nextIndex);
+
+    // Both copies of the card qualify; jump to whichever is nearest, so paging
+    // from the tail of the rail does not rewind the whole row.
+    const card = (Array.from(rail?.children ?? []) as HTMLElement[])
+      .filter((_, position) => position % exampleProfiles.length === nextIndex)
+      .sort(
+        (a, b) =>
+          Math.abs(a.offsetLeft - (rail?.scrollLeft ?? 0)) -
+          Math.abs(b.offsetLeft - (rail?.scrollLeft ?? 0)),
+      )[0];
 
     setActiveExample(nextIndex);
+    pauseMarquee(900);
     card?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
@@ -226,7 +317,8 @@ export function MarketingHome() {
       }
     });
 
-    setActiveExample(nearestIndex);
+    // The rail holds two copies, so fold the hit back onto the real range.
+    setActiveExample(nearestIndex % exampleProfiles.length);
   }
 
   return (
@@ -405,7 +497,13 @@ export function MarketingHome() {
             Musician with Spotify embed, coach with Calendly, creator, freelancer, curator, or shop.
           </Typography>
         </div>
-        <div className="example-carousel">
+        <div
+          className="example-carousel"
+          onPointerEnter={() => pauseMarquee()}
+          onPointerLeave={resumeMarquee}
+          onFocusCapture={() => pauseMarquee()}
+          onBlurCapture={resumeMarquee}
+        >
           <div className="example-carousel__toolbar">
             <div
               className="example-carousel__pagination"
@@ -441,15 +539,25 @@ export function MarketingHome() {
             onScroll={updateActiveExample}
             aria-label="Example Cueful profiles"
           >
-            {exampleProfiles.map((example, index) => (
+            {/* Rendered twice so the marquee has a seamless lap. The second
+                copy is decoration: hidden from assistive tech and off the tab
+                order, so the six examples are still announced once each. */}
+            {[...exampleProfiles, ...exampleProfiles].map((example, position) => {
+              const index = position % exampleProfiles.length;
+              const isClone = position >= exampleProfiles.length;
+              return (
               <Link
                 className={`example-profile example-profile--${example.template}${
-                  activeExample === index ? " is-active" : ""
+                  activeExample === index && !isClone ? " is-active" : ""
                 }`}
                 href={publicProfilePath(example.slug)}
                 aria-label={`Open ${example.profile.displayName}'s ${example.role} profile`}
-                aria-current={activeExample === index ? "true" : undefined}
-                key={example.slug}
+                aria-current={
+                  activeExample === index && !isClone ? "true" : undefined
+                }
+                aria-hidden={isClone || undefined}
+                tabIndex={isClone ? -1 : undefined}
+                key={`${example.slug}-${position}`}
               >
                 <div className="example-profile__meta">
                   <span>0{index + 1} / {example.role.toUpperCase()}</span>
@@ -606,7 +714,8 @@ export function MarketingHome() {
                   <Typography>{example.profile.bio}</Typography>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
           <div className="example-carousel__dots" aria-label="Choose an example">
             {exampleProfiles.map((example, index) => (
