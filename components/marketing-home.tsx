@@ -55,19 +55,49 @@ const integrationTiles = [
   { label: "Apple Music", tone: "sky" },
 ];
 
-// A decorative stand-in for the QR the share dialog generates -- deterministic
-// so it never changes between renders, with the three finder squares a real
-// code has. Not scannable, and not meant to be.
-const QR_GRID = 11;
-const qrCells = Array.from({ length: QR_GRID * QR_GRID }, (_, index) => {
-  const row = Math.floor(index / QR_GRID);
-  const column = index % QR_GRID;
-  const inFinder = (r: number, c: number) =>
-    r < 3 && (c < 3 || c > QR_GRID - 4);
-  if (inFinder(row, column) || inFinder(QR_GRID - 1 - row, column)) {
-    return true;
+// A decorative stand-in for the QR the share dialog generates. Deterministic,
+// and laid out on a real version-1 grid so it reads as a code rather than as a
+// dot field: 21 modules square, 7x7 finder rings at three corners with their
+// one-module separators, and the alternating timing tracks on row and column 6.
+// The payload area is noise. Not scannable, and not meant to be.
+const QR_SIZE = 21;
+const QR_FINDERS = [
+  [0, 0],
+  [0, QR_SIZE - 7],
+  [QR_SIZE - 7, 0],
+];
+
+function qrFinderModule(row: number, column: number) {
+  for (const [top, left] of QR_FINDERS) {
+    const y = row - top;
+    const x = column - left;
+    // The box is 9x9: the 7x7 eye plus the light separator ring around it.
+    if (y >= -1 && y <= 7 && x >= -1 && x <= 7) {
+      if (y < 0 || y > 6 || x < 0 || x > 6) return false;
+      const ring = y === 0 || y === 6 || x === 0 || x === 6;
+      const core = y >= 2 && y <= 4 && x >= 2 && x <= 4;
+      return ring || core;
+    }
   }
-  return (row * 7 + column * 3) % 5 < 2;
+  return null;
+}
+
+// Bit-mixed rather than modular: a plain (row * a + column * b) % n banded into
+// visible diagonal stripes, which is exactly what a QR payload does not do.
+function qrNoise(row: number, column: number) {
+  let n = (row * 73856093) ^ (column * 19349663);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) & 0xff) < 122;
+}
+
+const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, index) => {
+  const row = Math.floor(index / QR_SIZE);
+  const column = index % QR_SIZE;
+  const finder = qrFinderModule(row, column);
+  if (finder !== null) return finder;
+  if (row === 6) return column % 2 === 0;
+  if (column === 6) return row % 2 === 0;
+  return qrNoise(row, column);
 });
 
 // PLACEHOLDER TESTIMONIAL -- not a real customer quote.
@@ -643,8 +673,17 @@ export function MarketingHome() {
             <span>COPY · DANI3</span>
           </figure>
 
+          <figure className="marketing-control__card marketing-control__card--shop">
+            <div className="marketing-control__thumb" />
+            <small>MERCH</small>
+            <b>Tour tee</b>
+            <span>
+              USD 34 <em>Buy</em>
+            </span>
+          </figure>
+
           <div className="marketing-control__socials">
-            {["Instagram", "Twitch", "YouTube"].map((platform) => (
+            {["Instagram", "WhatsApp Business", "YouTube"].map((platform) => (
               <span key={platform}>{getSocialPlatformIcon(platform)}</span>
             ))}
           </div>

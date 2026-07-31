@@ -9658,7 +9658,7 @@ a {
 
 .marketing-control__stage {
   position: relative;
-  min-height: 460px;
+  min-height: 540px;
 }
 
 .marketing-control__card {
@@ -9690,16 +9690,16 @@ a {
   text-transform: uppercase;
 }
 
+/* No gap and no radius: adjacent dark modules have to merge into runs, which is
+   what separates a code from a dot field. */
 .marketing-control__qr {
-  width: 108px;
+  width: 126px;
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(21, 1fr);
 }
 
 .marketing-control__qr span {
   aspect-ratio: 1;
-  border-radius: 1px;
 }
 
 .marketing-control__qr span[data-on] {
@@ -9742,9 +9742,58 @@ a {
   font-style: normal;
 }
 
+.marketing-control__card--shop {
+  right: 20%;
+  bottom: 0;
+  width: 196px;
+  display: grid;
+  gap: 7px;
+  transform: rotate(-2deg);
+}
+
+.marketing-control__thumb {
+  height: 84px;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      120% 90% at 30% 20%,
+      color-mix(in srgb, var(--lime) 70%, var(--paper)) 0%,
+      transparent 60%
+    ),
+    linear-gradient(140deg, var(--surface), color-mix(in srgb, var(--orange) 18%, var(--surface)));
+}
+
+.marketing-control__card--shop small {
+  color: var(--muted);
+  font: 700 0.5rem "DM Mono", monospace;
+  letter-spacing: 0.09em;
+}
+
+.marketing-control__card--shop b {
+  font-size: 0.86rem;
+}
+
+.marketing-control__card--shop > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font: 500 0.68rem "DM Mono", monospace;
+}
+
+.marketing-control__card--shop em {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 700 0.55rem "DM Mono", monospace;
+  font-style: normal;
+  letter-spacing: 0.07em;
+}
+
 .marketing-control__card--player {
-  right: 4%;
-  bottom: 24%;
+  right: 2%;
+  bottom: 42%;
   width: 216px;
   display: flex;
   align-items: center;
@@ -9867,6 +9916,7 @@ a {
 }
 
 .marketing-integrations__grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(12px, 1.6vw, 20px);
@@ -9874,7 +9924,23 @@ a {
   justify-items: center;
 }
 
+/* Warm bloom behind the cluster so the tiles sit on light rather than on flat
+   paper -- the depth cue the rest of the composition gets from shadows. */
+.marketing-integrations__grid::before {
+  content: "";
+  position: absolute;
+  inset: -14% -8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--lime) 40%, transparent),
+    transparent 70%
+  );
+  filter: blur(10px);
+}
+
 .marketing-integrations__tile {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
@@ -9884,11 +9950,61 @@ a {
   border-radius: 26px;
   background: var(--surface);
   color: var(--ink);
+  box-shadow:
+    0 20px 36px -16px rgba(27, 28, 24, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.55) inset;
+}
+
+/* Light raking across the top-left of every tile, so the flat fills read as
+   physical chips rather than swatches. */
+.marketing-integrations__tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0) 48%
+  );
+  pointer-events: none;
 }
 
 .marketing-integrations__tile:nth-child(2),
 .marketing-integrations__tile:nth-child(6) {
   border-radius: 999px;
+}
+
+/* Hand-placed tilt, matching the scattered cards in the section above. */
+.marketing-integrations__tile:nth-child(1) {
+  transform: rotate(-4deg);
+}
+
+.marketing-integrations__tile:nth-child(3) {
+  transform: rotate(3deg);
+}
+
+.marketing-integrations__tile:nth-child(5) {
+  transform: rotate(4deg);
+}
+
+.marketing-integrations__tile:nth-child(7) {
+  transform: rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing-integrations__tile {
+    transition:
+      transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.4s ease;
+  }
+
+  .marketing-integrations__tile:hover {
+    transform: translateY(-7px) rotate(0deg);
+    box-shadow:
+      0 30px 52px -18px rgba(27, 28, 24, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  }
 }
 
 .marketing-integrations__tile .MuiSvgIcon-root {
@@ -9914,17 +10030,32 @@ a {
 }
 
 .marketing-integrations__pill {
+  position: relative;
   grid-column: 1 / -1;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   width: 100%;
   min-height: clamp(64px, 7vw, 88px);
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   border-radius: 999px;
   background: var(--paper);
-  color: var(--muted);
+  color: var(--ink);
   font: 500 clamp(0.95rem, 1.7vw, 1.4rem) "DM Mono", monospace;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  box-shadow:
+    0 26px 48px -22px rgba(27, 28, 24, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.marketing-integrations__pill::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--lime);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 34%, transparent);
 }
 
 /* ---- Testimonial ------------------------------------------------------ */
