@@ -6917,7 +6917,11 @@ a {
 /* Marketing homepage v2 — editorial, product-led, and conversion focused */
 
 .marketing-home {
-  overflow: hidden;
+  /* clip, not hidden: `overflow: hidden` makes this a scroll container, and a
+     sticky child then sticks to *it* rather than to the viewport -- which is
+     why the nav below would otherwise scroll away. `clip` still contains the
+     hero collage's horizontal spill without creating a scrollport. */
+  overflow-x: clip;
   background:
     linear-gradient(rgba(43, 47, 38, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(43, 47, 38, 0.045) 1px, transparent 1px),
@@ -6926,10 +6930,29 @@ a {
 }
 
 .marketing-nav {
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* Full-bleed so content scrolling underneath passes behind the bar rather
+     than beside it, with the inner inset matching the other sections. */
+  width: 100%;
+  padding-inline: max(24px, calc((100vw - 1380px) / 2));
   min-height: 76px;
   border-color: rgba(45, 48, 40, 0.16);
+  /* Tinted with the page's own paper, so it disappears against the top of the
+     page and only reads as glass once something passes behind it. The opacity
+     alone has to keep the links legible: backdrop-filter below is an
+     enhancement, and it silently does nothing wherever compositing is
+     unavailable rather than falling back to anything. */
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .marketing-nav {
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+  }
 }
 
 .marketing-nav__links {
@@ -7714,8 +7737,9 @@ a {
 .example-profile__meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   color: #71756a;
-  font: 750 0.54rem var(--font-mono), monospace;
+  font: 750 0.72rem var(--font-mono), monospace;
   letter-spacing: 0.08em;
 }
 

@@ -15,6 +15,7 @@ import {
   DialogTitle,
   Snackbar,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -123,6 +124,49 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(objectUrl);
 }
 
+// Two lines of display type on the card; beyond this it is trimmed anyway.
+const HEADING_MAX = 70;
+
+const DEFAULT_HEADINGS: Record<ShareFormat, string> = {
+  square: "All my useful links, one scan.",
+  poster: "SCAN FOR MY LINKS",
+};
+
+// The card art gives the heading two lines. Custom text is any length, so fold
+// it on word boundaries and clip the overflow rather than letting it run off
+// the card or overlap the QR below it.
+function wrapHeading(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines = 2,
+) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    // `!current` keeps a single over-long word rather than dropping it.
+    if (!current || context.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    lines.push(current);
+    current = word;
+    if (lines.length === maxLines) break;
+  }
+
+  if (lines.length < maxLines && current) lines.push(current);
+
+  const consumed = lines.join(" ").split(/\s+/).filter(Boolean).length;
+  if (consumed < words.length && lines.length) {
+    lines[lines.length - 1] = `${lines[lines.length - 1]}…`;
+  }
+
+  return lines;
+}
+
 async function exportShareAsset({
   format,
   theme,
@@ -130,6 +174,7 @@ async function exportShareAsset({
   displayName,
   username,
   profileUrl,
+  heading,
 }: {
   format: ShareFormat;
   theme: ShareTheme;
@@ -137,6 +182,7 @@ async function exportShareAsset({
   displayName: string;
   username: string;
   profileUrl: string;
+  heading: string;
 }) {
   const isSquare = format === "square";
   const width = isSquare ? 1080 : 1240;
@@ -174,8 +220,11 @@ async function exportShareAsset({
 
   context.fillStyle = theme.ink;
   context.font = `900 ${isSquare ? 66 : 82}px 'Avenir Next', Avenir, sans-serif`;
-  context.fillText(isSquare ? "All my useful" : "SCAN FOR", cardX + 60, cardY + 102);
-  context.fillText(isSquare ? "links, one scan." : "MY LINKS", cardX + 60, cardY + (isSquare ? 174 : 194));
+  const headingLines = wrapHeading(context, heading, cardWidth - 120);
+  const headingLeading = isSquare ? 72 : 92;
+  headingLines.forEach((line, index) => {
+    context.fillText(line, cardX + 60, cardY + 102 + index * headingLeading);
+  });
 
   context.fillStyle = theme.ink;
   context.globalAlpha = 0.66;
@@ -235,7 +284,14 @@ export function ShareDialog({
 }) {
   const profileUrl = publicProfileUrl(username);
   const [format, setFormat] = useState<ShareFormat>("square");
+  // Per-format, so switching between the square post and the poster does not
+  // carry sentence-case copy onto a card whose art is set in caps. Blank means
+  // "use the default", which is also how clearing the field restores it.
+  const [headings, setHeadings] = useState<Partial<Record<ShareFormat, string>>>(
+    {},
+  );
   const [themeId, setThemeId] = useState<ShareThemeId>("paper");
+  const heading = headings[format]?.trim() || DEFAULT_HEADINGS[format];
   const [qrAsset, setQrAsset] = useState<{
     themeId: ShareThemeId | "";
     png: string;
@@ -325,6 +381,7 @@ export function ShareDialog({
         displayName,
         username,
         profileUrl,
+        heading,
       });
       setNotice({
         message: `${format === "square" ? "Square post" : "Poster"} downloaded`,
@@ -374,6 +431,32 @@ export function ShareDialog({
                   <ToggleButton value="square">Square post</ToggleButton>
                   <ToggleButton value="poster">Print poster</ToggleButton>
                 </ToggleButtonGroup>
+              </Box>
+
+              <Box>
+                <Typography className="share-kit__label" component="label" htmlFor="share-heading">
+                  HEADING
+                </Typography>
+                <TextField
+                  id="share-heading"
+                  fullWidth
+                  size="small"
+                  multiline
+                  maxRows={3}
+                  value={headings[format] ?? ""}
+                  placeholder={DEFAULT_HEADINGS[format]}
+                  onChange={(event) =>
+                    setHeadings((current) => ({
+                      ...current,
+                      [format]: event.target.value.slice(0, HEADING_MAX),
+                    }))
+                  }
+                  helperText={
+                    headings[format]?.trim()
+                      ? `${headings[format]?.length ?? 0}/${HEADING_MAX} · clear to restore the default`
+                      : "Fits two lines on the card. Longer text is trimmed."
+                  }
+                />
               </Box>
 
               <Box>
@@ -453,13 +536,7 @@ export function ShareDialog({
               >
                 <div className="share-kit__brand"><i />cueful.</div>
                 <div className="share-kit__card">
-                  <Typography component="strong">
-                    {format === "square" ? (
-                      <>All my useful<br />links, one scan.</>
-                    ) : (
-                      <>SCAN FOR<br />MY LINKS</>
-                    )}
-                  </Typography>
+                  <Typography component="strong">{heading}</Typography>
                   <Typography component="span">{displayName}</Typography>
                   <div className="share-kit__qr">
                     {qrDataUrl ? (

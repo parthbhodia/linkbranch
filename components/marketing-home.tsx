@@ -119,10 +119,10 @@ const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, index) => {
 // page says.
 const testimonial = {
   quote:
-    "I stopped sending people to a wall of links. One page, the drop up top, and I can see which line actually got opened.",
+    "Twelve links and no idea which one worked. Now the drop sits up top — and when merch started outselling tickets, I saw it in a day and moved merch first.",
   name: "Nova",
   role: "Musician",
-  avatar: "/marketing/hero-collage-portrait-round.jpg",
+  avatar: "/marketing/hero-collage-statement.jpg",
 };
 
 const homepageFeatures = [

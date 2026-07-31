@@ -358,7 +358,9 @@ export const exampleProfiles: ExampleProfile[] = [
     profile: {
       username: "maya-makes",
       initials: "MM",
-      avatarUrl: "/marketing/hero-collage-statement.jpg",
+      // No avatarUrl: this portrait moved to the testimonial. The two sit on
+      // one page under different names, so leaving it here would put one face
+      // on two people.
       displayName: "Maya",
       greeting: "Hi, I’m",
       headline: "I turn tiny ideas into",
