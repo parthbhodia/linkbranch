@@ -1693,6 +1693,43 @@ a {
   color: var(--profile-text, var(--ink));
 }
 
+/* The fixed templates hardcode their own light-on-dark greys. A creator can
+   overlay a custom palette on any of them, and a light custom background then
+   kept the dark template's pale text -- pale sage on pale paper, across the
+   header, the social rail, the search field and every caption. Where a custom
+   theme exists, its AA-checked values win. */
+.public-template.profile-theme-custom .MuiTypography-caption,
+.public-template.profile-theme-custom .MuiTypography-body2,
+.public-template.profile-theme-custom .MuiTypography-colorTextSecondary,
+.public-template.profile-theme-custom .MuiInputLabel-root,
+.public-template.profile-theme-custom .profile-copy > .MuiTypography-body1,
+.public-template.profile-theme-custom .profile-brand-row .MuiIconButton-root,
+.public-template.profile-theme-custom .profile-handle,
+.public-template.profile-theme-custom .hub-footer .MuiTypography-root {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted))) !important;
+}
+
+.public-template.profile-theme-custom .social-rail .MuiIconButton-root,
+.public-template.profile-theme-custom .search-field input {
+  color: var(--profile-text) !important;
+}
+
+/* Header icons on a fixed template read as chrome, not decoration. */
+.public-template .profile-brand-row .MuiIconButton-root {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
+}
+
+/* A perk card carries its own background, chosen by the creator, so page-level
+   secondary colours must not reach inside it. The after-dark template paints
+   captions #c2cdb7 -- right on its near-black page, and 1.6:1 on a mustard
+   card, which is how the offer eyebrow ended up unreadable. Children follow the
+   foreground computed against the card instead. .perk-action keeps its own
+   colours: it is a light pill with its own dark label. */
+.public-template .perk-card .MuiTypography-root,
+.public-template .perk-card .MuiIconButton-root {
+  color: inherit !important;
+}
+
 /* QR dialog */
 
 .profile-qr {
