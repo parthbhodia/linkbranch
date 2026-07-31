@@ -10,6 +10,7 @@ import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
 import PlayCircleOutlineRounded from "@mui/icons-material/PlayCircleOutlineRounded";
+import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
@@ -18,6 +19,8 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogContent,
   IconButton,
   InputAdornment,
   Snackbar,
@@ -39,14 +42,17 @@ import {
   musicPlayerUrl,
   musicProviderLabel,
 } from "@/lib/music-providers";
+import QRCode from "qrcode";
 import type { CreatorProfile, LinkItem, Referral } from "@/lib/types";
 import { creatorBadgeUrl } from "@/lib/referrals";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
+import { publicProfileAddress } from "@/lib/brand";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import {
   profileThemeClassName,
   profileThemeStyle,
+  readableForeground,
   resolveProfileTheme,
 } from "@/lib/theme-config";
 
@@ -290,10 +296,19 @@ function ReferralCard({
   onCopy: (code: string, provider: string, referralId: number) => void;
   onOpen: (label: string, target: TrackTarget) => void;
 }) {
+  // The card colour is the creator's, so the foreground has to be chosen
+  // against it rather than fixed. White measured 2.28:1 on the mustard in use
+  // -- readable ink takes the same card to 7.83:1.
   return (
-    <Box className="perk-card" style={{ background: referral.color }}>
+    <Box
+      className="perk-card"
+      style={{
+        background: referral.color,
+        color: readableForeground(referral.color),
+      }}
+    >
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="caption" sx={{ opacity: 0.78, letterSpacing: "0.08em" }}>
+        <Typography variant="caption" sx={{ opacity: 0.88, letterSpacing: "0.08em" }}>
           {referral.provider.toUpperCase()} / REFERRAL
         </Typography>
         <Tooltip title={`Open ${referral.provider} offer`} arrow>
@@ -418,6 +433,32 @@ export function ProfileHub({
       active = false;
     };
   }, [databaseProfileId]);
+
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
+
+  // Generated on first open rather than on mount: most visitors never ask for
+  // it, and the page URL is only knowable client-side anyway.
+  useEffect(() => {
+    if (!qrOpen || qrDataUrl) return;
+    let active = true;
+    QRCode.toDataURL(window.location.href, {
+      width: 720,
+      margin: 1,
+      // Fixed high-contrast ink on paper, not the page theme -- a themed code
+      // on a low-contrast pair is the standard way to make one unscannable.
+      color: { dark: "#17180f", light: "#fffef8" },
+    })
+      .then((url) => {
+        if (active) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (active) setNotice({ message: "The QR code could not be generated", severity: "error" });
+      });
+    return () => {
+      active = false;
+    };
+  }, [qrOpen, qrDataUrl]);
 
   const sharePage = useCallback(async () => {
     const url = window.location.href;
@@ -553,6 +594,15 @@ export function ProfileHub({
               <Tooltip title="Share this page" arrow>
                 <IconButton size="small" onClick={sharePage} aria-label="Share this page">
                   <IosShareRounded fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Show QR code" arrow>
+                <IconButton
+                  size="small"
+                  onClick={() => setQrOpen(true)}
+                  aria-label="Show QR code for this page"
+                >
+                  <QrCode2Rounded fontSize="small" />
                 </IconButton>
               </Tooltip>
               {/* Owner-only: visiting your own public page is the most natural
@@ -1098,6 +1148,47 @@ export function ProfileHub({
           </footer>
         )}
       </article>
+
+      <Dialog
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        aria-labelledby="profile-qr-heading"
+      >
+        <DialogContent className="profile-qr">
+          <Typography id="profile-qr-heading" component="h2">
+            Scan to open this page
+          </Typography>
+          <div className="profile-qr__code">
+            {qrDataUrl ? (
+              <Box
+                component="img"
+                src={qrDataUrl}
+                alt={`QR code linking to ${publicProfileAddress(profile.username)}`}
+              />
+            ) : (
+              <span aria-label="Generating QR code" />
+            )}
+          </div>
+          <p className="profile-qr__url">{publicProfileAddress(profile.username)}</p>
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <Button size="small" startIcon={<ContentCopyRounded />} onClick={sharePage}>
+              Copy link
+            </Button>
+            <Button
+              size="small"
+              component="a"
+              href={qrDataUrl || undefined}
+              download={`${profile.username}-qr.png`}
+              startIcon={<QrCode2Rounded />}
+              disabled={!qrDataUrl}
+            >
+              Save PNG
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
 
       <Snackbar
         open={Boolean(notice)}

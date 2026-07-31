@@ -1678,6 +1678,62 @@ a {
   font-weight: 800;
 }
 
+/* Section labels and their hints were painting with the app's global --muted,
+   which is picked against the marketing paper rather than the creator's
+   background -- on a pale theme they washed out. Route them through the same
+   AA-checked value the rest of the profile's secondary text already uses. */
+.public-template .section-heading .section-label,
+.public-template .section-heading .MuiTypography-caption,
+.public-template .hub-footer,
+.public-template .profile-supporter-badge a {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
+}
+
+.public-template .profile-supporter-badge b {
+  color: var(--profile-text, var(--ink));
+}
+
+/* QR dialog */
+
+.profile-qr {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+
+.profile-qr h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.profile-qr__code {
+  width: min(268px, 72vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  /* Fixed paper behind the code regardless of theme: the quiet zone has to
+     stay light for a scanner to find the finder patterns. */
+  background: #fffef8;
+}
+
+.profile-qr__code img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.profile-qr__url {
+  margin: 0;
+  color: var(--muted);
+  font: 500 0.78rem "DM Mono", monospace;
+  word-break: break-all;
+}
+
 .public-template .perk-rail {
   margin-inline: -10px;
   padding: 4px 10px 12px;

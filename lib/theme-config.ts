@@ -420,6 +420,18 @@ function blend(from: string, to: string, amount: number) {
  * whichever of surface/background is worse, because muted text appears on
  * both.
  */
+/**
+ * Ink or paper, whichever reads better on `background`. Perk cards take their
+ * colour from the creator, so a fixed white foreground was only ever a bet on
+ * them picking something dark -- on a mustard or lime card it lands around 2:1
+ * and the offer becomes hard to read.
+ */
+export function readableForeground(background: string) {
+  const ink = "#17180f";
+  const paper = "#fffef8";
+  return contrast(ink, background) >= contrast(paper, background) ? ink : paper;
+}
+
 export function readableMuted(colors: ProfileThemeConfig["colors"]) {
   const { muted, surface, background, text } = colors;
   const worst = (candidate: string) =>
