@@ -8,13 +8,18 @@ import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
+import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
-import { getSocialPlatformIcon } from "@/lib/social-platforms";
-import { publicProfilePath } from "@/lib/brand";
+import { musicProviders } from "@/lib/music-providers";
+import {
+  getSocialPlatformIcon,
+  socialPlatformOptions,
+} from "@/lib/social-platforms";
+import { BRAND_DOMAIN, publicProfilePath } from "@/lib/brand";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,6 +29,60 @@ function formatTaps(total: number) {
   }
   return String(total);
 }
+
+// Tiles pull their glyphs from the real provider registries rather than from a
+// separate set of brand logos, so the row can only ever show something the
+// product actually embeds or links.
+const musicIconByLabel = new Map(
+  musicProviders.map((provider) => [provider.label, provider.icon]),
+);
+
+// Socials first: that registry carries real brand marks, where the music one
+// falls back to generic glyphs (YouTube, Twitch and Vimeo all share a camera).
+function integrationIcon(label: string) {
+  const social = socialPlatformOptions.find((option) => option.label === label);
+  return social?.icon ?? musicIconByLabel.get(label) ?? getSocialPlatformIcon(label);
+}
+
+// Picked so all six marks are visually distinct -- adding Twitch or Vimeo here
+// would repeat the camera glyph twice over.
+const integrationTiles = [
+  { label: "Spotify", tone: "lime" },
+  { label: "YouTube", tone: "rust" },
+  { label: "Instagram", tone: "sky" },
+  { label: "SoundCloud", tone: "violet" },
+  { label: "WhatsApp Business", tone: "lime" },
+  { label: "Apple Music", tone: "sky" },
+];
+
+// A decorative stand-in for the QR the share dialog generates -- deterministic
+// so it never changes between renders, with the three finder squares a real
+// code has. Not scannable, and not meant to be.
+const QR_GRID = 11;
+const qrCells = Array.from({ length: QR_GRID * QR_GRID }, (_, index) => {
+  const row = Math.floor(index / QR_GRID);
+  const column = index % QR_GRID;
+  const inFinder = (r: number, c: number) =>
+    r < 3 && (c < 3 || c > QR_GRID - 4);
+  if (inFinder(row, column) || inFinder(QR_GRID - 1 - row, column)) {
+    return true;
+  }
+  return (row * 7 + column * 3) % 5 < 2;
+});
+
+// PLACEHOLDER TESTIMONIAL -- not a real customer quote.
+// Nova is the same invented persona (and the same stock portrait) used in the
+// examples carousel above, deliberately: reusing an established illustration
+// reads as a sample, where a new name and face would read as a real endorsement
+// the product has not earned. Replace the whole block with a quote from a named
+// customer who has given permission before this ships to production.
+const testimonial = {
+  quote:
+    "I stopped sending people to a wall of links. One page, the drop up top, and I can see which line actually got opened.",
+  name: "Nova",
+  role: "Musician · Cueful example page",
+  avatar: "/marketing/hero-collage-portrait-round.jpg",
+};
 
 const homepageFeatures = [
   {
@@ -527,6 +586,124 @@ export function MarketingHome() {
         </div>
       </section>
 
+      <section className="marketing-control">
+        <div className="marketing-control__copy">
+          <p className="section-label">AFTER THE TAP</p>
+          <Typography component="h2">
+            Control how your page
+            <br />
+            <span>gets used.</span>
+          </Typography>
+          <Typography>
+            Put the track, the clip, or the stream inline so it plays without
+            leaving the page. Sell from product cards that hand off to your own
+            checkout. Share a QR that points at the same link as your bio.
+          </Typography>
+          <Button
+            component={Link}
+            href="/auth"
+            variant="outlined"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Start free
+          </Button>
+        </div>
+
+        <div className="marketing-control__stage" aria-hidden="true">
+          <figure className="marketing-control__card marketing-control__card--qr">
+            <div className="marketing-control__qr">
+              {qrCells.map((filled, index) => (
+                <span key={index} data-on={filled ? "" : undefined} />
+              ))}
+            </div>
+            <figcaption>Share your page</figcaption>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--phone">
+            <span className="marketing-control__handle">
+              {BRAND_DOMAIN}/nova-sounds
+            </span>
+            <b>Midnight Signal</b>
+            <em>Tour tickets</em>
+            <em>Merch drop</em>
+            <em>Join the mailing list</em>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--player">
+            <PlayArrowRounded aria-hidden="true" />
+            <div>
+              <b>Midnight Signal</b>
+              <i />
+            </div>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--offer">
+            <small>AIRALO / REFERRAL</small>
+            <b>$3 off your first travel eSIM</b>
+            <span>COPY · DANI3</span>
+          </figure>
+
+          <div className="marketing-control__socials">
+            {["Instagram", "Twitch", "YouTube"].map((platform) => (
+              <span key={platform}>{getSocialPlatformIcon(platform)}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="marketing-integrations">
+        <div className="marketing-integrations__copy">
+          <p className="section-label">PLAYS WELL WITH</p>
+          <Typography component="h2">
+            Works with what you
+            <br />
+            <span>already publish on.</span>
+          </Typography>
+          <Typography>
+            Paste a link from Spotify, Apple Music, SoundCloud, Bandcamp,
+            Audiomack, YouTube, Vimeo, or Twitch and it embeds on your page.
+            Fourteen social platforms sit in the header, WhatsApp Business
+            included.
+          </Typography>
+          <Button
+            component={Link}
+            href="/auth"
+            variant="contained"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Create your page
+          </Button>
+        </div>
+
+        <div className="marketing-integrations__grid">
+          {integrationTiles.slice(0, 3).map((tile) => (
+            <span
+              className="marketing-integrations__tile"
+              data-tone={tile.tone}
+              key={tile.label}
+              title={tile.label}
+            >
+              {integrationIcon(tile.label)}
+            </span>
+          ))}
+
+          <span className="marketing-integrations__pill">
+            {BRAND_DOMAIN}/you
+          </span>
+
+          {integrationTiles.slice(3).map((tile) => (
+            <span
+              className="marketing-integrations__tile"
+              data-tone={tile.tone}
+              key={tile.label}
+              title={tile.label}
+            >
+              {integrationIcon(tile.label)}
+            </span>
+          ))}
+        </div>
+      </section>
+
       <section className="marketing-evidence">
         <div>
           <p className="section-label">MEASURE THE ACTION</p>
@@ -540,6 +717,24 @@ export function MarketingHome() {
           <article><small>OFFER OPENS</small><b>92</b><span>+18% this week</span></article>
           <article><small>CODE COPIES</small><b>67</b><span>36% copy rate</span></article>
         </div>
+      </section>
+
+      <section className="marketing-voice">
+        <figure className="marketing-voice__portrait">
+          <Image
+            src={testimonial.avatar}
+            alt=""
+            fill
+            sizes="(max-width: 700px) 70vw, 420px"
+          />
+        </figure>
+        <blockquote>
+          <Typography component="p">“{testimonial.quote}”</Typography>
+        </blockquote>
+        <figcaption className="marketing-voice__by">
+          <b>{testimonial.name}</b>
+          <span>{testimonial.role}</span>
+        </figcaption>
       </section>
 
       <section className="marketing-cta">

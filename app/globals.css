@@ -9625,6 +9625,362 @@ a {
   }
 }
 
+/* ---- Control ---------------------------------------------------------- */
+
+.marketing-control {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(420px, 1.1fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+  background: color-mix(in srgb, var(--lime) 16%, var(--paper));
+  border-block: 1px solid var(--line);
+}
+
+.marketing-control__copy h2 {
+  margin-top: 12px;
+  font-size: clamp(2.6rem, 4.4vw, 4.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.marketing-control__copy h2 span {
+  color: var(--orange);
+  font-style: italic;
+}
+
+.marketing-control__copy > .MuiTypography-body1 {
+  max-width: 460px;
+  margin: 22px 0 30px;
+  color: var(--muted);
+}
+
+.marketing-control__stage {
+  position: relative;
+  min-height: 460px;
+}
+
+.marketing-control__card {
+  position: absolute;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 18px 40px rgba(27, 28, 24, 0.12);
+}
+
+.marketing-control__card--qr {
+  top: 6%;
+  left: 0;
+  width: 168px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  transform: rotate(-6deg);
+  background: #20221c;
+  border-color: #20221c;
+}
+
+.marketing-control__card--qr figcaption {
+  color: #e7ecdc;
+  font: 500 0.6rem "DM Mono", monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.marketing-control__qr {
+  width: 108px;
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 2px;
+}
+
+.marketing-control__qr span {
+  aspect-ratio: 1;
+  border-radius: 1px;
+}
+
+.marketing-control__qr span[data-on] {
+  background: var(--lime);
+}
+
+.marketing-control__card--phone {
+  top: 0;
+  left: 34%;
+  width: 210px;
+  display: grid;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 26px;
+  transform: rotate(3deg);
+}
+
+.marketing-control__handle {
+  color: var(--muted);
+  font: 500 0.58rem "DM Mono", monospace;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.marketing-control__card--phone b {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--lime);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.marketing-control__card--phone em {
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.marketing-control__card--player {
+  right: 4%;
+  bottom: 24%;
+  width: 216px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: rotate(-3deg);
+}
+
+.marketing-control__card--player > .MuiSvgIcon-root {
+  flex: none;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 1.5rem;
+}
+
+.marketing-control__card--player div {
+  flex: 1;
+  display: grid;
+  gap: 8px;
+}
+
+.marketing-control__card--player b {
+  font-size: 0.74rem;
+}
+
+.marketing-control__card--player i {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--orange) 0 42%,
+    var(--line) 42% 100%
+  );
+}
+
+.marketing-control__card--offer {
+  left: 8%;
+  bottom: 4%;
+  width: 232px;
+  display: grid;
+  gap: 8px;
+  transform: rotate(2deg);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.marketing-control__card--offer small {
+  color: #b9c0af;
+  font: 700 0.5rem "DM Mono", monospace;
+  letter-spacing: 0.09em;
+}
+
+.marketing-control__card--offer b {
+  color: #f4f7ed;
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+.marketing-control__card--offer span {
+  justify-self: start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+  font: 700 0.52rem "DM Mono", monospace;
+  letter-spacing: 0.07em;
+}
+
+.marketing-control__socials {
+  position: absolute;
+  top: 12%;
+  right: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.marketing-control__socials span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px rgba(27, 28, 24, 0.1);
+}
+
+.marketing-control__socials .MuiSvgIcon-root {
+  font-size: 1.15rem;
+}
+
+/* ---- Integrations ----------------------------------------------------- */
+
+.marketing-integrations {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(360px, 0.95fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+}
+
+.marketing-integrations__copy h2 {
+  margin-top: 12px;
+  font-size: clamp(2.6rem, 4.4vw, 4.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.marketing-integrations__copy h2 span {
+  color: var(--orange);
+  font-style: italic;
+}
+
+.marketing-integrations__copy > .MuiTypography-body1 {
+  max-width: 470px;
+  margin: 22px 0 30px;
+  color: var(--muted);
+}
+
+.marketing-integrations__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.6vw, 20px);
+  align-items: center;
+  justify-items: center;
+}
+
+.marketing-integrations__tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 132px;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.marketing-integrations__tile:nth-child(2),
+.marketing-integrations__tile:nth-child(6) {
+  border-radius: 999px;
+}
+
+.marketing-integrations__tile .MuiSvgIcon-root {
+  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+}
+
+.marketing-integrations__tile[data-tone="lime"] {
+  background: var(--lime);
+}
+
+.marketing-integrations__tile[data-tone="rust"] {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff6ef;
+}
+
+.marketing-integrations__tile[data-tone="sky"] {
+  background: #cfe4f4;
+}
+
+.marketing-integrations__tile[data-tone="violet"] {
+  background: #ded3f6;
+}
+
+.marketing-integrations__pill {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: clamp(64px, 7vw, 88px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font: 500 clamp(0.95rem, 1.7vw, 1.4rem) "DM Mono", monospace;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Testimonial ------------------------------------------------------ */
+
+.marketing-voice {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 980px) / 2));
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.marketing-voice__portrait {
+  position: relative;
+  width: min(420px, 72%);
+  aspect-ratio: 4 / 3;
+  margin: 0 0 clamp(28px, 4vw, 52px);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.marketing-voice__portrait img {
+  object-fit: cover;
+}
+
+.marketing-voice blockquote {
+  margin: 0;
+}
+
+.marketing-voice blockquote .MuiTypography-root {
+  font-size: clamp(1.7rem, 3.6vw, 3.1rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.marketing-voice__by {
+  display: grid;
+  gap: 4px;
+  margin-top: clamp(20px, 3vw, 34px);
+}
+
+.marketing-voice__by b {
+  font-size: 0.95rem;
+}
+
+.marketing-voice__by span {
+  color: var(--muted);
+  font: 500 0.68rem "DM Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .marketing-evidence {
   width: 100%;
   padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
@@ -9700,8 +10056,31 @@ a {
 }
 
 @media (max-width: 1120px) {
-  .marketing-evidence {
+  .marketing-evidence,
+  .marketing-control,
+  .marketing-integrations {
     grid-template-columns: 1fr;
+  }
+
+  /* The scattered cards are positioned as a percentage of the stage, so they
+     stay in composition down to here and then stack into a plain row. */
+  .marketing-control__stage {
+    min-height: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .marketing-control__card,
+  .marketing-control__socials {
+    position: static;
+    transform: none;
+  }
+
+  .marketing-control__socials {
+    display: flex;
+    gap: 10px;
   }
 }
 
