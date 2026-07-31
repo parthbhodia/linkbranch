@@ -360,7 +360,14 @@ export function MarketingHome() {
                   <ArrowOutwardRounded aria-hidden="true" />
                 </div>
                 <div className="example-profile__phone">
-                  <i>{example.profile.initials}</i>
+                  <i className={example.profile.avatarUrl ? "has-photo" : undefined}>
+                    {example.profile.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={example.profile.avatarUrl} alt="" />
+                    ) : (
+                      example.profile.initials
+                    )}
+                  </i>
                   <small>@{example.profile.username}</small>
                   <b>
                     {example.profile.headline}

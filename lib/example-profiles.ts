@@ -55,6 +55,12 @@ export const exampleProfiles: ExampleProfile[] = [
     profile: {
       username: "nova-sounds",
       initials: "NS",
+      // The three single-person shots from the hero collage, reused so the
+      // carousel shows faces rather than monograms. Assigned by card order
+      // rather than by persona: these are stock portraits and the example
+      // names are invented, so any pairing is arbitrary. Initials stay as the
+      // fallback for every other example.
+      avatarUrl: "/marketing/hero-collage-portrait-round.jpg",
       displayName: "Nova",
       greeting: "Hey, I’m",
       headline: "New songs, live dates, and",
@@ -119,6 +125,7 @@ export const exampleProfiles: ExampleProfile[] = [
     profile: {
       username: "rio-coach",
       initials: "RC",
+      avatarUrl: "/marketing/hero-collage-portrait-tall.jpg",
       displayName: "Rio",
       greeting: "I’m",
       headline: "I help founders ship with",
@@ -183,6 +190,7 @@ export const exampleProfiles: ExampleProfile[] = [
     profile: {
       username: "maya-makes",
       initials: "MM",
+      avatarUrl: "/marketing/hero-collage-statement.jpg",
       displayName: "Maya",
       greeting: "Hi, I’m",
       headline: "I turn tiny ideas into",

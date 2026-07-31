@@ -7789,6 +7789,20 @@ a {
   border-radius: 0;
 }
 
+/* A photo avatar drops the template's monogram colour: the disc becomes the
+   crop, so the background would only show through as a rim. */
+.example-profile__phone > i.has-photo {
+  overflow: hidden;
+  background: none;
+}
+
+.example-profile__phone > i.has-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .example-profile__socials {
   gap: 9px;
   margin-bottom: 2px;
