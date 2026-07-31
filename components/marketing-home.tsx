@@ -13,9 +13,17 @@ import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
+import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { publicProfilePath } from "@/lib/brand";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
+
+function formatTaps(total: number) {
+  if (total >= 1000) {
+    return `${(total / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return String(total);
+}
 
 const homepageFeatures = [
   {
@@ -358,6 +366,15 @@ export function MarketingHome() {
                     {example.profile.headline}
                     <em> {example.profile.headlineAccent}</em>
                   </b>
+                  {example.profile.socials.length > 0 && (
+                    <span className="example-profile__socials" aria-hidden="true">
+                      {example.profile.socials.slice(0, 4).map((social) => (
+                        <i key={social.platform}>
+                          {getSocialPlatformIcon(social.platform)}
+                        </i>
+                      ))}
+                    </span>
+                  )}
                   {example.mediaEmbeds?.[0] ? (
                     <span className="example-profile__music">
                       <strong>▶ {example.mediaEmbeds[0].title}</strong>
@@ -431,7 +448,7 @@ export function MarketingHome() {
                   !(/referral/i.test(example.role) &&
                     example.profile.referrals?.length)
                     ? example.profile.links
-                        .slice(0, example.mediaEmbeds?.length ? 1 : 2)
+                        .slice(0, example.mediaEmbeds?.length ? 2 : 3)
                         .map((link) => {
                           const isBooking =
                             /calendly|cal\.com|tidycal|savvycal|hubspot|calendar\.google/i.test(
@@ -465,6 +482,21 @@ export function MarketingHome() {
                           );
                         })
                     : null}
+                  {/* Pinned to the bottom of the frame. The preview shows at
+                      most three rows, so without something holding the floor a
+                      short example leaves the phone visibly half-empty. */}
+                  <span className="example-profile__stats" aria-hidden="true">
+                    <b>
+                      {formatTaps(
+                        example.profile.links.reduce(
+                          (total, link) => total + link.visits,
+                          0,
+                        ),
+                      )}{" "}
+                      taps
+                    </b>
+                    <b>{example.profile.links.length} links</b>
+                  </span>
                 </div>
                 <div>
                   <Typography component="h3">{example.profile.displayName}</Typography>
