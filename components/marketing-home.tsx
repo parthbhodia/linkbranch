@@ -556,6 +556,8 @@ export function MarketingHome() {
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>
           <Link href="/templates">Templates</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
           <Link href="/auth?mode=login">Sign in</Link>
         </div>
       </footer>

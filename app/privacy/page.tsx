@@ -14,7 +14,10 @@ export default function PrivacyPage() {
     <main className={styles.page}>
       <nav className={styles.nav} aria-label="Privacy navigation">
         <Link href="/">cueful.</Link>
-        <Link href="/">Back home</Link>
+        <div className={styles.navLinks}>
+          <Link href="/terms">Terms</Link>
+          <Link href="/">Back home</Link>
+        </div>
       </nav>
       <article className={styles.article}>
         <p className={styles.eyebrow}>PRIVACY / PLAIN LANGUAGE</p>

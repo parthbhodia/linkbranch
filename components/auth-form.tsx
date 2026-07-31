@@ -280,6 +280,13 @@ export function AuthForm() {
                   ? "Create account"
                   : "Sign in"}
             </Button>
+            {mode === "signup" && (
+              <Typography className="auth-form__legal" variant="caption">
+                By creating an account you agree to the{" "}
+                <Link href="/terms">Terms of Service</Link> and{" "}
+                <Link href="/privacy">Privacy Policy</Link>.
+              </Typography>
+            )}
           </Stack>
         </Paper>
     </AuthFrame>

@@ -1483,8 +1483,9 @@ a {
 
 .marketing-footer > div {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 20px;
+  gap: 12px 20px;
   font-size: 0.78rem;
   font-weight: 750;
 }
@@ -4684,7 +4685,14 @@ a {
   margin-top: -8px;
 }
 
-.auth-form__forgot a {
+.auth-form__legal {
+  color: #5e6256;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.auth-form__forgot a,
+.auth-form__legal a {
   color: #496800;
   font-size: 0.75rem;
   font-weight: 750;
@@ -4692,7 +4700,9 @@ a {
 }
 
 .auth-form__forgot a:hover,
-.auth-form__forgot a:focus-visible {
+.auth-form__forgot a:focus-visible,
+.auth-form__legal a:hover,
+.auth-form__legal a:focus-visible {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -10472,6 +10482,11 @@ a {
 
 .seo-footer p {
   color: #676b61;
+}
+
+.seo-footer nav {
+  flex-wrap: wrap;
+  row-gap: 12px;
 }
 
 @media (max-width: 1050px) {

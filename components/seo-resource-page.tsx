@@ -364,6 +364,8 @@ export function SeoResourcePage({ page }: { page: SeoPageConfig }) {
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>
           <Link href="/templates">Templates</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
         </nav>
       </footer>
     </main>

@@ -3037,7 +3037,8 @@ export function Dashboard({
                   <Box>
                     <Typography variant="h3">Privacy & data rights</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Download a copy of your Cueful data or review the privacy policy.
+                      Download a copy of your Cueful data or review the privacy
+                      policy and terms.
                     </Typography>
                   </Box>
                 </div>
@@ -3064,6 +3065,9 @@ export function Dashboard({
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                     <Button component={Link} href="/privacy" variant="text">
                       Privacy policy
+                    </Button>
+                    <Button component={Link} href="/terms" variant="text">
+                      Terms of service
                     </Button>
                     <Button
                       color="inherit"

@@ -39,6 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${BRAND_URL}/terms`,
+      lastModified: updatedAt,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
     ...seoPages.map((page) => ({
       url: `${BRAND_URL}${page.path}`,
       lastModified: updatedAt,
