@@ -12621,3 +12621,9 @@ a {
   line-height: 1.35;
   letter-spacing: -0.02em;
 }
+
+/* The referral panel is an editor now, not a summary grid, so it stacks in one
+   column instead of tiling cards. */
+.workspace-referral-grid--editing {
+  display: block;
+}

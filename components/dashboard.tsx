@@ -77,6 +77,12 @@ import {
   type SettingsJumpId,
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
+import { LinksEditor, type LinkDraft } from "@/components/links-editor";
+import {
+  ReferralsEditor,
+  type ReferralDraft,
+} from "@/components/referrals-editor";
+import { normalizeHttpUrl } from "@/lib/urls";
 import {
   DEFAULT_SOCIAL_IMAGE,
   publicProfileAddress,
@@ -403,6 +409,34 @@ export function Dashboard({
   // Raw text for the comma-separated tags field while it has focus; null hands
   // display back to the parsed array. See the field for why.
   const [tagsText, setTagsText] = useState<string | null>(null);
+  // Links are edited here now rather than by bouncing into the setup wizard,
+  // so the dashboard keeps its own draft of them alongside the profile draft.
+  const [linkDraft, setLinkDraft] = useState<LinkDraft[]>(() =>
+    links.map((item) => ({
+      id: item.id,
+      title: item.title,
+      url: item.url,
+      is_active: item.is_active,
+      is_featured: item.is_featured,
+      thumbnail_path: item.thumbnail_path,
+    })),
+  );
+  const [savingLinks, setSavingLinks] = useState(false);
+  const [referralDraft, setReferralDraft] = useState<ReferralDraft[]>(() =>
+    referrals.map((item) => ({
+      id: item.id,
+      provider: item.provider,
+      offer: item.offer,
+      url: item.url,
+      code: item.code ?? "",
+      color: item.color,
+      is_active: item.is_active,
+    })),
+  );
+  const [savingReferrals, setSavingReferrals] = useState(false);
+  // Thumbnails replaced or removed while editing. They stay in storage until
+  // the save succeeds, because until then the old path is still the live one.
+  const orphanedThumbnails = useRef<Set<string>>(new Set());
   const [draft, setDraft] = useState(() => ({
     ...profile,
     tags: Array.isArray(profile.tags) ? profile.tags : [],
@@ -799,6 +833,145 @@ export function Dashboard({
       "dismissed",
     );
     setSharePromptOpen(false);
+  }
+
+  async function saveLinks() {
+    const cleaned = linkDraft
+      .map((item) => ({ ...item, title: item.title.trim() }))
+      .filter((item) => item.title || item.url.trim());
+
+    if (cleaned.some((item) => !item.title)) {
+      setNotice({ severity: "error", message: "Give every link a title." });
+      return;
+    }
+
+    const normalized = cleaned.map((item) => ({
+      ...item,
+      url: normalizeHttpUrl(item.url),
+    }));
+    if (normalized.some((item) => !item.url)) {
+      setNotice({ severity: "error", message: "Enter a valid URL for every link." });
+      return;
+    }
+
+    setSavingLinks(true);
+    const supabase = createClient();
+
+    // Rows are updated in place and only the ones actually taken away are
+    // deleted -- a delete-all-then-reinsert would drop every link's id, and
+    // with it the analytics rows that reference them.
+    const existing = new Set(links.map((item) => item.id));
+    const kept = new Set(normalized.filter((item) => existing.has(item.id)).map((item) => item.id));
+    const removed = links.filter((item) => !kept.has(item.id)).map((item) => item.id);
+
+    if (removed.length) {
+      const { error } = await supabase.from("links").delete().in("id", removed);
+      if (error) {
+        setSavingLinks(false);
+        setNotice({ severity: "error", message: error.message });
+        return;
+      }
+    }
+
+    for (const [index, item] of normalized.entries()) {
+      const row = {
+        title: item.title,
+        url: item.url as string,
+        position: index,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+      };
+      const { error } = existing.has(item.id)
+        ? await supabase.from("links").update(row).eq("id", item.id)
+        : await supabase.from("links").insert({ ...row, user_id: profile.id });
+      if (error) {
+        setSavingLinks(false);
+        setNotice({ severity: "error", message: error.message });
+        return;
+      }
+    }
+
+    // Safe to sweep only now that the new paths are the ones on record.
+    const orphans = [...orphanedThumbnails.current];
+    if (orphans.length) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove(orphans);
+      orphanedThumbnails.current.clear();
+    }
+
+    setSavingLinks(false);
+    setNotice({ severity: "success", message: "Your links have been updated." });
+    router.refresh();
+  }
+
+  async function saveReferrals() {
+    const cleaned = referralDraft.filter(
+      (item) => item.provider.trim() || item.offer.trim() || item.url.trim(),
+    );
+
+    if (cleaned.some((item) => !item.provider.trim() || !item.offer.trim())) {
+      setNotice({
+        severity: "error",
+        message: "Give every referral a provider and an offer.",
+      });
+      return;
+    }
+
+    const normalized = cleaned.map((item) => ({
+      ...item,
+      url: normalizeHttpUrl(item.url),
+    }));
+    if (normalized.some((item) => !item.url)) {
+      setNotice({
+        severity: "error",
+        message: "Enter a valid URL for every referral offer.",
+      });
+      return;
+    }
+
+    setSavingReferrals(true);
+    const supabase = createClient();
+
+    const existing = new Set(referrals.map((item) => item.id));
+    const kept = new Set(
+      normalized.filter((item) => existing.has(item.id)).map((item) => item.id),
+    );
+    const removed = referrals
+      .filter((item) => !kept.has(item.id))
+      .map((item) => item.id);
+
+    if (removed.length) {
+      const { error } = await supabase.from("referrals").delete().in("id", removed);
+      if (error) {
+        setSavingReferrals(false);
+        setNotice({ severity: "error", message: error.message });
+        return;
+      }
+    }
+
+    for (const [index, item] of normalized.entries()) {
+      const row = {
+        provider: item.provider.trim(),
+        offer: item.offer.trim(),
+        url: item.url as string,
+        code: item.code.trim() || null,
+        color: item.color,
+        position: index,
+        is_active: item.is_active,
+      };
+      const { error } = existing.has(item.id)
+        ? await supabase.from("referrals").update(row).eq("id", item.id)
+        : await supabase.from("referrals").insert({ ...row, user_id: profile.id });
+      if (error) {
+        setSavingReferrals(false);
+        setNotice({ severity: "error", message: error.message });
+        return;
+      }
+    }
+
+    setSavingReferrals(false);
+    setNotice({ severity: "success", message: "Your referrals have been updated." });
+    router.refresh();
   }
 
   async function saveProfile() {
@@ -1726,40 +1899,31 @@ export function Dashboard({
                   </Typography>
                 </Box>
                 <Button
-                  component={Link}
-                  href={`/onboarding?template=${draft.template}&step=content`}
-                  variant="outlined"
+                  variant="contained"
+                  disabled={savingLinks}
+                  onClick={saveLinks}
                   startIcon={<InsertLinkRounded />}
                 >
-                  Edit links
+                  {savingLinks ? "Saving…" : "Save links"}
                 </Button>
               </div>
               <div className="workspace-content-list">
-                {links.slice(0, 4).map((item, index) => (
-                  <Paper className="workspace-content-item" variant="outlined" key={item.id}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <Box>
-                      <Typography fontWeight={800}>{item.title}</Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {item.subtitle || item.url}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      size="small"
-                      label={item.is_active ? "Visible" : "Hidden"}
-                      variant="outlined"
-                    />
-                  </Paper>
-                ))}
-                {links.length === 0 && (
-                  <Box className="workspace-empty">
-                    <InsertLinkRounded />
-                    <Typography fontWeight={800}>No links yet</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Add a first project, article, or favorite resource.
-                    </Typography>
-                  </Box>
-                )}
+                <LinksEditor
+                  value={linkDraft}
+                  onChange={setLinkDraft}
+                  userId={profile.id}
+                  // The dashboard's banner carries success/error only; the
+                  // editor's "warning" cases are completed actions, not faults.
+                  onNotice={(notice) =>
+                    setNotice({
+                      severity: notice.severity === "error" ? "error" : "success",
+                      message: notice.message,
+                    })
+                  }
+                  onThumbnailOrphaned={(path) =>
+                    orphanedThumbnails.current.add(path)
+                  }
+                />
               </div>
 
               <div className="workspace-panel__heading workspace-panel__heading--referrals">
@@ -1770,40 +1934,19 @@ export function Dashboard({
                   </Typography>
                 </Box>
                 <Button
-                  component={Link}
-                  href={`/onboarding?template=${draft.template}&step=content`}
-                  variant="outlined"
+                  variant="contained"
+                  disabled={savingReferrals}
+                  onClick={saveReferrals}
                   startIcon={<LocalOfferOutlined />}
                 >
-                  Edit referrals
+                  {savingReferrals ? "Saving…" : "Save referrals"}
                 </Button>
               </div>
-              <div className="workspace-referral-grid">
-                {referrals.slice(0, 4).map((item) => (
-                  <Paper
-                    className="workspace-referral-item"
-                    variant="outlined"
-                    key={item.id}
-                    style={{ "--referral-color": item.color } as React.CSSProperties}
-                  >
-                    <Typography className="section-label">
-                      {item.provider}
-                    </Typography>
-                    <Typography fontWeight={800}>{item.offer}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {item.code ? `Code: ${item.code}` : "Direct offer"}
-                    </Typography>
-                  </Paper>
-                ))}
-                {referrals.length === 0 && (
-                  <Box className="workspace-empty">
-                    <LocalOfferOutlined />
-                    <Typography fontWeight={800}>No referral offers yet</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Add a provider, perk, link, and optional coupon code.
-                    </Typography>
-                  </Box>
-                )}
+              <div className="workspace-referral-grid workspace-referral-grid--editing">
+                <ReferralsEditor
+                  value={referralDraft}
+                  onChange={setReferralDraft}
+                />
               </div>
 
               <FaqEditor profileId={profile.id} initialFaqs={faqs} />
