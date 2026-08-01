@@ -628,8 +628,15 @@ export function Dashboard({
 
     const bucketCount = 7;
     const bucketSpan = Math.max(86_400_000, (analyticsNow - cutoff) / bucketCount);
+    // Anchored so the last bucket ends now, rather than starting at the cutoff
+    // and running forward. With the one-day floor, a range shorter than seven
+    // days -- All Time on a young page -- made seven day-wide buckets overshoot
+    // today: the final ones began in the future, counted nothing, and their
+    // label read backwards ("Aug 3 - Jul 31") because the end was clamped to
+    // now while the start was not.
+    const windowStart = analyticsNow - bucketSpan * bucketCount;
     const days = Array.from({ length: bucketCount }, (_, offset) => {
-      const start = cutoff + bucketSpan * offset;
+      const start = windowStart + bucketSpan * offset;
       const end = offset === bucketCount - 1 ? analyticsNow + 1 : start + bucketSpan;
       const date = new Date(start);
       return {
