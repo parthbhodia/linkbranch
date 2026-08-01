@@ -77,7 +77,11 @@ import {
   type SettingsJumpId,
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
-import { publicProfileAddress, publicProfilePath } from "@/lib/brand";
+import {
+  DEFAULT_SOCIAL_IMAGE,
+  publicProfileAddress,
+  publicProfilePath,
+} from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
@@ -396,6 +400,9 @@ export function Dashboard({
   referralCount: number;
 }) {
   const router = useRouter();
+  // Raw text for the comma-separated tags field while it has focus; null hands
+  // display back to the parsed array. See the field for why.
+  const [tagsText, setTagsText] = useState<string | null>(null);
   const [draft, setDraft] = useState(() => ({
     ...profile,
     tags: Array.isArray(profile.tags) ? profile.tags : [],
@@ -480,7 +487,13 @@ export function Dashboard({
     draft.seo_og_title?.trim() || seoPreviewTitle;
   const seoSocialDescription =
     draft.seo_og_description?.trim() || seoPreviewDescription;
-  const seoPreviewImage = publicAssetUrl(draft.seo_image_path) ?? null;
+  // Same fallback the page metadata uses (app/u/[username]/page.tsx). Without
+  // it the preview showed an empty 1200x630 box whenever nothing had been
+  // uploaded, while the card people actually see falls back to the generated
+  // /opengraph-image -- so the panel was reporting a blank share card that
+  // never happens.
+  const seoPreviewImage =
+    publicAssetUrl(draft.seo_image_path) ?? DEFAULT_SOCIAL_IMAGE;
   const analytics = useMemo(() => {
     const knownDates = [...views, ...events]
       .map((item) => new Date(item.occurred_at).getTime())
@@ -712,6 +725,14 @@ export function Dashboard({
       .join("")
       .slice(0, 2)
       .toUpperCase() || "LB";
+
+  function parseTags(raw: string) {
+    return raw
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .slice(0, 16);
+  }
 
   function update<K extends keyof DashboardProfile>(
     field: K,
@@ -1524,19 +1545,20 @@ export function Dashboard({
                 helperText={`${draft.bio.length}/160`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+              {/* Shows the raw text while focused rather than the parsed array
+                  joined back together. Rendering the join meant the separator
+                  the user had just typed was parsed away and never made it back
+                  into the field -- "AWS," became "AWS" on the same keystroke, so
+                  a second tag could not be started. On blur the local copy is
+                  dropped and the canonical join takes over again. */}
               <TextField
                 label="Skill tags"
-                value={draft.tags.join(", ")}
-                onChange={(event) =>
-                  update(
-                    "tags",
-                    event.target.value
-                      .split(",")
-                      .map((tag) => tag.trim())
-                      .filter(Boolean)
-                      .slice(0, 16),
-                  )
-                }
+                value={tagsText ?? draft.tags.join(", ")}
+                onChange={(event) => {
+                  setTagsText(event.target.value);
+                  update("tags", parseTags(event.target.value));
+                }}
+                onBlur={() => setTagsText(null)}
                 helperText="Comma-separated chips under your intro (AWS, DevOps, Design…)"
                 slotProps={{ inputLabel: { shrink: true } }}
               />

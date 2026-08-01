@@ -1679,6 +1679,99 @@ a {
   font-weight: 800;
 }
 
+/* Section labels and their hints were painting with the app's global --muted,
+   which is picked against the marketing paper rather than the creator's
+   background -- on a pale theme they washed out. Route them through the same
+   AA-checked value the rest of the profile's secondary text already uses. */
+.public-template .section-heading .section-label,
+.public-template .section-heading .MuiTypography-caption,
+.public-template .hub-footer,
+.public-template .profile-supporter-badge a {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
+}
+
+.public-template .profile-supporter-badge b {
+  color: var(--profile-text, var(--ink));
+}
+
+/* The fixed templates hardcode their own light-on-dark greys. A creator can
+   overlay a custom palette on any of them, and a light custom background then
+   kept the dark template's pale text -- pale sage on pale paper, across the
+   header, the social rail, the search field and every caption. Where a custom
+   theme exists, its AA-checked values win. */
+.public-template.profile-theme-custom .MuiTypography-caption,
+.public-template.profile-theme-custom .MuiTypography-body2,
+.public-template.profile-theme-custom .MuiTypography-colorTextSecondary,
+.public-template.profile-theme-custom .MuiInputLabel-root,
+.public-template.profile-theme-custom .profile-copy > .MuiTypography-body1,
+.public-template.profile-theme-custom .profile-brand-row .MuiIconButton-root,
+.public-template.profile-theme-custom .profile-handle,
+.public-template.profile-theme-custom .hub-footer .MuiTypography-root {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted))) !important;
+}
+
+.public-template.profile-theme-custom .social-rail .MuiIconButton-root,
+.public-template.profile-theme-custom .search-field input {
+  color: var(--profile-text) !important;
+}
+
+/* Header icons on a fixed template read as chrome, not decoration. */
+.public-template .profile-brand-row .MuiIconButton-root {
+  color: var(--profile-muted-readable, var(--profile-muted, var(--muted)));
+}
+
+/* A perk card carries its own background, chosen by the creator, so page-level
+   secondary colours must not reach inside it. The after-dark template paints
+   captions #c2cdb7 -- right on its near-black page, and 1.6:1 on a mustard
+   card, which is how the offer eyebrow ended up unreadable. Children follow the
+   foreground computed against the card instead. .perk-action keeps its own
+   colours: it is a light pill with its own dark label. */
+.public-template .perk-card .MuiTypography-root,
+.public-template .perk-card .MuiIconButton-root {
+  color: inherit !important;
+}
+
+/* QR dialog */
+
+.profile-qr {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+
+.profile-qr h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.profile-qr__code {
+  width: min(268px, 72vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  /* Fixed paper behind the code regardless of theme: the quiet zone has to
+     stay light for a scanner to find the finder patterns. */
+  background: #fffef8;
+}
+
+.profile-qr__code img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.profile-qr__url {
+  margin: 0;
+  color: var(--muted);
+  font: 500 0.78rem "DM Mono", monospace;
+  word-break: break-all;
+}
+
 .public-template .perk-rail {
   margin-inline: -10px;
   padding: 4px 10px 12px;
@@ -6927,7 +7020,11 @@ a {
 /* Marketing homepage v2 — editorial, product-led, and conversion focused */
 
 .marketing-home {
-  overflow: hidden;
+  /* clip, not hidden: `overflow: hidden` makes this a scroll container, and a
+     sticky child then sticks to *it* rather than to the viewport -- which is
+     why the nav below would otherwise scroll away. `clip` still contains the
+     hero collage's horizontal spill without creating a scrollport. */
+  overflow-x: clip;
   background:
     linear-gradient(rgba(43, 47, 38, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(43, 47, 38, 0.045) 1px, transparent 1px),
@@ -6936,10 +7033,29 @@ a {
 }
 
 .marketing-nav {
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* Full-bleed so content scrolling underneath passes behind the bar rather
+     than beside it, with the inner inset matching the other sections. */
+  width: 100%;
+  padding-inline: max(24px, calc((100vw - 1380px) / 2));
   min-height: 76px;
   border-color: rgba(45, 48, 40, 0.16);
+  /* Tinted with the page's own paper, so it disappears against the top of the
+     page and only reads as glass once something passes behind it. The opacity
+     alone has to keep the links legible: backdrop-filter below is an
+     enhancement, and it silently does nothing wherever compositing is
+     unavailable rather than falling back to anything. */
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .marketing-nav {
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+  }
 }
 
 .marketing-nav__links {
@@ -7677,6 +7793,15 @@ a {
   display: none;
 }
 
+/* Set while the marquee runs. Mandatory snapping would drag the rail back to a
+   card edge every frame, and a smooth scroll-behavior would animate each of
+   those per-frame writes on top of the one already in flight. Both stay on for
+   reduced-motion visitors, who never get the marquee. */
+.example-profile-grid[data-marquee="on"] {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
 .example-profile {
   flex: 0 0 clamp(360px, 42vw, 540px);
   min-height: 660px;
@@ -7715,8 +7840,9 @@ a {
 .example-profile__meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   color: #71756a;
-  font: 750 0.54rem var(--font-mono), monospace;
+  font: 750 0.72rem var(--font-mono), monospace;
   letter-spacing: 0.08em;
 }
 
@@ -7797,6 +7923,20 @@ a {
   align-items: center;
   border: 0;
   border-radius: 0;
+}
+
+/* A photo avatar drops the template's monogram colour: the disc becomes the
+   crop, so the background would only show through as a rim. */
+.example-profile__phone > i.has-photo {
+  overflow: hidden;
+  background: none;
+}
+
+.example-profile__phone > i.has-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .example-profile__socials {
@@ -9621,6 +9761,508 @@ a {
   }
 }
 
+/* ---- Control ---------------------------------------------------------- */
+
+.marketing-control {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(420px, 1.1fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+  background: color-mix(in srgb, var(--lime) 16%, var(--paper));
+  border-block: 1px solid var(--line);
+}
+
+.marketing-control__copy h2 {
+  margin-top: 12px;
+  font-size: clamp(2.6rem, 4.4vw, 4.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.marketing-control__copy h2 span {
+  color: var(--orange);
+  font-style: italic;
+}
+
+.marketing-control__copy > .MuiTypography-body1 {
+  max-width: 460px;
+  margin: 22px 0 30px;
+  color: var(--muted);
+}
+
+.marketing-control__stage {
+  position: relative;
+  min-height: 540px;
+}
+
+.marketing-control__card {
+  position: absolute;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 18px 40px rgba(27, 28, 24, 0.12);
+}
+
+.marketing-control__card--qr {
+  top: 6%;
+  left: 0;
+  width: 168px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  transform: rotate(-6deg);
+  background: #20221c;
+  border-color: #20221c;
+}
+
+.marketing-control__card--qr figcaption {
+  color: #e7ecdc;
+  font: 500 0.6rem "DM Mono", monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* No gap and no radius: adjacent dark modules have to merge into runs, which is
+   what separates a code from a dot field. */
+.marketing-control__qr {
+  width: 126px;
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+}
+
+.marketing-control__qr span {
+  aspect-ratio: 1;
+}
+
+.marketing-control__qr span[data-on] {
+  background: var(--lime);
+}
+
+.marketing-control__card--phone {
+  top: 0;
+  left: 34%;
+  width: 210px;
+  display: grid;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 26px;
+  transform: rotate(3deg);
+}
+
+.marketing-control__handle {
+  color: var(--muted);
+  font: 500 0.58rem "DM Mono", monospace;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.marketing-control__card--phone b {
+  margin-top: 4px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: var(--lime);
+  font-size: 0.74rem;
+}
+
+.marketing-control__card--phone em {
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.marketing-control__card--phone .MuiSvgIcon-root {
+  flex: none;
+  font-size: 1rem;
+}
+
+.marketing-control__card--phone em .MuiSvgIcon-root {
+  color: var(--muted);
+}
+
+.marketing-control__card--shop {
+  right: 20%;
+  bottom: 0;
+  width: 196px;
+  display: grid;
+  gap: 7px;
+  transform: rotate(-2deg);
+}
+
+.marketing-control__thumb {
+  height: 84px;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      120% 90% at 30% 20%,
+      color-mix(in srgb, var(--lime) 70%, var(--paper)) 0%,
+      transparent 60%
+    ),
+    linear-gradient(140deg, var(--surface), color-mix(in srgb, var(--orange) 18%, var(--surface)));
+}
+
+.marketing-control__card--shop small {
+  color: var(--muted);
+  font: 700 0.5rem "DM Mono", monospace;
+  letter-spacing: 0.09em;
+}
+
+.marketing-control__card--shop b {
+  font-size: 0.86rem;
+}
+
+.marketing-control__card--shop > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font: 500 0.68rem "DM Mono", monospace;
+}
+
+.marketing-control__card--shop em {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 700 0.55rem "DM Mono", monospace;
+  font-style: normal;
+  letter-spacing: 0.07em;
+}
+
+.marketing-control__card--player {
+  right: 2%;
+  bottom: 42%;
+  width: 216px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: rotate(-3deg);
+}
+
+.marketing-control__card--player > .MuiSvgIcon-root {
+  flex: none;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 1.5rem;
+}
+
+.marketing-control__card--player div {
+  flex: 1;
+  display: grid;
+  gap: 8px;
+}
+
+.marketing-control__card--player b {
+  font-size: 0.74rem;
+}
+
+.marketing-control__card--player i {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--orange) 0 42%,
+    var(--line) 42% 100%
+  );
+}
+
+.marketing-control__card--offer {
+  left: 8%;
+  bottom: 4%;
+  width: 232px;
+  display: grid;
+  gap: 8px;
+  transform: rotate(2deg);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.marketing-control__card--offer small {
+  color: #b9c0af;
+  font: 700 0.5rem "DM Mono", monospace;
+  letter-spacing: 0.09em;
+}
+
+.marketing-control__card--offer b {
+  color: #f4f7ed;
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+.marketing-control__card--offer span {
+  justify-self: start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+  font: 700 0.52rem "DM Mono", monospace;
+  letter-spacing: 0.07em;
+}
+
+.marketing-control__socials {
+  position: absolute;
+  top: 12%;
+  right: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.marketing-control__socials span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px rgba(27, 28, 24, 0.1);
+}
+
+.marketing-control__socials .MuiSvgIcon-root {
+  font-size: 1.15rem;
+}
+
+/* ---- Integrations ----------------------------------------------------- */
+
+.marketing-integrations {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(360px, 0.95fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+}
+
+.marketing-integrations__copy h2 {
+  margin-top: 12px;
+  font-size: clamp(2.6rem, 4.4vw, 4.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.marketing-integrations__copy h2 span {
+  color: var(--orange);
+  font-style: italic;
+}
+
+.marketing-integrations__copy > .MuiTypography-body1 {
+  max-width: 470px;
+  margin: 22px 0 30px;
+  color: var(--muted);
+}
+
+.marketing-integrations__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.6vw, 20px);
+  align-items: center;
+  justify-items: center;
+}
+
+/* Warm bloom behind the cluster so the tiles sit on light rather than on flat
+   paper -- the depth cue the rest of the composition gets from shadows. */
+.marketing-integrations__grid::before {
+  content: "";
+  position: absolute;
+  inset: -14% -8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--lime) 40%, transparent),
+    transparent 70%
+  );
+  filter: blur(10px);
+}
+
+.marketing-integrations__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 132px;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    0 20px 36px -16px rgba(27, 28, 24, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.55) inset;
+}
+
+/* Light raking across the top-left of every tile, so the flat fills read as
+   physical chips rather than swatches. */
+.marketing-integrations__tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0) 48%
+  );
+  pointer-events: none;
+}
+
+.marketing-integrations__tile:nth-child(2),
+.marketing-integrations__tile:nth-child(6) {
+  border-radius: 999px;
+}
+
+/* Hand-placed tilt, matching the scattered cards in the section above. */
+.marketing-integrations__tile:nth-child(1) {
+  transform: rotate(-4deg);
+}
+
+.marketing-integrations__tile:nth-child(3) {
+  transform: rotate(3deg);
+}
+
+.marketing-integrations__tile:nth-child(5) {
+  transform: rotate(4deg);
+}
+
+.marketing-integrations__tile:nth-child(7) {
+  transform: rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing-integrations__tile {
+    transition:
+      transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.4s ease;
+  }
+
+  .marketing-integrations__tile:hover {
+    transform: translateY(-7px) rotate(0deg);
+    box-shadow:
+      0 30px 52px -18px rgba(27, 28, 24, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  }
+}
+
+.marketing-integrations__tile .MuiSvgIcon-root {
+  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+}
+
+.marketing-integrations__tile[data-tone="lime"] {
+  background: var(--lime);
+}
+
+.marketing-integrations__tile[data-tone="rust"] {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff6ef;
+}
+
+.marketing-integrations__tile[data-tone="sky"] {
+  background: #cfe4f4;
+}
+
+.marketing-integrations__tile[data-tone="violet"] {
+  background: #ded3f6;
+}
+
+.marketing-integrations__pill {
+  position: relative;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-height: clamp(64px, 7vw, 88px);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 500 clamp(0.95rem, 1.7vw, 1.4rem) "DM Mono", monospace;
+  letter-spacing: -0.02em;
+  box-shadow:
+    0 26px 48px -22px rgba(27, 28, 24, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.marketing-integrations__pill::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--lime);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 34%, transparent);
+}
+
+/* ---- Testimonial ------------------------------------------------------ */
+
+.marketing-voice {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 980px) / 2));
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.marketing-voice__portrait {
+  position: relative;
+  width: min(420px, 72%);
+  aspect-ratio: 4 / 3;
+  margin: 0 0 clamp(28px, 4vw, 52px);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.marketing-voice__portrait img {
+  object-fit: cover;
+}
+
+.marketing-voice blockquote {
+  margin: 0;
+}
+
+.marketing-voice blockquote .MuiTypography-root {
+  font-size: clamp(1.7rem, 3.6vw, 3.1rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.marketing-voice__by {
+  display: grid;
+  gap: 4px;
+  margin-top: clamp(20px, 3vw, 34px);
+}
+
+.marketing-voice__by b {
+  font-size: 0.95rem;
+}
+
+.marketing-voice__by span {
+  color: var(--muted);
+  font: 500 0.68rem "DM Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .marketing-evidence {
   width: 100%;
   padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
@@ -9696,8 +10338,31 @@ a {
 }
 
 @media (max-width: 1120px) {
-  .marketing-evidence {
+  .marketing-evidence,
+  .marketing-control,
+  .marketing-integrations {
     grid-template-columns: 1fr;
+  }
+
+  /* The scattered cards are positioned as a percentage of the stage, so they
+     stay in composition down to here and then stack into a plain row. */
+  .marketing-control__stage {
+    min-height: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .marketing-control__card,
+  .marketing-control__socials {
+    position: static;
+    transform: none;
+  }
+
+  .marketing-control__socials {
+    display: flex;
+    gap: 10px;
   }
 }
 

@@ -8,13 +8,22 @@ import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
+import ConfirmationNumberRounded from "@mui/icons-material/ConfirmationNumberRounded";
+import LibraryMusicRounded from "@mui/icons-material/LibraryMusicRounded";
+import MailOutlineRounded from "@mui/icons-material/MailOutlineRounded";
+import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
+import ShoppingBagRounded from "@mui/icons-material/ShoppingBagRounded";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
-import { getSocialPlatformIcon } from "@/lib/social-platforms";
-import { publicProfilePath } from "@/lib/brand";
+import { musicProviders } from "@/lib/music-providers";
+import {
+  getSocialPlatformIcon,
+  socialPlatformOptions,
+} from "@/lib/social-platforms";
+import { BRAND_DOMAIN, publicProfilePath } from "@/lib/brand";
 import { captureReferralFromLocation } from "@/lib/referrals";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,6 +33,97 @@ function formatTaps(total: number) {
   }
   return String(total);
 }
+
+// Pixels per second the examples rail creeps at. Slow enough to read a card
+// while it passes, rather than a ticker.
+const MARQUEE_SPEED = 26;
+
+// Tiles pull their glyphs from the real provider registries rather than from a
+// separate set of brand logos, so the row can only ever show something the
+// product actually embeds or links.
+const musicIconByLabel = new Map(
+  musicProviders.map((provider) => [provider.label, provider.icon]),
+);
+
+// Socials first: that registry carries real brand marks, where the music one
+// falls back to generic glyphs (YouTube, Twitch and Vimeo all share a camera).
+function integrationIcon(label: string) {
+  const social = socialPlatformOptions.find((option) => option.label === label);
+  return social?.icon ?? musicIconByLabel.get(label) ?? getSocialPlatformIcon(label);
+}
+
+// Picked so all six marks are visually distinct -- adding Twitch or Vimeo here
+// would repeat the camera glyph twice over.
+const integrationTiles = [
+  { label: "Spotify", tone: "lime" },
+  { label: "YouTube", tone: "rust" },
+  { label: "Instagram", tone: "sky" },
+  { label: "SoundCloud", tone: "violet" },
+  { label: "WhatsApp Business", tone: "lime" },
+  { label: "Apple Music", tone: "sky" },
+];
+
+// A decorative stand-in for the QR the share dialog generates. Deterministic,
+// and laid out on a real version-1 grid so it reads as a code rather than as a
+// dot field: 21 modules square, 7x7 finder rings at three corners with their
+// one-module separators, and the alternating timing tracks on row and column 6.
+// The payload area is noise. Not scannable, and not meant to be.
+const QR_SIZE = 21;
+const QR_FINDERS = [
+  [0, 0],
+  [0, QR_SIZE - 7],
+  [QR_SIZE - 7, 0],
+];
+
+function qrFinderModule(row: number, column: number) {
+  for (const [top, left] of QR_FINDERS) {
+    const y = row - top;
+    const x = column - left;
+    // The box is 9x9: the 7x7 eye plus the light separator ring around it.
+    if (y >= -1 && y <= 7 && x >= -1 && x <= 7) {
+      if (y < 0 || y > 6 || x < 0 || x > 6) return false;
+      const ring = y === 0 || y === 6 || x === 0 || x === 6;
+      const core = y >= 2 && y <= 4 && x >= 2 && x <= 4;
+      return ring || core;
+    }
+  }
+  return null;
+}
+
+// Bit-mixed rather than modular: a plain (row * a + column * b) % n banded into
+// visible diagonal stripes, which is exactly what a QR payload does not do.
+function qrNoise(row: number, column: number) {
+  let n = (row * 73856093) ^ (column * 19349663);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) & 0xff) < 122;
+}
+
+const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, index) => {
+  const row = Math.floor(index / QR_SIZE);
+  const column = index % QR_SIZE;
+  const finder = qrFinderModule(row, column);
+  if (finder !== null) return finder;
+  if (row === 6) return column % 2 === 0;
+  if (column === 6) return row % 2 === 0;
+  return qrNoise(row, column);
+});
+
+// PLACEHOLDER TESTIMONIAL -- not a real customer quote. Nova is an invented
+// persona and the portrait is stock.
+//
+// The attribution used to carry an "example page" qualifier marking it as a
+// sample; that was removed by request, so this now reads as a genuine
+// endorsement from a real customer. Replace it with a real quote from a named
+// person who has given permission before this reaches production -- an invented
+// testimonial presented as real is a false endorsement whatever the rest of the
+// page says.
+const testimonial = {
+  quote:
+    "Twelve links and no idea which one worked. Now the drop sits up top — and when merch started outselling tickets, I saw it in a day and moved merch first.",
+  name: "Nova",
+  role: "Musician",
+  avatar: "/marketing/hero-collage-statement.jpg",
+};
 
 const homepageFeatures = [
   {
@@ -83,6 +183,83 @@ export function MarketingHome() {
   const [importOpen, setImportOpen] = useState(false);
   const [activeExample, setActiveExample] = useState(0);
   const examplesRailRef = useRef<HTMLDivElement>(null);
+  const marqueePausedRef = useRef(false);
+  const marqueeResumeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hold the rail still for a beat -- used while an arrow's smooth scroll plays
+  // out, since the per-frame scrollLeft write below would otherwise fight it.
+  function pauseMarquee(resumeAfter?: number) {
+    marqueePausedRef.current = true;
+    if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    marqueeResumeRef.current = resumeAfter
+      ? setTimeout(() => {
+          marqueePausedRef.current = false;
+        }, resumeAfter)
+      : null;
+  }
+
+  function resumeMarquee() {
+    if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    marqueeResumeRef.current = null;
+    marqueePausedRef.current = false;
+  }
+
+  // The rail renders the examples twice; creeping scrollLeft forward and
+  // subtracting a lap on the wrap makes that read as one endless row. Driving
+  // the scroll position rather than a transform keeps the arrows, the pagination
+  // readout, and ordinary swiping working on the same element.
+  useEffect(() => {
+    const rail = examplesRailRef.current;
+    if (!rail) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Scroll snapping would fight a scroll position that never settles.
+    rail.dataset.marquee = "on";
+
+    let frame = 0;
+    let last = performance.now();
+    // Carried separately because the browser snaps scrollLeft to whole pixels:
+    // writing scrollLeft += 0.4 sixty times a second rounds every step away and
+    // the rail never moves. Accumulate here, write the total.
+    let position = rail.scrollLeft;
+
+    const step = (now: number) => {
+      const elapsed = now - last;
+      last = now;
+      const lap = rail.scrollWidth / 2;
+
+      // Something else moved the rail -- a swipe, a wheel, an arrow. Take its
+      // position as the new truth instead of yanking it back.
+      if (Math.abs(rail.scrollLeft - position) > 2) position = rail.scrollLeft;
+
+      if (lap > 0) {
+        if (!marqueePausedRef.current && !document.hidden) {
+          position += (MARQUEE_SPEED * elapsed) / 1000;
+          rail.scrollLeft = position;
+        }
+        // Checked even while paused, so a manual swipe past the seam wraps too.
+        if (rail.scrollLeft >= lap) {
+          rail.scrollLeft -= lap;
+          position = rail.scrollLeft;
+        }
+      }
+
+      frame = requestAnimationFrame(step);
+    };
+
+    frame = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(frame);
+      delete rail.dataset.marquee;
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (marqueeResumeRef.current) clearTimeout(marqueeResumeRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     captureReferralFromLocation();
@@ -101,9 +278,19 @@ export function MarketingHome() {
     const nextIndex =
       (index + exampleProfiles.length) % exampleProfiles.length;
     const rail = examplesRailRef.current;
-    const card = rail?.children.item(nextIndex);
+
+    // Both copies of the card qualify; jump to whichever is nearest, so paging
+    // from the tail of the rail does not rewind the whole row.
+    const card = (Array.from(rail?.children ?? []) as HTMLElement[])
+      .filter((_, position) => position % exampleProfiles.length === nextIndex)
+      .sort(
+        (a, b) =>
+          Math.abs(a.offsetLeft - (rail?.scrollLeft ?? 0)) -
+          Math.abs(b.offsetLeft - (rail?.scrollLeft ?? 0)),
+      )[0];
 
     setActiveExample(nextIndex);
+    pauseMarquee(900);
     card?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
@@ -130,7 +317,8 @@ export function MarketingHome() {
       }
     });
 
-    setActiveExample(nearestIndex);
+    // The rail holds two copies, so fold the hit back onto the real range.
+    setActiveExample(nearestIndex % exampleProfiles.length);
   }
 
   return (
@@ -309,7 +497,13 @@ export function MarketingHome() {
             Musician with Spotify embed, coach with Calendly, creator, freelancer, curator, or shop.
           </Typography>
         </div>
-        <div className="example-carousel">
+        <div
+          className="example-carousel"
+          onPointerEnter={() => pauseMarquee()}
+          onPointerLeave={resumeMarquee}
+          onFocusCapture={() => pauseMarquee()}
+          onBlurCapture={resumeMarquee}
+        >
           <div className="example-carousel__toolbar">
             <div
               className="example-carousel__pagination"
@@ -345,22 +539,39 @@ export function MarketingHome() {
             onScroll={updateActiveExample}
             aria-label="Example Cueful profiles"
           >
-            {exampleProfiles.map((example, index) => (
+            {/* Rendered twice so the marquee has a seamless lap. The second
+                copy is decoration: hidden from assistive tech and off the tab
+                order, so the six examples are still announced once each. */}
+            {[...exampleProfiles, ...exampleProfiles].map((example, position) => {
+              const index = position % exampleProfiles.length;
+              const isClone = position >= exampleProfiles.length;
+              return (
               <Link
                 className={`example-profile example-profile--${example.template}${
-                  activeExample === index ? " is-active" : ""
+                  activeExample === index && !isClone ? " is-active" : ""
                 }`}
                 href={publicProfilePath(example.slug)}
                 aria-label={`Open ${example.profile.displayName}'s ${example.role} profile`}
-                aria-current={activeExample === index ? "true" : undefined}
-                key={example.slug}
+                aria-current={
+                  activeExample === index && !isClone ? "true" : undefined
+                }
+                aria-hidden={isClone || undefined}
+                tabIndex={isClone ? -1 : undefined}
+                key={`${example.slug}-${position}`}
               >
                 <div className="example-profile__meta">
                   <span>0{index + 1} / {example.role.toUpperCase()}</span>
                   <ArrowOutwardRounded aria-hidden="true" />
                 </div>
                 <div className="example-profile__phone">
-                  <i>{example.profile.initials}</i>
+                  <i className={example.profile.avatarUrl ? "has-photo" : undefined}>
+                    {example.profile.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={example.profile.avatarUrl} alt="" />
+                    ) : (
+                      example.profile.initials
+                    )}
+                  </i>
                   <small>@{example.profile.username}</small>
                   <b>
                     {example.profile.headline}
@@ -503,7 +714,8 @@ export function MarketingHome() {
                   <Typography>{example.profile.bio}</Typography>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
           <div className="example-carousel__dots" aria-label="Choose an example">
             {exampleProfiles.map((example, index) => (
@@ -520,6 +732,148 @@ export function MarketingHome() {
         </div>
       </section>
 
+      <section className="marketing-control">
+        <div className="marketing-control__copy">
+          <p className="section-label">AFTER THE TAP</p>
+          <Typography component="h2">
+            Control how your page
+            <br />
+            <span>gets used.</span>
+          </Typography>
+          <Typography>
+            Put the track, the clip, or the stream inline so it plays without
+            leaving the page. Sell from product cards that hand off to your own
+            checkout. Share a QR that points at the same link as your bio.
+          </Typography>
+          <Button
+            component={Link}
+            href="/auth"
+            variant="outlined"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Start free
+          </Button>
+        </div>
+
+        <div className="marketing-control__stage" aria-hidden="true">
+          <figure className="marketing-control__card marketing-control__card--qr">
+            <div className="marketing-control__qr">
+              {qrCells.map((filled, index) => (
+                <span key={index} data-on={filled ? "" : undefined} />
+              ))}
+            </div>
+            <figcaption>Share your page</figcaption>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--phone">
+            <span className="marketing-control__handle">
+              {BRAND_DOMAIN}/nova-sounds
+            </span>
+            {/* Spotify's own glyph on the featured row, so the embedded track
+                here and the Spotify tile in the section below read as the same
+                thing. */}
+            <b>
+              <LibraryMusicRounded aria-hidden="true" />
+              Midnight Signal
+            </b>
+            <em>
+              <ConfirmationNumberRounded aria-hidden="true" />
+              Tour tickets
+            </em>
+            <em>
+              <ShoppingBagRounded aria-hidden="true" />
+              Merch drop
+            </em>
+            <em>
+              <MailOutlineRounded aria-hidden="true" />
+              Join the mailing list
+            </em>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--player">
+            <PlayArrowRounded aria-hidden="true" />
+            <div>
+              <b>Midnight Signal</b>
+              <i />
+            </div>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--offer">
+            <small>AIRALO / REFERRAL</small>
+            <b>$3 off your first travel eSIM</b>
+            <span>COPY · DANI3</span>
+          </figure>
+
+          <figure className="marketing-control__card marketing-control__card--shop">
+            <div className="marketing-control__thumb" />
+            <small>MERCH</small>
+            <b>Tour tee</b>
+            <span>
+              USD 34 <em>Buy</em>
+            </span>
+          </figure>
+
+          <div className="marketing-control__socials">
+            {["Instagram", "WhatsApp Business", "YouTube"].map((platform) => (
+              <span key={platform}>{getSocialPlatformIcon(platform)}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="marketing-integrations">
+        <div className="marketing-integrations__copy">
+          <p className="section-label">PLAYS WELL WITH</p>
+          <Typography component="h2">
+            Works with what you
+            <br />
+            <span>already publish on.</span>
+          </Typography>
+          <Typography>
+            Paste a link from Spotify, Apple Music, SoundCloud, Bandcamp,
+            Audiomack, YouTube, Vimeo, or Twitch and it embeds on your page.
+            Fourteen social platforms sit in the header, WhatsApp Business
+            included.
+          </Typography>
+          <Button
+            component={Link}
+            href="/auth"
+            variant="contained"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            Create your page
+          </Button>
+        </div>
+
+        <div className="marketing-integrations__grid">
+          {integrationTiles.slice(0, 3).map((tile) => (
+            <span
+              className="marketing-integrations__tile"
+              data-tone={tile.tone}
+              key={tile.label}
+              title={tile.label}
+            >
+              {integrationIcon(tile.label)}
+            </span>
+          ))}
+
+          <span className="marketing-integrations__pill">
+            {BRAND_DOMAIN}/you
+          </span>
+
+          {integrationTiles.slice(3).map((tile) => (
+            <span
+              className="marketing-integrations__tile"
+              data-tone={tile.tone}
+              key={tile.label}
+              title={tile.label}
+            >
+              {integrationIcon(tile.label)}
+            </span>
+          ))}
+        </div>
+      </section>
+
       <section className="marketing-evidence">
         <div>
           <p className="section-label">MEASURE THE ACTION</p>
@@ -533,6 +887,24 @@ export function MarketingHome() {
           <article><small>OFFER OPENS</small><b>92</b><span>+18% this week</span></article>
           <article><small>CODE COPIES</small><b>67</b><span>36% copy rate</span></article>
         </div>
+      </section>
+
+      <section className="marketing-voice">
+        <figure className="marketing-voice__portrait">
+          <Image
+            src={testimonial.avatar}
+            alt=""
+            fill
+            sizes="(max-width: 700px) 70vw, 420px"
+          />
+        </figure>
+        <blockquote>
+          <Typography component="p">“{testimonial.quote}”</Typography>
+        </blockquote>
+        <figcaption className="marketing-voice__by">
+          <b>{testimonial.name}</b>
+          <span>{testimonial.role}</span>
+        </figcaption>
       </section>
 
       <section className="marketing-cta">
