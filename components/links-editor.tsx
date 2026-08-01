@@ -397,7 +397,7 @@ export function LinksEditor({
   }
 
   return (
-    <Box>
+    <Box className="links-editor">
       <DndContext
         sensors={dragSensors}
         collisionDetection={closestCenter}

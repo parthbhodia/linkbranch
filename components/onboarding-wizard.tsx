@@ -87,6 +87,10 @@ import {
 import { SortableLinkEditor } from "@/components/links-editor";
 import { ReferralsEditor } from "@/components/referrals-editor";
 import { normalizeHttpUrl } from "@/lib/urls";
+import {
+  defaultProfileTheme,
+  resolveProfileTheme,
+} from "@/lib/theme-config";
 
 type LinkDraft = {
   id: number;
@@ -207,6 +211,10 @@ export type OnboardingInitialData = {
     location: string;
     show_location: boolean;
     avatar_path: string | null;
+    // Needed to tell whether the creator has switched template, and to carry
+    // their uploaded assets across when the palette is reset.
+    template: string | null;
+    theme_config: unknown;
   };
   links: Array<{
     id: number;
@@ -827,6 +835,30 @@ export function OnboardingWizard({
     if (error) {
       setNotice({ message: error.message, severity: "error" });
       return;
+    }
+
+    // save_profile_bundle writes `template` but never touches `theme_config`,
+    // and resolveProfileTheme prefers a stored theme over the template default.
+    // So for anyone who already had colours saved, picking a new template here
+    // changed the layout and left the old palette in place -- choosing the pink
+    // template and getting the previous theme back. Reset the palette to the
+    // chosen template's, keeping the assets the creator uploaded.
+    if (initialTemplate !== initialData.profile.template) {
+      const previous = resolveProfileTheme(
+        initialData.profile.theme_config,
+        initialData.profile.template ?? "field-notes",
+      );
+      const next = defaultProfileTheme(initialTemplate);
+      await supabase
+        .from("profiles")
+        .update({
+          theme_config: {
+            ...next,
+            logoPath: previous.logoPath ?? null,
+            wallpaperPath: previous.wallpaperPath ?? null,
+          },
+        })
+        .eq("id", initialData.profile.id);
     }
 
     const referrerUsername = readReferralAttribution();

@@ -12627,3 +12627,32 @@ a {
 .workspace-referral-grid--editing {
   display: block;
 }
+
+/* The link row was written for the wizard's full-width form. Dropped into the
+   dashboard panel its fixed columns -- 38px handle, 120px thumbnail, and the
+   actions -- eat about 360px, leaving the title and URL fields squeezed to a
+   few characters each. Measure against the editor's own width rather than the
+   viewport, since the same component now renders at two very different widths. */
+.links-editor {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .link-editor {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .link-editor__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .link-editor__thumbnail,
+  .link-editor__actions {
+    grid-column: 2;
+  }
+
+  .link-editor__actions {
+    justify-content: flex-start;
+  }
+}
