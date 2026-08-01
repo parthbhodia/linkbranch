@@ -278,6 +278,78 @@ const templateDefaults: Record<string, ProfileThemeConfig> = {
     density: "compact",
     contactForm: false,
   },
+  // The four below deliberately differ on more than palette. Each one takes a
+  // different font, button shape and background treatment, because four
+  // templates that shared a layout and varied only in colour were reading as
+  // the same template painted over.
+  "press-sheet": {
+    version: 1,
+    colors: {
+      background: "#f1efe6",
+      surface: "#ffffff",
+      text: "#0d0d0b",
+      muted: "#4c4c46",
+      accent: "#d5361f",
+      button: "#0d0d0b",
+      buttonText: "#ffffff",
+    },
+    font: "mono",
+    buttonShape: "sharp",
+    background: "graph",
+    density: "compact",
+    contactForm: false,
+  },
+  "golden-hour": {
+    version: 1,
+    colors: {
+      background: "#fff0e4",
+      surface: "#fff8f3",
+      text: "#3a1d12",
+      muted: "#8a5741",
+      accent: "#e2582a",
+      button: "#ff8a4c",
+      buttonText: "#3a1008",
+    },
+    font: "rounded",
+    buttonShape: "pill",
+    background: "flare",
+    density: "relaxed",
+    contactForm: true,
+  },
+  broadsheet: {
+    version: 1,
+    colors: {
+      background: "#f5f3ea",
+      surface: "#fffdf6",
+      text: "#1b201a",
+      muted: "#5b6254",
+      accent: "#2f5d3f",
+      button: "#1b201a",
+      buttonText: "#f5f3ea",
+    },
+    font: "editorial",
+    buttonShape: "outline",
+    background: "paper",
+    density: "relaxed",
+    contactForm: true,
+  },
+  "tide-pool": {
+    version: 1,
+    colors: {
+      background: "#08202c",
+      surface: "#0f3242",
+      text: "#e9f6f8",
+      muted: "#9ac2cd",
+      accent: "#4fd3c4",
+      button: "#16495e",
+      buttonText: "#4fd3c4",
+    },
+    font: "studio",
+    buttonShape: "glass",
+    background: "lagoon",
+    density: "relaxed",
+    contactForm: false,
+  },
 };
 
 function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {

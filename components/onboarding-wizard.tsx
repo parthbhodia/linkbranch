@@ -7,15 +7,11 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
-import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
-import LinkRounded from "@mui/icons-material/LinkRounded";
 import LocalMallOutlined from "@mui/icons-material/LocalMallOutlined";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
 import RocketLaunchOutlined from "@mui/icons-material/RocketLaunchOutlined";
 import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
-import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
-import StarRounded from "@mui/icons-material/StarRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
 import WorkOutlineRounded from "@mui/icons-material/WorkOutlineRounded";
 import BusinessCenterRounded from "@mui/icons-material/BusinessCenterRounded";
@@ -58,10 +54,8 @@ import {
 } from "@/lib/import-draft";
 import {
   bookingProviders,
-  detectBookingProvider,
 } from "@/lib/booking-providers";
 import {
-  detectMusicProvider,
   musicQuickAdds,
   type MusicProviderId,
 } from "@/lib/music-providers";
@@ -88,10 +82,15 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { SortableLinkEditor } from "@/components/links-editor";
+import { ReferralsEditor } from "@/components/referrals-editor";
+import { normalizeHttpUrl } from "@/lib/urls";
+import {
+  defaultProfileTheme,
+  resolveProfileTheme,
+} from "@/lib/theme-config";
 
 type LinkDraft = {
   id: number;
@@ -212,6 +211,10 @@ export type OnboardingInitialData = {
     location: string;
     show_location: boolean;
     avatar_path: string | null;
+    // Needed to tell whether the creator has switched template, and to carry
+    // their uploaded assets across when the palette is reset.
+    template: string | null;
+    theme_config: unknown;
   };
   links: Array<{
     id: number;
@@ -249,211 +252,7 @@ function normalizeReferralColor(value: string | null | undefined, index = 0) {
   return DEFAULT_REFERRAL_COLORS[index % DEFAULT_REFERRAL_COLORS.length];
 }
 
-function normalizeHttpUrl(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return "";
-  }
 
-  const candidate = /^https?:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  try {
-    const parsed = new URL(candidate);
-    if (
-      !["http:", "https:"].includes(parsed.protocol) ||
-      !parsed.hostname
-    ) {
-      return null;
-    }
-    return parsed.toString();
-  } catch {
-    return null;
-  }
-}
-
-function SortableLinkEditor({
-  item,
-  uploading,
-  onUpdate,
-  onFeature,
-  onVisibility,
-  onRemove,
-  onUpload,
-  onRemoveThumbnail,
-}: {
-  item: LinkDraft;
-  uploading: boolean;
-  onUpdate: (id: number, field: "title" | "url", value: string) => void;
-  onFeature: (id: number) => void;
-  onVisibility: (id: number) => void;
-  onRemove: (id: number) => void;
-  onUpload: (id: number, event: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveThumbnail: (id: number) => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
-
-  const booking = detectBookingProvider(item.url);
-  const music = booking ? null : detectMusicProvider(item.url);
-  const special = music ?? booking;
-  const urlPlaceholder = special?.placeholder ?? "https://example.com";
-
-  return (
-    <Box
-      ref={setNodeRef}
-      className={`link-editor${isDragging ? " is-dragging" : ""}${
-        music ? " link-editor--music" : ""
-      }${booking ? " link-editor--booking" : ""}`}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-    >
-      <Tooltip title="Drag to reorder" arrow>
-        <IconButton
-          className="link-editor__handle"
-          aria-label={`Reorder ${item.title || "link"}`}
-          {...attributes}
-          {...listeners}
-        >
-          <DragIndicatorRounded />
-        </IconButton>
-      </Tooltip>
-
-      <div className="link-editor__fields">
-        <TextField
-          label="Link title"
-          value={item.title}
-          onChange={(event) => onUpdate(item.id, "title", event.target.value)}
-          fullWidth
-          size="small"
-        />
-        <TextField
-          label={
-            music
-              ? `${music.label} URL`
-              : booking
-                ? `${booking.label} booking URL`
-                : "URL"
-          }
-          type="url"
-          placeholder={urlPlaceholder}
-          helperText={
-            music
-              ? `Paste your full ${music.label} link — Cueful shows an inline player.`
-              : booking
-                ? `Paste your full ${booking.label} event link so people can schedule.`
-                : undefined
-          }
-          value={item.url}
-          onChange={(event) => onUpdate(item.id, "url", event.target.value)}
-          onBlur={() => {
-            const normalized = normalizeHttpUrl(item.url);
-            if (normalized) {
-              onUpdate(item.id, "url", normalized);
-            }
-          }}
-          fullWidth
-          size="small"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  {special?.icon ?? <LinkRounded fontSize="small" />}
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-      </div>
-
-      <div className="link-editor__thumbnail">
-        {item.thumbnail_path ? (
-          <>
-            <Box
-              component="img"
-              src={publicAssetUrl(item.thumbnail_path)}
-              alt=""
-            />
-            <Tooltip title="Remove thumbnail" arrow>
-              <IconButton
-                size="small"
-                aria-label={`Remove ${item.title || "link"} thumbnail`}
-                onClick={() => onRemoveThumbnail(item.id)}
-              >
-                <CloseRounded fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </>
-        ) : (
-          <Button
-            component="label"
-            size="small"
-            variant="outlined"
-            startIcon={
-              uploading ? <CircularProgress size={14} /> : <ImageOutlined />
-            }
-            disabled={uploading}
-          >
-            Thumbnail
-            <input
-              hidden
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(event) => onUpload(item.id, event)}
-            />
-          </Button>
-        )}
-      </div>
-
-      <div className="link-editor__actions">
-        <Tooltip
-          title={item.is_featured ? "Remove spotlight" : "Spotlight this link"}
-          arrow
-        >
-          <IconButton
-            color={item.is_featured ? "primary" : "default"}
-            aria-label={
-              item.is_featured
-                ? `Remove ${item.title || "link"} from spotlight`
-                : `Spotlight ${item.title || "link"}`
-            }
-            onClick={() => onFeature(item.id)}
-          >
-            {item.is_featured ? <StarRounded /> : <StarOutlineRounded />}
-          </IconButton>
-        </Tooltip>
-        <FormControlLabel
-          className="link-editor__visibility"
-          control={
-            <Switch
-              size="small"
-              checked={item.is_active}
-              onChange={() => onVisibility(item.id)}
-            />
-          }
-          label={item.is_active ? "Visible" : "Hidden"}
-        />
-        <Tooltip title="Remove link" arrow>
-          <IconButton
-            aria-label={`Remove ${item.title || "link"}`}
-            onClick={() => onRemove(item.id)}
-          >
-            <DeleteOutlineRounded />
-          </IconButton>
-        </Tooltip>
-      </div>
-    </Box>
-  );
-}
 
 export function OnboardingWizard({
   initialTemplate,
@@ -849,49 +648,6 @@ export function OnboardingWizard({
     });
   }
 
-  function updateReferral(
-    id: number,
-    field: "provider" | "offer" | "url" | "code" | "color",
-    value: string,
-  ) {
-    setReferrals((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
-    );
-  }
-
-  function addReferral() {
-    setReferrals((current) => [
-      ...current,
-      {
-        id: Math.max(0, ...current.map((item) => item.id)) + 1,
-        provider: "",
-        offer: "",
-        url: "",
-        code: "",
-        color: normalizeReferralColor(null, current.length),
-        is_active: true,
-      },
-    ]);
-    setNotice({ message: "Referral added", severity: "success" });
-  }
-
-  function toggleReferralVisibility(id: number) {
-    setReferrals((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, is_active: !item.is_active } : item,
-      ),
-    );
-  }
-
-  function removeReferral(id: number) {
-    const removed = referrals.find((item) => item.id === id);
-    setReferrals((current) => current.filter((item) => item.id !== id));
-    setNotice({
-      message: `${removed?.provider || "Referral"} removed`,
-      severity: "warning",
-    });
-  }
-
   function addSocial(platform?: string) {
     const nextPlatform = platform ?? unusedSocialPlatforms[0]?.label;
     if (!nextPlatform) {
@@ -1079,6 +835,30 @@ export function OnboardingWizard({
     if (error) {
       setNotice({ message: error.message, severity: "error" });
       return;
+    }
+
+    // save_profile_bundle writes `template` but never touches `theme_config`,
+    // and resolveProfileTheme prefers a stored theme over the template default.
+    // So for anyone who already had colours saved, picking a new template here
+    // changed the layout and left the old palette in place -- choosing the pink
+    // template and getting the previous theme back. Reset the palette to the
+    // chosen template's, keeping the assets the creator uploaded.
+    if (initialTemplate !== initialData.profile.template) {
+      const previous = resolveProfileTheme(
+        initialData.profile.theme_config,
+        initialData.profile.template ?? "field-notes",
+      );
+      const next = defaultProfileTheme(initialTemplate);
+      await supabase
+        .from("profiles")
+        .update({
+          theme_config: {
+            ...next,
+            logoPath: previous.logoPath ?? null,
+            wallpaperPath: previous.wallpaperPath ?? null,
+          },
+        })
+        .eq("id", initialData.profile.id);
     }
 
     const referrerUsername = readReferralAttribution();
@@ -1554,129 +1334,9 @@ export function OnboardingWizard({
                       Share a benefit and the URL visitors should use to claim it.
                     </Typography>
                   </Box>
-                  <Button variant="outlined" startIcon={<AddRounded />} onClick={addReferral}>
-                    Add referral
-                  </Button>
                 </Stack>
 
-                <Stack spacing={2} sx={{ mt: 2.5 }}>
-                  {referrals.map((item, index) => (
-                    <Box className="referral-editor" key={item.id}>
-                      <div className="referral-editor__header">
-                        <Typography variant="caption" fontWeight={800}>
-                          REFERRAL {index + 1}
-                        </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                size="small"
-                                checked={item.is_active}
-                                onChange={() => toggleReferralVisibility(item.id)}
-                              />
-                            }
-                            label={item.is_active ? "Visible" : "Hidden"}
-                          />
-                          <Tooltip title="Remove referral" arrow>
-                            <IconButton
-                              aria-label={`Remove ${item.provider || "referral"}`}
-                              onClick={() => removeReferral(item.id)}
-                              size="small"
-                            >
-                              <DeleteOutlineRounded fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </div>
-                      <div className="referral-editor__grid">
-                        <TextField
-                          label="Provider"
-                          placeholder="Lyft"
-                          value={item.provider}
-                          onChange={(event) =>
-                            updateReferral(item.id, "provider", event.target.value)
-                          }
-                          fullWidth
-                          size="small"
-                          required
-                        />
-                        <TextField
-                          label="Offer"
-                          placeholder="$15 off your first ride"
-                          value={item.offer}
-                          onChange={(event) =>
-                            updateReferral(item.id, "offer", event.target.value)
-                          }
-                          fullWidth
-                          size="small"
-                          required
-                        />
-                        <TextField
-                          label="Referral URL"
-                          type="url"
-                          placeholder="https://example.com/ref/your-name"
-                          value={item.url}
-                          onChange={(event) =>
-                            updateReferral(item.id, "url", event.target.value)
-                          }
-                          onBlur={() => {
-                            const normalized = normalizeHttpUrl(item.url);
-                            if (normalized) {
-                              updateReferral(item.id, "url", normalized);
-                            }
-                          }}
-                          fullWidth
-                          size="small"
-                          required
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <LinkRounded fontSize="small" />
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
-                        />
-                        <TextField
-                          label="Coupon code"
-                          placeholder="Optional"
-                          value={item.code}
-                          onChange={(event) =>
-                            updateReferral(item.id, "code", event.target.value.toUpperCase())
-                          }
-                          fullWidth
-                          size="small"
-                          helperText="Leave blank if the URL applies the offer automatically."
-                        />
-                        <label className="referral-editor__color">
-                          <span>Card color</span>
-                          <span>
-                            <input
-                              type="color"
-                              value={item.color}
-                              onChange={(event) =>
-                                updateReferral(item.id, "color", event.target.value)
-                              }
-                              aria-label={`Color for ${item.provider || `referral ${index + 1}`}`}
-                            />
-                            <code>{item.color}</code>
-                          </span>
-                        </label>
-                      </div>
-                    </Box>
-                  ))}
-                  {referrals.length === 0 && (
-                    <Box className="referral-editor__empty">
-                      <Typography variant="body2" color="text.secondary">
-                        No referral offers yet.
-                      </Typography>
-                      <Button size="small" startIcon={<AddRounded />} onClick={addReferral}>
-                        Add your first referral
-                      </Button>
-                    </Box>
-                  )}
-                </Stack>
+                <ReferralsEditor value={referrals} onChange={setReferrals} />
               </Paper>
             </Stack>
           )}

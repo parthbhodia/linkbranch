@@ -12621,3 +12621,198 @@ a {
   line-height: 1.35;
   letter-spacing: -0.02em;
 }
+
+/* The referral panel is an editor now, not a summary grid, so it stacks in one
+   column instead of tiling cards. */
+.workspace-referral-grid--editing {
+  display: block;
+}
+
+/* The link row was written for the wizard's full-width form. Dropped into the
+   dashboard panel its fixed columns -- 38px handle, 120px thumbnail, and the
+   actions -- eat about 360px, leaving the title and URL fields squeezed to a
+   few characters each. Measure against the editor's own width rather than the
+   viewport, since the same component now renders at two very different widths. */
+.links-editor {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .link-editor {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .link-editor__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .link-editor__thumbnail,
+  .link-editor__actions {
+    grid-column: 2;
+  }
+
+  .link-editor__actions {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Template previews: the four newer vibes ------------------------------
+   Each carries its own background treatment as well as its palette, so the
+   picker shows four distinguishable cards rather than one card recoloured. */
+
+.template-preview--press {
+  color: #0d0d0b;
+  background:
+    linear-gradient(rgba(13, 13, 11, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 13, 11, 0.09) 1px, transparent 1px),
+    #f1efe6;
+  background-size: 11px 11px;
+}
+
+.template-preview--press .mini-profile__avatar {
+  color: #ffffff;
+  background: #0d0d0b;
+  border-radius: 2px;
+}
+
+.template-preview--golden {
+  color: #3a1d12;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 154, 92, 0.55), transparent 62%),
+    linear-gradient(160deg, #fff0e4, #ffe2cd);
+}
+
+.template-preview--golden .mini-profile__avatar {
+  color: #3a1008;
+  background: #ff8a4c;
+}
+
+.template-preview--broadsheet {
+  color: #1b201a;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      rgba(27, 32, 26, 0.035) 0 2px,
+      transparent 2px 6px
+    ),
+    #f5f3ea;
+}
+
+.template-preview--broadsheet .mini-profile__avatar {
+  color: #f5f3ea;
+  background: #1b201a;
+}
+
+.template-preview--broadsheet .mini-profile__name,
+.template-preview--broadsheet .mini-profile__column b {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.template-preview--tide {
+  color: #e9f6f8;
+  background:
+    radial-gradient(90% 70% at 20% 0%, rgba(79, 211, 196, 0.32), transparent 60%),
+    linear-gradient(170deg, #0b2836, #08202c);
+}
+
+.template-preview--tide .mini-profile__avatar {
+  color: #08202c;
+  background: #4fd3c4;
+}
+
+.template-preview--tide .mini-profile__bio,
+.template-preview--tide .mini-profile__bar {
+  color: #9ac2cd;
+}
+
+/* ---- Preview bodies ------------------------------------------------------ */
+
+.mini-profile__tags {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.mini-profile__tags i {
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.42rem;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.mini-profile__shop {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.mini-profile__shop span {
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.mini-profile__shop i {
+  height: 26px;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.mini-profile__shop b {
+  font-size: 0.46rem;
+}
+
+.mini-profile__shop small {
+  font-size: 0.4rem;
+  opacity: 0.7;
+}
+
+.mini-profile__column {
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.mini-profile__column b {
+  font-size: 0.5rem;
+  line-height: 1.2;
+}
+
+.mini-profile__column small {
+  margin-bottom: 5px;
+  font-size: 0.4rem;
+  opacity: 0.68;
+}
+
+.mini-profile__index {
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.mini-profile__index span {
+  display: flex;
+  gap: 7px;
+  padding: 5px 2px;
+  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  font-size: 0.46rem;
+}
+
+.mini-profile__index span:last-child {
+  border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.mini-profile__index em {
+  font-style: normal;
+  opacity: 0.6;
+}

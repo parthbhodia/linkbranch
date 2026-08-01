@@ -20,7 +20,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { readImportedProfileDraft } from "@/lib/import-draft";
 
-type TemplateId = "field-notes" | "after-dark" | "soft-studio" | "signal-deck";
+type TemplateId =
+  | "field-notes"
+  | "after-dark"
+  | "soft-studio"
+  | "signal-deck"
+  | "press-sheet"
+  | "golden-hour"
+  | "broadsheet"
+  | "tide-pool";
 
 type Template = {
   id: TemplateId;
@@ -30,6 +38,8 @@ type Template = {
   badge: string;
   previewClass: string;
   accent: string;
+  /** Which sample body the preview draws, so the cards stop looking alike. */
+  shape: "links" | "music" | "shop" | "signals" | "index" | "column";
 };
 
 const templates: Template[] = [
@@ -41,6 +51,7 @@ const templates: Template[] = [
     badge: "Most popular",
     previewClass: "template-preview--field",
     accent: "#c9ef69",
+    shape: "links",
   },
   {
     id: "after-dark",
@@ -51,6 +62,7 @@ const templates: Template[] = [
     badge: "Music embeds",
     previewClass: "template-preview--dark",
     accent: "#b9ff66",
+    shape: "music",
   },
   {
     id: "soft-studio",
@@ -61,6 +73,7 @@ const templates: Template[] = [
     badge: "Shop ready",
     previewClass: "template-preview--soft",
     accent: "#ffb7d0",
+    shape: "shop",
   },
   {
     id: "signal-deck",
@@ -71,11 +84,67 @@ const templates: Template[] = [
     badge: "New",
     previewClass: "template-preview--signal",
     accent: "#b9ff66",
+    shape: "signals",
+  },
+  {
+    id: "press-sheet",
+    number: "05",
+    name: "Press Sheet",
+    description:
+      "Newsprint and red ink on graph paper. Square corners, monospaced, nothing decorative. For writers and zines.",
+    badge: "Brutalist",
+    previewClass: "template-preview--press",
+    accent: "#d5361f",
+    shape: "index",
+  },
+  {
+    id: "golden-hour",
+    number: "06",
+    name: "Golden Hour",
+    description:
+      "Warm sunset wash with rounded type and pill buttons. Made for lifestyle, travel, and food creators.",
+    badge: "Warm",
+    previewClass: "template-preview--golden",
+    accent: "#e2582a",
+    shape: "links",
+  },
+  {
+    id: "broadsheet",
+    number: "07",
+    name: "Broadsheet",
+    description:
+      "Serif headlines on paper stock with outlined buttons. For essayists, researchers, and newsletters.",
+    badge: "Editorial",
+    previewClass: "template-preview--broadsheet",
+    accent: "#2f5d3f",
+    shape: "column",
+  },
+  {
+    id: "tide-pool",
+    number: "08",
+    name: "Tide Pool",
+    description:
+      "Deep teal with frosted glass cards over a lagoon wash. For studios and anyone wanting a darker calm.",
+    badge: "Glass",
+    previewClass: "template-preview--tide",
+    accent: "#4fd3c4",
+    shape: "shop",
   },
 ];
 
 function MiniProfile({ template }: { template: Template }) {
-  const isMusic = template.id === "after-dark";
+  const { shape } = template;
+  const bio =
+    shape === "music"
+      ? "New single out everywhere."
+      : shape === "shop"
+        ? "Small batch, made to order."
+        : shape === "column"
+          ? "Essays on how things get built."
+          : shape === "index"
+            ? "Notes, filed and dated."
+            : "Making useful things for the web.";
+
   return (
     <div className={`template-preview ${template.previewClass}`}>
       <div className="mini-profile__bar">
@@ -84,15 +153,23 @@ function MiniProfile({ template }: { template: Template }) {
       </div>
       <div className="mini-profile__avatar">PB</div>
       <div className="mini-profile__name">@yourname</div>
-      <div className="mini-profile__bio">
-        {isMusic ? "New single out everywhere." : "Making useful things for the web."}
-      </div>
-      <div className="mini-profile__socials">
-        <i />
-        <i />
-        <i />
-      </div>
-      {isMusic ? (
+      <div className="mini-profile__bio">{bio}</div>
+
+      {shape === "signals" ? (
+        <div className="mini-profile__tags" aria-hidden="true">
+          <i>AWS</i>
+          <i>DevOps</i>
+          <i>Design</i>
+        </div>
+      ) : (
+        <div className="mini-profile__socials">
+          <i />
+          <i />
+          <i />
+        </div>
+      )}
+
+      {shape === "music" ? (
         <div className="mini-profile__music" aria-hidden="true">
           <span className="mini-profile__music-dot" />
           <span>
@@ -101,11 +178,60 @@ function MiniProfile({ template }: { template: Template }) {
           </span>
         </div>
       ) : null}
-      <div className="mini-profile__links">
-        <span>{isMusic ? "Tour tickets" : "Latest project"} <b>↗</b></span>
-        <span>{isMusic ? "Merch drop" : "Field notes"} <b>↗</b></span>
-        <span>{isMusic ? "Mailing list" : "Creator stack"} <b>↗</b></span>
-      </div>
+
+      {shape === "shop" ? (
+        <div className="mini-profile__shop" aria-hidden="true">
+          <span>
+            <i />
+            <b>Speckled mug</b>
+            <small>USD 48</small>
+          </span>
+          <span>
+            <i />
+            <b>One-off vase</b>
+            <small>USD 120</small>
+          </span>
+        </div>
+      ) : null}
+
+      {shape === "column" ? (
+        <div className="mini-profile__column" aria-hidden="true">
+          <b>The cost of a rewrite</b>
+          <small>Issue 14 · 8 min</small>
+          <b>Notes on shipping slowly</b>
+          <small>Issue 13 · 5 min</small>
+        </div>
+      ) : null}
+
+      {shape === "index" ? (
+        <div className="mini-profile__index" aria-hidden="true">
+          <span>
+            <em>01</em> Field notes
+          </span>
+          <span>
+            <em>02</em> Archive
+          </span>
+          <span>
+            <em>03</em> Contact
+          </span>
+        </div>
+      ) : null}
+
+      {shape === "links" || shape === "music" || shape === "signals" ? (
+        <div className="mini-profile__links">
+          <span>
+            {shape === "music" ? "Tour tickets" : "Latest project"} <b>↗</b>
+          </span>
+          <span>
+            {shape === "music" ? "Merch drop" : "Field notes"} <b>↗</b>
+          </span>
+          {shape !== "signals" && (
+            <span>
+              {shape === "music" ? "Mailing list" : "Creator stack"} <b>↗</b>
+            </span>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -114,13 +240,9 @@ export function TemplatePicker() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requested = searchParams.get("template");
-  const initialId =
-    requested === "after-dark" ||
-    requested === "soft-studio" ||
-    requested === "field-notes" ||
-    requested === "signal-deck"
-      ? requested
-      : "field-notes";
+  const initialId = templates.some((item) => item.id === requested)
+    ? (requested as TemplateId)
+    : "field-notes";
   const [selectedId, setSelectedId] = useState<TemplateId>(initialId);
   const isImportFlow = searchParams.get("import") === "1";
 
