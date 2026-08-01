@@ -1,0 +1,5 @@
+data/
+*.log
+.instagram_session*
+.env*
+__pycache__/
