@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import AutoAwesomeRounded from "@mui/icons-material/AutoAwesomeRounded";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import PlaceOutlined from "@mui/icons-material/PlaceOutlined";
@@ -10,9 +11,11 @@ import {
   Button,
   Chip,
   Collapse,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { VoiceNoteButton } from "@/components/voice-note-button";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -51,8 +54,49 @@ export function ContactExchange({
     "idle",
   );
   const [error, setError] = useState<string | null>(null);
+  const [prefilled, setPrefilled] = useState(false);
 
   const firstName = displayName.trim().split(/\s+/)[0] || displayName;
+
+  /**
+   * If the person scanning already has a Cueful page, fill the form from it so
+   * sending is one tap. Prefilled only -- never sent on their behalf, which
+   * would be a privacy incident dressed up as convenience.
+   */
+  useEffect(() => {
+    if (!allowExchange || !profileId) return;
+    let active = true;
+
+    void (async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      const viewer = data.user;
+      // Your own page is not an exchange.
+      if (!viewer || viewer.id === profileId) return;
+
+      const { data: mine } = await supabase
+        .from("profiles")
+        .select("display_name,company,contact_email,contact_phone")
+        .eq("id", viewer.id)
+        .maybeSingle();
+      if (!active || !mine) return;
+
+      // Never clobber something they already typed.
+      setName((current) => current || mine.display_name || "");
+      setEmail((current) => current || mine.contact_email || viewer.email || "");
+      setPhone((current) => current || mine.contact_phone || "");
+      setCompany((current) => current || mine.company || "");
+      setPrefilled(true);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [allowExchange, profileId]);
+
+  const appendToNote = useCallback((text: string) => {
+    setNote((current) => (current ? `${current} ${text}` : text).slice(0, 2000));
+  }, []);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -167,6 +211,17 @@ export function ContactExchange({
         allowExchange && (
           <Collapse in={open} unmountOnExit>
             <form className="contact-exchange__form" onSubmit={onSubmit}>
+              {prefilled && (
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  alignItems="center"
+                  className="contact-exchange__prefill"
+                >
+                  <AutoAwesomeRounded fontSize="inherit" />
+                  <span>Filled in from your Cueful page. Edit anything.</span>
+                </Stack>
+              )}
               <div className="contact-exchange__trap" aria-hidden="true">
                 <label htmlFor="exchange-website">
                   Leave this field empty
@@ -222,17 +277,20 @@ export function ContactExchange({
                   disabled={status === "saving"}
                 />
               </div>
-              <TextField
-                label="What did you talk about?"
-                placeholder="The bit they’ll want to remember tomorrow morning."
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                fullWidth
-                size="small"
-                multiline
-                minRows={2}
-                disabled={status === "saving"}
-              />
+              <div className="contact-exchange__note">
+                <TextField
+                  label="What did you talk about?"
+                  placeholder="The bit they’ll want to remember tomorrow morning."
+                  value={note}
+                  onChange={(event) => setNote(event.target.value.slice(0, 2000))}
+                  fullWidth
+                  size="small"
+                  multiline
+                  minRows={2}
+                  disabled={status === "saving"}
+                />
+                <VoiceNoteButton onTranscript={appendToNote} label="Speak it" />
+              </div>
               {error && <Alert severity="error">{error}</Alert>}
               <Button
                 type="submit"

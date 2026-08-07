@@ -204,6 +204,8 @@ export type DashboardView = {
   device_type: string | null;
   country_code: string | null;
   referrer: string | null;
+  /** Which event was running when the page was opened. '' when none was. */
+  event_tag?: string | null;
 };
 
 type WorkspaceSection =
@@ -802,6 +804,18 @@ export function Dashboard({
       .filter(Boolean)
       .slice(0, 16);
   }
+
+  // How many people opened the page during each event, so the inbox can show
+  // the ask's conversion rather than just its yield.
+  const viewsByEvent = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const view of views) {
+      const tag = view.event_tag ?? "";
+      if (!tag) continue;
+      counts[tag] = (counts[tag] ?? 0) + 1;
+    }
+    return counts;
+  }, [views]);
 
   function update<K extends keyof DashboardProfile>(
     field: K,
@@ -1941,6 +1955,7 @@ export function Dashboard({
                 profileId={profile.id}
                 initialConnections={connections}
                 initialEventTag={profile.current_event_tag ?? ""}
+                viewsByEvent={viewsByEvent}
               />
             </Stack>
           )}

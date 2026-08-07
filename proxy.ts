@@ -24,6 +24,7 @@ const APP_ROUTES = new Set([
   "onboarding",
   "opengraph-image",
   "privacy",
+  "sort",
   "templates",
   "terms",
   "u",

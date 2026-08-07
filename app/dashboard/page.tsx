@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         .limit(5000),
       supabase
         .from("profile_views")
-        .select("occurred_at,device_type,country_code,referrer")
+        .select("occurred_at,device_type,country_code,referrer,event_tag")
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
       supabase
         .from("connections")
         .select(
-          "id,name,email,phone,company,job_title,note,event_tag,status,source,met_at",
+          "id,name,email,phone,company,job_title,note,event_tag,status,source,met_at,connected_at",
         )
         .eq("profile_id", user.id)
         .order("met_at", { ascending: false })

@@ -7,7 +7,9 @@ import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
 import HandshakeOutlined from "@mui/icons-material/HandshakeOutlined";
+import LinkedIn from "@mui/icons-material/LinkedIn";
 import LocalFireDepartmentOutlined from "@mui/icons-material/LocalFireDepartmentOutlined";
+import PlaylistAddCheckRounded from "@mui/icons-material/PlaylistAddCheckRounded";
 import PlaceOutlined from "@mui/icons-material/PlaceOutlined";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import {
@@ -28,6 +30,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { linkedInSearchUrl } from "@/lib/linkedin";
 import { createClient } from "@/lib/supabase/client";
 
 export type ConnectionStatus = "new" | "meet" | "warm" | "archived";
@@ -44,10 +47,12 @@ export type DashboardConnection = {
   status: ConnectionStatus;
   source: string;
   met_at: string;
+  /** Set the first time you open their LinkedIn search, so a second pass skips them. */
+  connected_at: string | null;
 };
 
 const CONNECTION_COLUMNS =
-  "id,name,email,phone,company,job_title,note,event_tag,status,source,met_at";
+  "id,name,email,phone,company,job_title,note,event_tag,status,source,met_at,connected_at";
 
 /** OP's two piles, plus the untriaged stack they get sorted out of. */
 const statusMeta: Record<
@@ -135,10 +140,13 @@ export function ConnectionsInbox({
   profileId,
   initialConnections,
   initialEventTag,
+  viewsByEvent = {},
 }: {
   profileId: string;
   initialConnections: DashboardConnection[];
   initialEventTag: string;
+  /** Page opens per event tag. Lets a group show conversion, not just yield. */
+  viewsByEvent?: Record<string, number>;
 }) {
   const [connections, setConnections] = useState(initialConnections);
   const [eventTag, setEventTag] = useState(initialEventTag);
@@ -271,6 +279,26 @@ export function ConnectionsInbox({
     }
   }
 
+  /**
+   * Opening the search is the only signal we get that a contact has been dealt
+   * with on LinkedIn -- there is no API to confirm a request was sent. Good
+   * enough to stop the second pass re-offering everyone.
+   */
+  function markConnected(connection: DashboardConnection) {
+    if (connection.connected_at) return;
+    const stamp = new Date().toISOString();
+    setConnections((current) =>
+      current.map((item) =>
+        item.id === connection.id ? { ...item, connected_at: stamp } : item,
+      ),
+    );
+    void createClient()
+      .from("connections")
+      .update({ connected_at: stamp })
+      .eq("id", connection.id)
+      .eq("profile_id", profileId);
+  }
+
   async function addConnection() {
     const name = draft.name.trim();
     if (!name) {
@@ -357,6 +385,16 @@ export function ConnectionsInbox({
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          {counts.new > 0 && (
+            <Button
+              component={Link}
+              href="/sort"
+              variant="contained"
+              startIcon={<PlaylistAddCheckRounded />}
+            >
+              Sort {counts.new}
+            </Button>
+          )}
           <Button
             component={Link}
             href="/card"
@@ -447,10 +485,27 @@ export function ConnectionsInbox({
               {group.tag || "No event"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {group.items.length}{" "}
-              {group.items.length === 1 ? "person" : "people"} ·{" "}
+              {/* Opens first: a low number here means nobody scanned, a high
+                  one with few sends means the ask is not landing. */}
+              {group.tag && viewsByEvent[group.tag]
+                ? `${viewsByEvent[group.tag]} opened your page · ${
+                    group.items.length
+                  } sent details · `
+                : `${group.items.length} ${
+                    group.items.length === 1 ? "person" : "people"
+                  } · `}
               {formatMetAt(group.items[0].met_at)}
             </Typography>
+            {group.items.some((item) => item.status === "new") && (
+              <Button
+                component={Link}
+                href={`/sort?event=${encodeURIComponent(group.tag)}`}
+                size="small"
+                startIcon={<PlaylistAddCheckRounded />}
+              >
+                Sort these
+              </Button>
+            )}
           </div>
 
           <div className="connections__list">
@@ -518,6 +573,28 @@ export function ConnectionsInbox({
                       </Button>
                     ),
                   )}
+                  <Tooltip
+                    title={
+                      connection.connected_at
+                        ? "Already searched"
+                        : "Search for them on LinkedIn"
+                    }
+                  >
+                    <Button
+                      component="a"
+                      href={linkedInSearchUrl(connection.name, connection.company)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      startIcon={<LinkedIn />}
+                      className={
+                        connection.connected_at ? "is-connected" : undefined
+                      }
+                      onClick={() => markConnected(connection)}
+                    >
+                      {connection.connected_at ? "Searched" : "LinkedIn"}
+                    </Button>
+                  </Tooltip>
                   <Tooltip title="Delete">
                     <IconButton
                       size="small"
