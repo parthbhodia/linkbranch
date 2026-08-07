@@ -77,6 +77,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("profiles")
       .select("username,updated_at")
       .eq("is_published", true)
+      // Submitting a noindex URL is a Search Console coverage error against
+      // this property, and spends crawl budget on a page that can never index.
+      .eq("seo_noindex", false)
       .neq("bio", "")
       .order("updated_at", { ascending: false })
       .limit(5000);
