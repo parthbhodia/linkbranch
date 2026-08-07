@@ -84,6 +84,7 @@ import {
 } from "@/components/referrals-editor";
 import { normalizeHttpUrl } from "@/lib/urls";
 import {
+  BRAND_URL,
   DEFAULT_SOCIAL_IMAGE,
   publicProfileAddress,
   publicProfilePath,
@@ -526,6 +527,16 @@ export function Dashboard({
   // uploaded, while the card people actually see falls back to the generated
   // /opengraph-image -- so the panel was reporting a blank share card that
   // never happens.
+  // A canonical pointing at another domain tells search engines this page is a
+  // duplicate of one elsewhere, which quietly removes the profile from results.
+  // The database rejects it too; this is here so the creator finds out while
+  // typing rather than on save.
+  const canonicalValue = draft.canonical_url?.trim() ?? "";
+  const canonicalError =
+    canonicalValue && !canonicalValue.toLowerCase().startsWith(`${BRAND_URL}/`)
+      ? `Must start with ${BRAND_URL}/ — a canonical on another domain hides this page from search.`
+      : null;
+
   const seoPreviewImage =
     publicAssetUrl(draft.seo_image_path) ?? DEFAULT_SOCIAL_IMAGE;
   const analytics = useMemo(() => {
@@ -982,6 +993,10 @@ export function Dashboard({
   }
 
   async function saveProfile() {
+    if (canonicalError) {
+      setNotice({ severity: "error", message: canonicalError });
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase
@@ -2960,8 +2975,12 @@ export function Dashboard({
                     onChange={(event) =>
                       update("canonical_url", event.target.value)
                     }
-                    placeholder={`https://cueful.bio${publicProfilePath(draft.username)}`}
-                    helperText="Optional override. Leave blank to use your Cueful page URL."
+                    placeholder={`${BRAND_URL}${publicProfilePath(draft.username)}`}
+                    error={Boolean(canonicalError)}
+                    helperText={
+                      canonicalError ??
+                      "Optional override, and it must stay on this site. Leave blank to use your Cueful page URL."
+                    }
                     fullWidth
                   />
                   <div className="workspace-seo-image">
