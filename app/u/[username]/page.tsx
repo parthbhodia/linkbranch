@@ -333,6 +333,9 @@ export default async function PublicProfilePage({
         faqs={(faqs ?? []) as PublicFaq[]}
         highlights={(highlights ?? []) as PublicHighlight[]}
         disclosureText={profile.disclosure_text}
+        eventTag={profile.current_event_tag}
+        showSaveContact={Boolean(profile.show_save_contact)}
+        showExchange={Boolean(profile.show_exchange)}
       />
     </>
   );

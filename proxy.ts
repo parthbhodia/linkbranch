@@ -31,6 +31,7 @@ const APP_ROUTES = new Set([
   "cueful-vs-beacons",
   "cueful-vs-carrd",
   "cueful-vs-linktree",
+  "digital-business-card",
   "free-link-in-bio",
   "free-linktree-alternative",
   "link-in-bio-for-instagram",

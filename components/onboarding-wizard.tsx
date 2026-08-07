@@ -7,6 +7,10 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import HandshakeOutlined from "@mui/icons-material/HandshakeOutlined";
+import HandymanOutlined from "@mui/icons-material/HandymanOutlined";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
 import LocalMallOutlined from "@mui/icons-material/LocalMallOutlined";
 import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
@@ -118,6 +122,10 @@ type SocialDraft = {
 };
 
 type StarterPurpose =
+  | "sales"
+  | "realtor"
+  | "recruiter"
+  | "trades"
   | "creator"
   | "freelancer"
   | "coach"
@@ -134,6 +142,34 @@ const starterPurposes: Array<{
   icon: React.ReactNode;
   links: string[];
 }> = [
+  {
+    id: "sales",
+    name: "Sales",
+    note: "Book a meeting, pricing, and proof",
+    icon: <HandshakeOutlined />,
+    links: ["Book a meeting", "See pricing", "Read customer stories"],
+  },
+  {
+    id: "realtor",
+    name: "Real estate",
+    note: "Listings, viewings, and reviews",
+    icon: <HomeWorkOutlined />,
+    links: ["Browse my listings", "Book a viewing", "Read client reviews"],
+  },
+  {
+    id: "recruiter",
+    name: "Recruiter",
+    note: "Open roles, CV drop, and a quick chat",
+    icon: <BadgeOutlined />,
+    links: ["See open roles", "Send me your CV", "Book a 15-minute chat"],
+  },
+  {
+    id: "trades",
+    name: "Trades & services",
+    note: "Quote, call now, reviews, and directions",
+    icon: <HandymanOutlined />,
+    links: ["Request a quote", "Call now", "Read reviews", "Get directions"],
+  },
   {
     id: "creator",
     name: "Creator",

@@ -34,6 +34,7 @@ import {
   detectBookingProvider,
   isLikelyCompleteBookingUrl,
 } from "@/lib/booking-providers";
+import { ContactExchange } from "@/components/contact-exchange";
 import { ProfileContactForm } from "@/components/profile-contact-form";
 import {
   detectMusicProvider,
@@ -379,6 +380,9 @@ export function ProfileHub({
   faqs = [],
   highlights = [],
   disclosureText,
+  eventTag,
+  showSaveContact = false,
+  showExchange = false,
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -391,6 +395,9 @@ export function ProfileHub({
   faqs?: PublicFaq[];
   highlights?: PublicHighlight[];
   disclosureText?: string | null;
+  eventTag?: string | null;
+  showSaveContact?: boolean;
+  showExchange?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -698,6 +705,17 @@ export function ProfileHub({
           </nav>
           )}
         </header>
+
+        {(showSaveContact || showExchange) && (
+          <ContactExchange
+            profileId={databaseProfileId}
+            username={profile.username}
+            displayName={profile.displayName}
+            eventTag={eventTag}
+            allowSaveContact={showSaveContact}
+            allowExchange={showExchange}
+          />
+        )}
 
         <section className="hub-panel">
           {highlights.length > 0 && (

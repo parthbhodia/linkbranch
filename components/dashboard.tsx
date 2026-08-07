@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import ColorLensOutlined from "@mui/icons-material/ColorLensOutlined";
 import EditRounded from "@mui/icons-material/EditRounded";
+import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
 import InsertLinkRounded from "@mui/icons-material/InsertLinkRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import HelpOutlineRounded from "@mui/icons-material/HelpOutlineRounded";
@@ -60,6 +62,10 @@ import {
   type DashboardMediaEmbed,
   type DashboardProduct,
 } from "@/components/commerce-media-editor";
+import {
+  ConnectionsInbox,
+  type DashboardConnection,
+} from "@/components/connections-inbox";
 import { FaqEditor, type DashboardFaq } from "@/components/faq-editor";
 import {
   HighlightsEditor,
@@ -139,6 +145,13 @@ export type DashboardProfile = {
   onboarding_completed: boolean;
   theme_config: unknown;
   disclosure_text: string | null;
+  job_title: string | null;
+  company: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  show_save_contact: boolean;
+  show_exchange: boolean;
+  current_event_tag: string | null;
 };
 
 export type DashboardLink = {
@@ -195,6 +208,7 @@ export type DashboardView = {
 
 type WorkspaceSection =
   | "profile"
+  | "connections"
   | "content"
   | "commerce"
   | "appearance"
@@ -210,6 +224,7 @@ const workspaceSections: Array<{
   icon: React.ReactNode;
 }> = [
   { id: "profile", label: "Profile", icon: <PersonOutlineRounded /> },
+  { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
   { id: "content", label: "Links & referrals", icon: <InsertLinkRounded /> },
   { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "appearance", label: "Appearance", icon: <ColorLensOutlined /> },
@@ -225,6 +240,11 @@ const sectionCopy: Record<
     eyebrow: "PROFILE",
     title: "Tell people who you are",
     body: "Edit the introduction that appears at the top of your public page.",
+  },
+  connections: {
+    eyebrow: "PEOPLE",
+    title: "Sort the stack while it’s fresh",
+    body: "Everyone who swapped details with you, grouped by where you met them.",
   },
   content: {
     eyebrow: "CONTENT",
@@ -390,6 +410,7 @@ export function Dashboard({
   mediaEmbeds,
   faqs,
   highlights,
+  connections,
   referralCount,
 }: {
   profile: DashboardProfile;
@@ -403,6 +424,7 @@ export function Dashboard({
   mediaEmbeds: DashboardMediaEmbed[];
   faqs: DashboardFaq[];
   highlights: DashboardHighlight[];
+  connections: DashboardConnection[];
   referralCount: number;
 }) {
   const router = useRouter();
@@ -446,6 +468,12 @@ export function Dashboard({
     seo_noindex: profile.seo_noindex ?? false,
     twitter_card_style: profile.twitter_card_style ?? "summary_large_image",
     canonical_url: profile.canonical_url ?? null,
+    job_title: profile.job_title ?? null,
+    company: profile.company ?? null,
+    contact_email: profile.contact_email ?? null,
+    contact_phone: profile.contact_phone ?? null,
+    show_save_contact: profile.show_save_contact ?? true,
+    show_exchange: profile.show_exchange ?? true,
     theme_config: resolveProfileTheme(profile.theme_config, profile.template),
   }));
   const [connectedSocials, setConnectedSocials] = useState(socials);
@@ -1013,6 +1041,12 @@ export function Dashboard({
         is_discoverable: draft.is_discoverable,
         is_published: draft.is_published,
         disclosure_text: draft.disclosure_text?.trim() || null,
+        job_title: draft.job_title?.trim() || null,
+        company: draft.company?.trim() || null,
+        contact_email: draft.contact_email?.trim() || null,
+        contact_phone: draft.contact_phone?.trim() || null,
+        show_save_contact: draft.show_save_contact,
+        show_exchange: draft.show_exchange,
       })
       .eq("id", profile.id);
 
@@ -1896,6 +1930,16 @@ export function Dashboard({
             </Stack>
           )}
 
+          {section === "connections" && (
+            <Stack className="workspace-panel" spacing={2}>
+              <ConnectionsInbox
+                profileId={profile.id}
+                initialConnections={connections}
+                initialEventTag={profile.current_event_tag ?? ""}
+              />
+            </Stack>
+          )}
+
           {section === "content" && (
             <Stack className="workspace-panel" spacing={2}>
               <div className="workspace-panel__heading">
@@ -2683,6 +2727,16 @@ export function Dashboard({
             <div className="workspace-more">
               <Typography className="section-label">CREATE & MAINTAIN</Typography>
               <div className="workspace-more__list">
+                <ButtonBase onClick={() => setSection("commerce")}>
+                  <span className="workspace-more__icon workspace-more__icon--highlight">
+                    <StorefrontOutlined />
+                  </span>
+                  <span>
+                    <b>Shop & media</b>
+                    <small>Product cards, music, and video</small>
+                  </span>
+                  <ChevronRightRounded />
+                </ButtonBase>
                 <ButtonBase onClick={() => setSection("highlights")}>
                   <span className="workspace-more__icon workspace-more__icon--highlight">
                     <StarOutlineRounded />
@@ -2796,6 +2850,83 @@ export function Dashboard({
                     helperText="Signed in and verified by Supabase."
                     fullWidth
                     disabled
+                  />
+                </div>
+              </Paper>
+
+              <Paper
+                id="settings-card"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
+                <div className="workspace-settings-card__heading">
+                  <BadgeOutlined />
+                  <Box>
+                    <Typography variant="h3">Contact card</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      What lands in someone’s phone when they save your contact.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-settings-card__fields">
+                  <TextField
+                    label="Job title"
+                    value={draft.job_title ?? ""}
+                    onChange={(event) =>
+                      update("job_title", event.target.value.slice(0, 80))
+                    }
+                    placeholder="Account Executive"
+                    fullWidth
+                  />
+                  <TextField
+                    label="Company"
+                    value={draft.company ?? ""}
+                    onChange={(event) =>
+                      update("company", event.target.value.slice(0, 80))
+                    }
+                    placeholder="Northwind"
+                    fullWidth
+                  />
+                  <TextField
+                    label="Contact email"
+                    type="email"
+                    value={draft.contact_email ?? ""}
+                    onChange={(event) =>
+                      update("contact_email", event.target.value.slice(0, 254))
+                    }
+                    helperText="Shown on your card. Can differ from your sign-in email."
+                    fullWidth
+                  />
+                  <TextField
+                    label="Phone"
+                    value={draft.contact_phone ?? ""}
+                    onChange={(event) =>
+                      update("contact_phone", event.target.value.slice(0, 32))
+                    }
+                    placeholder="+1 555 000 1234"
+                    fullWidth
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={draft.show_save_contact}
+                        onChange={(event) =>
+                          update("show_save_contact", event.target.checked)
+                        }
+                      />
+                    }
+                    label="Show “Save my contact” on my page"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={draft.show_exchange}
+                        onChange={(event) =>
+                          update("show_exchange", event.target.checked)
+                        }
+                      />
+                    }
+                    label="Let people send their details back to me"
                   />
                 </div>
               </Paper>
@@ -3473,15 +3604,15 @@ export function Dashboard({
           <span>Design</span>
         </ButtonBase>
         <ButtonBase
-          className={section === "commerce" ? "is-active" : ""}
+          className={section === "connections" ? "is-active" : ""}
           onClick={() => {
-            setSection("commerce");
+            setSection("connections");
             setMobileMode("edit");
           }}
-          aria-current={section === "commerce" ? "page" : undefined}
+          aria-current={section === "connections" ? "page" : undefined}
         >
-          <StorefrontOutlined />
-          <span>Shop</span>
+          <GroupsOutlined />
+          <span>People</span>
         </ButtonBase>
         <ButtonBase
           className={section === "analytics" ? "is-active" : ""}
@@ -3496,7 +3627,7 @@ export function Dashboard({
         </ButtonBase>
         <ButtonBase
           className={
-            ["more", "highlights", "health", "account"].includes(section)
+            ["more", "highlights", "health", "account", "commerce"].includes(section)
               ? "is-active"
               : ""
           }
@@ -3505,7 +3636,7 @@ export function Dashboard({
             setMobileMode("edit");
           }}
           aria-current={
-            ["more", "highlights", "health", "account"].includes(section)
+            ["more", "highlights", "health", "account", "commerce"].includes(section)
               ? "page"
               : undefined
           }
