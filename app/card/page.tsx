@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { EventCardScreen } from "@/components/event-card-screen";
 import { createClient } from "@/lib/supabase/server";
+import { readWalletConfig } from "@/lib/wallet-pass";
 
 export const metadata = {
   title: "My card | Cueful",
@@ -44,6 +45,10 @@ export default async function CardPage() {
       username={profile.username}
       displayName={profile.display_name}
       initialEventTag={profile.current_event_tag ?? ""}
+      // Decided on the server so the button never appears where the route
+      // would only 404 -- a deployment without Apple certificates is normal
+      // locally and on previews.
+      walletEnabled={readWalletConfig() !== null}
     />
   );
 }
