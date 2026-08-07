@@ -91,6 +91,17 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
+`NEXT_PUBLIC_GA_ID` is optional. Set it to a GA4 measurement id
+(`G-XXXXXXXXXX`) to load the Google tag; leave it unset and no Google script is
+requested at all, which is how local and preview builds should stay. Set it on
+Production only unless you want preview traffic in the same property.
+
+The tag is loaded site-wide from the root layout, so it covers public creator
+profiles as well as the marketing pages. Google's tag sets cookies, so
+visitors in the EU/UK need a consent gate before it fires -- that is not built
+yet. Vercel Analytics runs alongside it and is cookieless, so it keeps
+reporting regardless.
+
 The authenticated pages are explicitly server-rendered, so a missing Vercel
 variable no longer crashes static-page generation during `pnpm run build`.
 Those variables are still required at runtime for sign-up, sign-in, account
