@@ -77,6 +77,10 @@ create index if not exists connections_profile_met_idx
 create index if not exists connections_profile_status_idx
   on public.connections (profile_id, status);
 
+-- Dropped first because Postgres has no `create trigger if not exists`, and
+-- every other statement in this file is safe to re-run.
+drop trigger if exists connections_set_updated_at on public.connections;
+
 create trigger connections_set_updated_at
   before update on public.connections
   for each row execute function public.set_updated_at();
@@ -105,6 +109,8 @@ begin
 end;
 $$;
 
+drop trigger if exists connections_stamp_visitor on public.connections;
+
 create trigger connections_stamp_visitor
   before insert on public.connections
   for each row execute function public.stamp_visitor_connection();
@@ -118,6 +124,12 @@ revoke all on public.connections from public, anon, authenticated;
 grant insert on public.connections to anon, authenticated;
 grant select, update, delete on public.connections to authenticated;
 grant usage, select on sequence public.connections_id_seq to anon, authenticated;
+
+drop policy if exists connections_public_insert on public.connections;
+drop policy if exists connections_owner_read on public.connections;
+drop policy if exists connections_owner_insert on public.connections;
+drop policy if exists connections_owner_update on public.connections;
+drop policy if exists connections_owner_delete on public.connections;
 
 create policy connections_public_insert on public.connections
 for insert to anon, authenticated
