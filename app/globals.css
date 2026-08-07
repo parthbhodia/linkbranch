@@ -13134,6 +13134,24 @@ a {
   font-size: 0.86rem;
 }
 
+/*
+ * Deliberately quiet. This screen is fixed black-on-white for scanner
+ * contrast, and a filled button here would compete with the code for
+ * attention at exactly the wrong moment.
+ */
+.event-card__wallet {
+  margin-top: 0.35rem;
+  border-color: #d3d5cd;
+  color: #3f4239;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.event-card__wallet:hover {
+  border-color: #3f4239;
+  background: transparent;
+}
+
 /* Voice dictation, shared by the exchange form and the sort session. */
 .voice-note {
   align-self: flex-start;
