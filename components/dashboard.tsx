@@ -1486,13 +1486,18 @@ export function Dashboard({
           <BrandMark className="workspace-mobile-brand" />
           <span>{publicProfileAddress(draft.username || "username")}</span>
         </div>
+        {/* On a phone this is the button you press standing in front of
+            someone, so it goes to the code rather than the asset kit. The
+            Share Kit is still one tap away under Settings → QR & page
+            sharing, where you'd look for a poster anyway. */}
         <Button
+          component={Link}
+          href="/card"
           variant="contained"
-          startIcon={<IosShareRounded />}
-          onClick={() => setShareOpen(true)}
+          startIcon={<QrCode2Rounded />}
           disabled={!draft.is_published}
         >
-          Share
+          My card
         </Button>
       </header>
 

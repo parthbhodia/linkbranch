@@ -14,6 +14,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 // Middleware decides resolution; the reserved table stops the name being taken.
 const APP_ROUTES = new Set([
   "auth",
+  "card",
   "claim",
   "dashboard",
   "demo",

@@ -9,6 +9,7 @@ import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
 import HandshakeOutlined from "@mui/icons-material/HandshakeOutlined";
 import LocalFireDepartmentOutlined from "@mui/icons-material/LocalFireDepartmentOutlined";
 import PlaceOutlined from "@mui/icons-material/PlaceOutlined";
+import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import {
   Alert,
   Box,
@@ -26,6 +27,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export type ConnectionStatus = "new" | "meet" | "warm" | "archived";
@@ -355,6 +357,14 @@ export function ConnectionsInbox({
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          <Button
+            component={Link}
+            href="/card"
+            variant="outlined"
+            startIcon={<QrCode2Rounded />}
+          >
+            Show my card
+          </Button>
           <Button
             variant="outlined"
             startIcon={<DownloadRounded />}
