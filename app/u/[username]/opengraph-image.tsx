@@ -24,6 +24,9 @@ export default async function ProfileOpenGraphImage({
   let displayName = example?.profile.displayName ?? `@${handle}`;
   let bio = example?.profile.bio ?? "";
   let avatarUrl: string | null = example?.profile.avatarUrl ?? null;
+  let tags: string[] = example?.profile.tags ?? [];
+  let linkCount = example?.profile.links?.length ?? 0;
+  let offerCount = example?.profile.referrals?.length ?? 0;
   let theme = example
     ? resolveProfileTheme(null, example.template)
     : resolveProfileTheme(null, "field-notes");
@@ -32,7 +35,7 @@ export default async function ProfileOpenGraphImage({
     const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name,bio,avatar_path,template,theme_config")
+      .select("id,display_name,bio,avatar_path,template,theme_config,tags")
       .eq("username", handle)
       .eq("is_published", true)
       .maybeSingle();
@@ -42,8 +45,31 @@ export default async function ProfileOpenGraphImage({
       bio = profile.bio?.trim() || "";
       avatarUrl = publicAssetUrl(profile.avatar_path) ?? null;
       theme = resolveProfileTheme(profile.theme_config, profile.template);
+      tags = Array.isArray(profile.tags) ? profile.tags : [];
+
+      // Counts rather than a strapline: a card that says what is actually on
+      // the page gives someone a reason to open it.
+      const [{ count: links }, { count: offers }] = await Promise.all([
+        supabase
+          .from("links")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", profile.id)
+          .eq("is_active", true),
+        supabase
+          .from("referrals")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", profile.id)
+          .eq("is_active", true),
+      ]);
+      linkCount = links ?? 0;
+      offerCount = offers ?? 0;
     }
   }
+
+  const counts = [
+    linkCount ? `${linkCount} ${linkCount === 1 ? "link" : "links"}` : null,
+    offerCount ? `${offerCount} ${offerCount === 1 ? "offer" : "offers"}` : null,
+  ].filter(Boolean);
 
   const { background, surface, text, muted, accent } = theme.colors;
   const initials =
@@ -65,7 +91,12 @@ export default async function ProfileOpenGraphImage({
           padding: 72,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          // Centred as one block rather than spread to the edges. A profile
+          // with a one-line bio and no tags has little to show; distributing
+          // the slack evenly reads as a deliberately airy card, where
+          // space-between left an obvious hole through the middle.
+          justifyContent: "center",
+          gap: 30,
           color: text,
           backgroundColor: background,
         }}
@@ -109,9 +140,9 @@ export default async function ProfileOpenGraphImage({
           <div
             style={{
               display: "flex",
-              maxWidth: 940,
-              fontSize: 38,
-              lineHeight: 1.35,
+              maxWidth: 1000,
+              fontSize: 40,
+              lineHeight: 1.3,
               color: muted,
             }}
           >
@@ -121,7 +152,33 @@ export default async function ProfileOpenGraphImage({
           </div>
         ) : null}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        {tags.length ? (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {tags.slice(0, 5).map((tag) => (
+              <div
+                key={tag}
+                style={{
+                  display: "flex",
+                  padding: "10px 22px",
+                  borderRadius: 999,
+                  border: `2px solid ${muted}`,
+                  color: muted,
+                  fontSize: 26,
+                }}
+              >
+                {tag}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -135,9 +192,11 @@ export default async function ProfileOpenGraphImage({
           >
             {`${BRAND_DOMAIN}/${handle}`}
           </div>
-          <div style={{ display: "flex", fontSize: 26, color: muted }}>
-            Links · offers · signals
-          </div>
+          {counts.length ? (
+            <div style={{ display: "flex", fontSize: 26, color: muted }}>
+              {counts.join(" · ")}
+            </div>
+          ) : null}
         </div>
       </div>
     ),
