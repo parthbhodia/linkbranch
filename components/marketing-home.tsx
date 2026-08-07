@@ -924,6 +924,7 @@ export function MarketingHome() {
         <BrandMark />
         <Typography>Clear links. Useful signals.</Typography>
         <div>
+          <Link href="/digital-business-card">Digital business card</Link>
           <Link href="/cueful-vs-linktree">Cueful vs Linktree</Link>
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>

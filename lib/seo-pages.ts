@@ -51,6 +51,148 @@ const importLinktree = "/#import";
 
 export const seoPages: SeoPageConfig[] = [
   {
+    path: "/digital-business-card",
+    metaTitle: "Free Digital Business Card—With a Contact Inbox | Cueful",
+    metaDescription:
+      "A free digital business card people can save to their phone, plus a two-way exchange so you keep their details too. Tag the event, add a note, sort the pile, export to CSV.",
+    eyebrow: "DIGITAL BUSINESS CARD",
+    title: "The card is the easy half.",
+    lead:
+      "Tapping a phone hands over your details and leaves you with nothing. Cueful gives people a card they can save, asks for theirs back, and files every contact under the event you met at—so tomorrow morning you still know who they were.",
+    theme: "ink",
+    proof: [
+      { value: "$0", label: "no card to buy" },
+      { value: "2-way", label: "you get their details too" },
+      { value: "CSV", label: "export to your CRM" },
+    ],
+    preview: {
+      category: "SALES / NETWORKING",
+      initials: "RM",
+      handle: "@rae-mercer",
+      headline: "Let’s pick this up",
+      accent: "on Monday.",
+      bio: "Enterprise AE. Save my card, send me yours, and I’ll follow up with context.",
+      links: ["Save my contact", "Book 20 minutes", "See customer stories"],
+    },
+    sections: [
+      {
+        heading: "Why NFC cards lose the plot",
+        body:
+          "A paper card was never valuable because it carried a phone number. It was valuable because you could write on the back of it, and because the stack in your jacket pocket was a to-do list. Tapping a phone deletes both of those and leaves an unsorted row in your contacts app.",
+        bullets: [
+          "One-way by design: they get your details, you get nothing back",
+          "No context—no event, no date, no note about what you actually discussed",
+          "Everything lands in one flat contacts list with no way to sort it",
+          "Hardware you have to buy, carry, and remember you own",
+        ],
+      },
+      {
+        heading: "A card that goes both ways",
+        body:
+          "Your Cueful page has a Save my contact button that drops a proper vCard into any phone—iPhone or Android, no app, no hardware. Next to it sits the half every NFC card is missing: a short form so they can send their details back to you.",
+        bullets: [
+          "Save my contact writes name, title, company, phone, email, and links",
+          "Send me yours captures their name, email, phone, and company",
+          "A notes field for the thing you’ll want to remember tomorrow",
+          "Works from your existing QR code, printed or on screen",
+        ],
+      },
+      {
+        heading: "The morning after is the actual product",
+        body:
+          "Turn on event mode before you walk in and every contact you collect that day is stamped with where you met. Your dashboard groups them by event instead of dumping them into one list, so the pile stays readable.",
+        bullets: [
+          "Event mode tags every capture automatically",
+          "Sort each person into Meet 1:1, Keep warm, or Archive",
+          "Edit notes inline while the conversation is still fresh",
+          "Export the lot to CSV for Salesforce, HubSpot, or a spreadsheet",
+        ],
+      },
+      {
+        heading: "Your data stays yours",
+        body:
+          "Cueful does not sell contact data or scan history. Everything you collect can be exported or deleted from your account settings at any time, and the card itself costs nothing.",
+        bullets: [
+          "No subscription and no hardware to buy",
+          "Full account export and delete built in",
+          "Turn the exchange form off whenever you want",
+        ],
+      },
+    ],
+    steps: [
+      {
+        title: "Fill in your card",
+        body: "Add your title, company, phone, and contact email in settings. That is what a saved contact will contain.",
+      },
+      {
+        title: "Turn on event mode",
+        body: "Name where you are—“SaaStr, Tuesday mixer”—before you walk in.",
+      },
+      {
+        title: "Show your QR",
+        body: "They scan, save your contact, and send theirs back in the same breath.",
+      },
+      {
+        title: "Sort the pile",
+        body: "Next morning, work through the event group: meet, warm, or archive. Export when you are done.",
+      },
+    ],
+    comparison: {
+      heading: "Cueful next to an NFC card",
+      intro:
+        "NFC cards solve distribution, which was never the hard part. This is where the two differ.",
+      columns: ["What you need", "Cueful", "NFC card or tag"],
+      rows: [
+        ["Share your details", "QR or link, no hardware", "Tap, if their phone cooperates"],
+        ["Save to their phone", "vCard download", "vCard download"],
+        ["Get their details back", "Built-in exchange form", "Usually not included"],
+        ["Know where you met", "Automatic event tagging", "Not captured"],
+        ["Notes on the conversation", "Per-contact notes field", "Whatever you retype later"],
+        ["Get it into a CRM", "CSV export", "Varies, often a paid tier"],
+        ["Cost", "Free", "Card purchase, often plus a subscription"],
+      ],
+    },
+    faqs: [
+      {
+        question: "Do I need to buy an NFC card to use this?",
+        answer:
+          "No. Cueful works from a QR code or a link, which any phone camera can read without an app. If you already own an NFC card, point it at your Cueful URL and it will work the same way.",
+      },
+      {
+        question: "Will the contact save properly on an iPhone?",
+        answer:
+          "Yes. Save my contact serves a standard vCard file, which both iOS and Android Contacts import directly. Nobody has to install anything.",
+      },
+      {
+        question: "How do I get their details, not just give mine?",
+        answer:
+          "Your page includes a short form so the person you just met can send their name, email, phone, and company straight back to you, along with a note about what you discussed. It lands in your dashboard, tagged with the event.",
+      },
+      {
+        question: "Can I get my contacts into Salesforce or HubSpot?",
+        answer:
+          "Export everyone to CSV from the dashboard and import that file into your CRM. Direct integrations are not available yet.",
+      },
+      {
+        question: "Is this really free?",
+        answer:
+          "Yes. The card, the exchange form, event tagging, notes, and CSV export are all free to use.",
+      },
+    ],
+    related: [
+      { href: "/free-link-in-bio", label: "Free link-in-bio page" },
+      {
+        href: "/templates/portfolio-link-page-for-freelancers",
+        label: "Portfolio page for freelancers",
+      },
+      { href: "/best-link-in-bio-tools", label: "Compare link-in-bio tools" },
+    ],
+    primaryCta: "Create your card",
+    primaryHref: startFresh,
+    secondaryCta: "See a live example",
+    secondaryHref: "/demo",
+  },
+  {
     path: "/free-linktree-alternative",
     metaTitle: "Free Linktree Alternative—No Ads or Branding | Cueful",
     metaDescription:

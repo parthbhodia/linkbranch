@@ -4,6 +4,7 @@ import { ButtonBase } from "@mui/material";
 
 export const settingsJumpTargets = [
   { id: "settings-profile", label: "Profile" },
+  { id: "settings-card", label: "Contact card" },
   { id: "settings-seo", label: "SEO" },
   { id: "settings-qr", label: "QR" },
   { id: "settings-connect", label: "Connect" },

@@ -361,6 +361,7 @@ export function SeoResourcePage({ page }: { page: SeoPageConfig }) {
         <Link href="/">cueful.</Link>
         <p>Free link-in-bio pages for creators who value clarity.</p>
         <nav aria-label="Footer navigation">
+          <Link href="/digital-business-card">Digital business card</Link>
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>
           <Link href="/templates">Templates</Link>
