@@ -42,6 +42,11 @@ export function ContactExchange({
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
   const [note, setNote] = useState("");
+  // Honeypot. Hidden from people and from screen readers, so anything in it
+  // came from a bot filling every field it found in the markup. This only
+  // catches scrapers that read the form -- one posting straight at the API
+  // never sees it, which is what the database-side hourly cap is for.
+  const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "sent" | "error">(
     "idle",
   );
@@ -59,6 +64,13 @@ export function ContactExchange({
     }
     if (!email.trim() && !phone.trim()) {
       setError("Add an email or a phone number so they can reach you.");
+      return;
+    }
+
+    // Bots get the success screen and no row. Telling them they were caught
+    // just teaches them which field to leave alone.
+    if (website.trim()) {
+      setStatus("sent");
       return;
     }
 
@@ -83,7 +95,11 @@ export function ContactExchange({
 
     if (insertError) {
       setStatus("error");
-      setError("That didn’t send. Check the fields and try again.");
+      setError(
+        insertError.code === "P0001"
+          ? "This page has taken a lot of contacts in the last hour. Try again shortly."
+          : "That didn’t send. Check the fields and try again.",
+      );
       return;
     }
 
@@ -151,6 +167,20 @@ export function ContactExchange({
         allowExchange && (
           <Collapse in={open} unmountOnExit>
             <form className="contact-exchange__form" onSubmit={onSubmit}>
+              <div className="contact-exchange__trap" aria-hidden="true">
+                <label htmlFor="exchange-website">
+                  Leave this field empty
+                </label>
+                <input
+                  id="exchange-website"
+                  name="website"
+                  type="text"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
               <div className="contact-exchange__fields">
                 <TextField
                   label="Your name"

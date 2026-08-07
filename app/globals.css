@@ -2941,6 +2941,17 @@ a {
   border-radius: var(--profile-radius, 18px);
 }
 
+/* Honeypot. Moved off-screen rather than display:none, which more bots know to
+   skip. aria-hidden and tabIndex=-1 keep it away from screen readers and the
+   keyboard, so nobody real can reach it by accident. */
+.contact-exchange__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .profile-contact-form {
   display: grid;
   gap: 12px;
