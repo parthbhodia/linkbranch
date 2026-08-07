@@ -1,0 +1,70 @@
+<!--
+  Confirm signup. Rendered by Supabase Auth, so this is Go templating, not JSX.
+  {{ .ConfirmationURL }} carries the /auth/callback?next= handoff -- keep it.
+
+  Table layout and inline styles throughout: Outlook drops flex, grid, and most
+  of a <style> block, and Gmail strips <head> entirely.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#faf9f1;margin:0;padding:32px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #c5c8b9;border-radius:14px;">
+        <tr>
+          <td style="padding:36px 40px 0 40px;">
+            <div style="font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#1b1c18;">cueful.</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 40px 0 40px;">
+            <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#5e6256;">One more step</div>
+            <h1 style="margin:10px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:1.22;font-weight:400;color:#1b1c18;">Confirm your email address</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 40px 0 40px;">
+            <p style="margin:0;font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#5e6256;">
+              Confirm this address and your Cueful account is ready. You&rsquo;ll pick a template next, then publish your page.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 40px 0 40px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td bgcolor="#c9ef69" style="border-radius:9px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#1b1c18;text-decoration:none;border-radius:9px;">Confirm email address</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <p style="margin:0 0 6px 0;font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5e6256;">
+              If the button doesn&rsquo;t work, paste this into your browser:
+            </p>
+            <p style="margin:0;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:12px;line-height:1.5;word-break:break-all;color:#c64a16;">{{ .ConfirmationURL }}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 40px 34px 40px;">
+            <div style="border-top:1px solid #c5c8b9;padding-top:18px;">
+              <p style="margin:0;font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#5e6256;">
+                This link expires and can only be used once. If you didn&rsquo;t create a Cueful account, you can ignore this email &mdash; nothing was set up.
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+        <tr>
+          <td align="center" style="padding:18px 40px 0 40px;">
+            <p style="margin:0;font-family:'Avenir Next',Avenir,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#5e6256;">
+              <a href="https://cueful.bio" style="color:#5e6256;text-decoration:none;">cueful.bio</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
