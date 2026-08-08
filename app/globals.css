@@ -5113,6 +5113,21 @@ a {
 
 .workspace-panel__heading {
   justify-content: space-between;
+  /* The action group sits at min-width: auto, so it never shrinks below its
+     own content. Without wrapping it takes the whole row and squeezes the
+     title down to a few pixels -- one word per line. The column-stacking rule
+     in the media query further down fixes the same thing, but it keys off the
+     viewport, and this panel is narrow because of the sidebar and preview
+     columns rather than because the window is. Wrapping responds to the space
+     that actually exists. */
+  flex-wrap: wrap;
+}
+
+.workspace-panel__heading > .MuiBox-root {
+  /* Overrides the min-width: 0 above: the title needs a floor to wrap the
+     actions down instead of collapsing. min() so a container narrower than
+     the floor degrades rather than forcing the panel wider. */
+  min-width: min(13rem, 100%);
 }
 
 .workspace-panel__heading--referrals {
@@ -13043,9 +13058,16 @@ a {
 }
 
 .event-card__handle {
-  font: 700 0.72rem var(--font-mono), monospace;
+  /* This is the manual fallback for the code below it: when a camera will not
+     focus, someone reads this address off the screen or types it. At 0.72rem
+     in muted grey it was the smallest text on a screen built to be read from
+     across a table. Usernames run to 30 characters, so it wraps rather than
+     overflowing the bar at the long end. */
+  font: 700 0.85rem var(--font-mono), monospace;
   letter-spacing: 0.06em;
-  color: #5c5f52;
+  color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .event-card__stage {
