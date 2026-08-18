@@ -13332,3 +13332,71 @@ a {
   .sort__pile { min-height: 62px; font-size: 0.78rem !important; }
   .sort__pile kbd { display: none; }
 }
+
+/* ---- Install suggestion --------------------------------------------------
+   Sits above the card screen rather than over it: at an event the card is the
+   thing being held up to someone, and a floating panel across it would be in
+   the way at exactly the wrong moment. */
+
+.install-app {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  align-items: start;
+  margin: 12px;
+  padding: 16px 44px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.install-app__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.install-app__copy h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.install-app__copy .MuiTypography-body2 {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.install-app__steps {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.install-app__steps svg {
+  vertical-align: -2px;
+}
+
+.install-app__actions {
+  grid-column: 2;
+}
+
+.install-app__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+@media (min-width: 620px) {
+  .install-app {
+    margin: 16px auto;
+    max-width: 560px;
+  }
+}

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { EventCardScreen } from "@/components/event-card-screen";
+import { InstallApp } from "@/components/install-app";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -38,12 +39,18 @@ export default async function CardPage() {
     redirect("/onboarding");
   }
 
+  // The card screen is exactly where installing pays off, so the suggestion
+  // sits here rather than interrupting somewhere it would read as a nag. It
+  // renders nothing once installed or dismissed.
   return (
-    <EventCardScreen
-      profileId={profile.id}
-      username={profile.username}
-      displayName={profile.display_name}
-      initialEventTag={profile.current_event_tag ?? ""}
-    />
+    <>
+      <InstallApp />
+      <EventCardScreen
+        profileId={profile.id}
+        username={profile.username}
+        displayName={profile.display_name}
+        initialEventTag={profile.current_event_tag ?? ""}
+      />
+    </>
   );
 }
