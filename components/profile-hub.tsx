@@ -571,6 +571,20 @@ export function ProfileHub({
         mediaEmbeds.length +
         (showContactForm ? 1 : 0);
 
+  // The same tally before the search box touches it. Without this, a page that
+  // simply has nothing on it is indistinguishable from a search that matched
+  // nothing, and a visitor who never typed gets told to clear their search.
+  const totalContentCount =
+    publicView === "shop"
+      ? products.length
+      : profile.links.length +
+        profile.referrals.length +
+        faqs.length +
+        mediaEmbeds.length +
+        (showContactForm ? 1 : 0);
+
+  const isSearching = query.trim().length > 0;
+
   return (
     <main
       className={`app-shell public-template public-template--${template}${
@@ -603,13 +617,16 @@ export function ProfileHub({
                   <IosShareRounded fontSize="small" />
                 </IconButton>
               </Tooltip>
+              {/* Deliberately the largest control in this row. At an event this
+                  is the one someone reaches for, and at the old icon size it
+                  read as a decoration rather than a button. */}
               <Tooltip title="Show QR code" arrow>
                 <IconButton
-                  size="small"
+                  className="profile-qr-button"
                   onClick={() => setQrOpen(true)}
                   aria-label="Show QR code for this page"
                 >
-                  <QrCode2Rounded fontSize="small" />
+                  <QrCode2Rounded />
                 </IconButton>
               </Tooltip>
               {/* Owner-only: visiting your own public page is the most natural
@@ -767,29 +784,33 @@ export function ProfileHub({
               </div>
             </section>
           )}
-          <div className="profile-search">
-            <TextField
-              className="search-field"
-              placeholder="Search this page…"
-              type="search"
-              size="small"
-              fullWidth
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              inputProps={{
-                "aria-label": "Search this page",
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchRounded />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          </div>
+          {/* A search box over nothing is furniture, and it invites exactly the
+              dead end this page used to show. */}
+          {totalContentCount > 0 && (
+            <div className="profile-search">
+              <TextField
+                className="search-field"
+                placeholder="Search this page…"
+                type="search"
+                size="small"
+                fullWidth
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                inputProps={{
+                  "aria-label": "Search this page",
+                }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchRounded />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </div>
+          )}
 
           {products.length > 0 && (
             <div className="profile-view-toggle" role="tablist" aria-label="Page view">
@@ -1138,7 +1159,7 @@ export function ProfileHub({
             </section>
           )}
 
-          {currentResultsCount === 0 && (
+          {currentResultsCount === 0 && isSearching && (
             <Box className="empty-state">
               <Typography variant="h3">Nothing matches yet.</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ my: 1.5 }}>
@@ -1146,6 +1167,23 @@ export function ProfileHub({
               </Typography>
               <Button variant="contained" onClick={() => setQuery("")}>
                 Clear search
+              </Button>
+            </Box>
+          )}
+
+          {/* Nobody searched -- the page is simply empty. A visitor is told
+              nothing, because the card and the exchange above are the point of
+              a networking page and an apology for missing links is noise. The
+              owner is the only one who can act on it, so only they see it. */}
+          {totalContentCount === 0 && !isSearching && isOwner && (
+            <Box className="empty-state">
+              <Typography variant="h3">Your page has no links yet.</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ my: 1.5 }}>
+                Visitors can still save your contact and send theirs back. Add
+                links when you have somewhere to point them.
+              </Typography>
+              <Button variant="contained" component={Link} href="/dashboard">
+                Add links
               </Button>
             </Box>
           )}
