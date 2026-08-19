@@ -43,6 +43,21 @@ function isIosSafari() {
   return !/crios|fxios|edgios|opios/i.test(window.navigator.userAgent);
 }
 
+function isAndroidDevice() {
+  if (typeof window === "undefined") return false;
+  return /android/i.test(window.navigator.userAgent);
+}
+
+type InstallAppProps = {
+  /**
+   * "inline" sits in the document flow -- the card screen puts it above the
+   * code. "floating" pins it to a corner, for the dashboard, whose shell is a
+   * fixed-height grid with overflow hidden: an in-flow panel there would push
+   * the whole workspace off screen rather than sit above it.
+   */
+  placement?: "inline" | "floating";
+};
+
 /**
  * Offers installation. The worker itself is registered app-wide by
  * ServiceWorkerRegistrar.
@@ -51,7 +66,7 @@ function isIosSafari() {
  * dismissed it before, or on a browser that can neither prompt nor be given
  * useful instructions -- so it is safe to mount anywhere.
  */
-export function InstallApp() {
+export function InstallApp({ placement = "inline" }: InstallAppProps) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -93,12 +108,19 @@ export function InstallApp() {
   // and previously fell through to showing nothing.
   const iosOtherBrowser = isClient && isIosDevice() && !iosSafari;
 
+  const mobile = isClient && (isIosDevice() || isAndroidDevice());
+
   const visible =
     isClient &&
     !installed &&
     !dismissed &&
     !alreadyDismissed &&
     !isStandalone() &&
+    // The dashboard offer exists so the phone that gets carried to an event
+    // can open the code without the browser. A desktop PWA does nothing for
+    // that, so the floating placement stays off computers. The card screen
+    // keeps offering it everywhere, which is what already shipped.
+    (placement === "inline" || mobile) &&
     (Boolean(promptEvent) || iosSafari || iosOtherBrowser);
 
   function dismiss() {
@@ -118,7 +140,11 @@ export function InstallApp() {
   if (!visible) return null;
 
   return (
-    <aside className="install-app">
+    <aside
+      className={`install-app${
+        placement === "floating" ? " install-app--floating" : ""
+      }`}
+    >
       <div className="install-app__icon" aria-hidden="true">
         <InstallMobileRounded />
       </div>
@@ -155,7 +181,7 @@ export function InstallApp() {
         <div className="install-app__actions">
           {promptEvent ? (
             <Button variant="contained" size="small" onClick={install}>
-              Add to home screen
+              {mobile ? "Add to home screen" : "Install app"}
             </Button>
           ) : (
             <Button

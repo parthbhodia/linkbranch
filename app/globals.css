@@ -13439,7 +13439,11 @@ a {
   grid-column: 2;
 }
 
-.install-app__close {
+/* Scoped to the parent to outrank MUI's own .MuiButtonBase-root, which sets
+   position: relative at the same specificity and is injected after this file,
+   so the plain class lost on source order and the button sat in the grid flow
+   -- leaving the reserved space in the padding above it empty. */
+.install-app .install-app__close {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -13462,4 +13466,29 @@ a {
 .install-app__note {
   margin-top: 10px;
   color: var(--muted);
+}
+
+/* Floating placement, used by the dashboard. The workspace shell is
+   height: 100svh with overflow: hidden, so an in-flow panel does not sit above
+   it -- it pushes the entire workspace past the bottom of the window.
+
+   Bottom left, because the share prompt owns the bottom right corner. They are
+   mutually exclusive today, but a panel that moves depending on what else is
+   on screen is worse than one that has its own place. */
+.install-app--floating {
+  position: fixed;
+  z-index: 1200;
+  inset: auto auto 24px 24px;
+  margin: 0;
+  width: min(390px, calc(100vw - 48px));
+  box-shadow: 0 18px 46px rgba(14, 15, 13, 0.22);
+}
+
+@media (max-width: 700px) {
+  .install-app--floating {
+    /* Clear of the fixed mobile nav: 72px tall, 10px off the bottom, plus the
+       safe area on a notched phone -- which is exactly where this shows up. */
+    inset: auto 12px calc(96px + env(safe-area-inset-bottom)) 12px;
+    width: auto;
+  }
 }
