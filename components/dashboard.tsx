@@ -71,6 +71,7 @@ import {
   HighlightsEditor,
   type DashboardHighlight,
 } from "@/components/highlights-editor";
+import { InstallApp } from "@/components/install-app";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
 import {
   resolveSeoDescription,
@@ -3749,6 +3750,15 @@ export function Dashboard({
           </Paper>
         </div>
       )}
+
+      {/* The card screen also offers this, but you only reach that screen by
+          already knowing where it is. The dashboard is the first thing a
+          signed-in person sees, so the offer has to exist here too.
+
+          Queued behind the tour and the share prompt rather than stacked on
+          top of them: three cards competing for the same corner is how every
+          one of them gets dismissed unread. */}
+      {!tourOpen && !sharePromptOpen && <InstallApp placement="floating" />}
 
       {sharePromptOpen && !tourOpen && draft.is_published && (
         <Paper className="dashboard-share-prompt" elevation={10}>
