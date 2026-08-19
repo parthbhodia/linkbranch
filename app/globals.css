@@ -11720,28 +11720,36 @@ a {
   padding: 20px clamp(28px, 5vw, 72px) 34px;
 }
 
+/* Filled rather than a hairline outline in muted text. It was styled like a
+   footer credit, which is what it used to say; as a call to action it has to
+   be legible against whatever background the creator picked, so it carries its
+   own surface instead of borrowing the page's. */
 .profile-supporter-badge a {
-  min-height: 42px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 14px;
-  border: 1px solid currentColor;
+  gap: 9px;
+  padding: 12px 22px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   border-radius: 999px;
-  color: var(--muted);
-  font-size: 0.72rem;
+  background: var(--surface);
+  box-shadow: 0 10px 26px -14px rgba(27, 28, 24, 0.5);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .profile-supporter-badge a:hover {
-  color: var(--ink);
   transform: translateY(-2px);
+  box-shadow: 0 16px 32px -14px rgba(27, 28, 24, 0.55);
 }
 
 .profile-supporter-badge b {
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
+  font-weight: 800;
   letter-spacing: -0.04em;
 }
 
@@ -13399,4 +13407,16 @@ a {
     margin: 16px auto;
     max-width: 560px;
   }
+}
+
+/* The badge sets its own foreground now, so the custom-theme override that
+   pushed it to muted would undo exactly what makes it readable. */
+.public-template.profile-theme-custom .profile-supporter-badge a {
+  background: var(--profile-surface);
+  color: var(--profile-text) !important;
+}
+
+.install-app__note {
+  margin-top: 10px;
+  color: var(--muted);
 }

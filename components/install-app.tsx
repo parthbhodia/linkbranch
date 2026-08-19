@@ -24,12 +24,23 @@ function isStandalone() {
   );
 }
 
-function isIos() {
+function isIosDevice() {
   if (typeof window === "undefined") return false;
-  return (
-    /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
-    !/crios|fxios/i.test(window.navigator.userAgent)
-  );
+  const ua = window.navigator.userAgent;
+  // iPadOS 13+ reports itself as "Macintosh" and is indistinguishable from a
+  // desktop Mac by user agent alone -- a touch-capable one is an iPad, since
+  // no Mac reports more than one touch point.
+  const iPadOs = /macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1;
+  return /iphone|ipad|ipod/i.test(ua) || iPadOs;
+}
+
+// Only Safari can add to the home screen on iOS. Chrome, Firefox and Edge
+// there are all WebKit wrappers without the Share sheet's install item, so
+// their users need sending to Safari rather than a set of steps they cannot
+// follow.
+function isIosSafari() {
+  if (!isIosDevice()) return false;
+  return !/crios|fxios|edgios|opios/i.test(window.navigator.userAgent);
 }
 
 /**
@@ -77,7 +88,10 @@ export function InstallApp() {
 
   // Safari implements no install API, so iOS is offered instructions rather
   // than a button that would do nothing when tapped.
-  const iosCanInstall = isClient && isIos();
+  const iosSafari = isClient && isIosSafari();
+  // A different message, not silence: these browsers cannot install at all,
+  // and previously fell through to showing nothing.
+  const iosOtherBrowser = isClient && isIosDevice() && !iosSafari;
 
   const visible =
     isClient &&
@@ -85,7 +99,7 @@ export function InstallApp() {
     !dismissed &&
     !alreadyDismissed &&
     !isStandalone() &&
-    (Boolean(promptEvent) || iosCanInstall);
+    (Boolean(promptEvent) || iosSafari || iosOtherBrowser);
 
   function dismiss() {
     window.localStorage.setItem(DISMISSED_KEY, "1");
@@ -115,7 +129,14 @@ export function InstallApp() {
           browser, no typing the address at an event.
         </Typography>
 
-        {showIosHelp ? (
+        {iosOtherBrowser ? (
+          <Typography variant="body2" className="install-app__note">
+            Only Safari can add an app to the iPhone home screen. Open this page
+            in Safari and the option appears under Share.
+          </Typography>
+        ) : null}
+
+        {showIosHelp && iosSafari ? (
           <ol className="install-app__steps">
             <li>
               Tap <IosShareRounded fontSize="inherit" /> Share in Safari&apos;s
@@ -127,21 +148,26 @@ export function InstallApp() {
         ) : null}
       </div>
 
-      <div className="install-app__actions">
-        {promptEvent ? (
-          <Button variant="contained" size="small" onClick={install}>
-            Add to home screen
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => setShowIosHelp((open) => !open)}
-          >
-            {showIosHelp ? "Hide steps" : "Show me how"}
-          </Button>
-        )}
-      </div>
+      {/* No button for the browsers that cannot install: the note above is the
+          whole instruction, and a button would imply an action that is not
+          available to them. */}
+      {iosOtherBrowser ? null : (
+        <div className="install-app__actions">
+          {promptEvent ? (
+            <Button variant="contained" size="small" onClick={install}>
+              Add to home screen
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => setShowIosHelp((open) => !open)}
+            >
+              {showIosHelp ? "Hide steps" : "Show me how"}
+            </Button>
+          )}
+        </div>
+      )}
 
       <IconButton
         className="install-app__close"
