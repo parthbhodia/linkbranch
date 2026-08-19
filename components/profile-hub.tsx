@@ -1158,8 +1158,10 @@ export function ProfileHub({
         )}
         {showBadge && (
           <footer className="profile-supporter-badge">
+            {/* This is the growth loop: every visitor to every creator page
+                sees it, so it reads as an invitation rather than a credit. */}
             <a href={creatorBadgeUrl(profile.username)}>
-              <span>Made with</span>
+              <span>Make your own with</span>
               <b>cueful.</b>
               <ArrowOutwardRounded aria-hidden="true" />
             </a>
