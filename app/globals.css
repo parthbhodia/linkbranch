@@ -1539,9 +1539,34 @@ a {
   text-align: left;
 }
 
+/*
+ * Was 0.64rem -- about 10px, below the floor for a mono face at 700 weight,
+ * and this is the one place the page states whose it is.
+ */
 .profile-handle {
   color: var(--muted);
-  font: 700 0.64rem var(--font-mono), monospace;
+  font: 700 0.8rem var(--font-mono), monospace;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * The QR is the reason this row exists on a phone, so it gets a real target
+ * rather than matching the chrome around it: a larger glyph, a ring to read as
+ * pressable, and 44px of touch area.
+ */
+.profile-qr-button.MuiIconButton-root {
+  padding: 8px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  opacity: 0.85;
+}
+
+.profile-qr-button.MuiIconButton-root .MuiSvgIcon-root {
+  font-size: 1.5rem;
+}
+
+.profile-qr-button.MuiIconButton-root:hover {
+  opacity: 1;
 }
 
 .public-template .profile-copy {
