@@ -13492,3 +13492,242 @@ a {
     width: auto;
   }
 }
+
+/* ---- Admin ---------------------------------------------------------------
+   Internal, one reader, never indexed. Styled to be scannable rather than
+   branded: the point is reading numbers, not looking like the product. */
+
+.admin-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 80px;
+  display: grid;
+  gap: 18px;
+  color: var(--ink);
+}
+
+.admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-eyebrow {
+  margin: 0;
+  font: 700 0.68rem var(--font-mono), monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.admin-head h1 {
+  margin: 6px 0 4px;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.admin-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.admin-head a {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.admin-card h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.admin-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-card__top h2 {
+  margin: 0;
+}
+
+.admin-card__top p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-funnel {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-funnel li {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-funnel__label b {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.admin-funnel__label small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.admin-funnel__bar {
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.admin-funnel__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 7px;
+  background: var(--lime);
+  /* Zero-width bars still read as a row rather than vanishing. */
+  min-width: 2px;
+}
+
+.admin-funnel__figures {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 132px;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-funnel__figures b {
+  font-size: 1rem;
+}
+
+.admin-funnel__figures small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.admin-funnel__figures em {
+  font-style: normal;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #b3261e;
+}
+
+.admin-funnel__figures em.is-flat {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.admin-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.admin-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-stats div {
+  display: grid;
+  gap: 2px;
+}
+
+.admin-stats dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-stats dd {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-stats dd small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.admin-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.admin-table th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-table td:first-child {
+  font-family: var(--font-mono), monospace;
+}
+
+@media (max-width: 640px) {
+  .admin-funnel li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  /* The bar is decoration; on a narrow screen the numbers matter more. */
+  .admin-funnel__bar {
+    display: none;
+  }
+}
