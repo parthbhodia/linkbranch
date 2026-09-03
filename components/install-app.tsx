@@ -56,6 +56,12 @@ type InstallAppProps = {
    * the whole workspace off screen rather than sit above it.
    */
   placement?: "inline" | "floating";
+  /**
+   * Something else already owns the bottom of the screen, so move to the top
+   * rather than overlap it. Used for the share prompt, which is bottom-anchored
+   * and, on a phone, wide enough to collide.
+   */
+  avoidBottom?: boolean;
 };
 
 /**
@@ -66,7 +72,10 @@ type InstallAppProps = {
  * dismissed it before, or on a browser that can neither prompt nor be given
  * useful instructions -- so it is safe to mount anywhere.
  */
-export function InstallApp({ placement = "inline" }: InstallAppProps) {
+export function InstallApp({
+  placement = "inline",
+  avoidBottom = false,
+}: InstallAppProps) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -143,7 +152,7 @@ export function InstallApp({ placement = "inline" }: InstallAppProps) {
     <aside
       className={`install-app${
         placement === "floating" ? " install-app--floating" : ""
-      }`}
+      }${placement === "floating" && avoidBottom ? " install-app--top" : ""}`}
     >
       <div className="install-app__icon" aria-hidden="true">
         <InstallMobileRounded />
