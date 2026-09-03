@@ -13814,3 +13814,18 @@ a {
     font-size: 0.88rem;
   }
 }
+
+/* When the share prompt owns the bottom of the screen, the install panel goes
+   to the top rather than waiting for a prompt that may never be dismissed.
+   Anchoring to the opposite edge avoids having to guess the other card's
+   height, which varies with its copy. */
+.install-app--floating.install-app--top {
+  inset: calc(12px + env(safe-area-inset-top)) 24px auto 24px;
+}
+
+@media (max-width: 700px) {
+  .install-app--floating.install-app--top {
+    inset: calc(10px + env(safe-area-inset-top)) 12px auto 12px;
+    width: auto;
+  }
+}

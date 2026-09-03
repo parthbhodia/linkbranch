@@ -3755,10 +3755,15 @@ export function Dashboard({
           already knowing where it is. The dashboard is the first thing a
           signed-in person sees, so the offer has to exist here too.
 
-          Queued behind the tour and the share prompt rather than stacked on
-          top of them: three cards competing for the same corner is how every
-          one of them gets dismissed unread. */}
-      {!tourOpen && !sharePromptOpen && <InstallApp placement="floating" />}
+          Only the tour suppresses it -- that one is a modal over the whole
+          screen. It used to wait on the share prompt as well, which silently
+          meant never: is_published defaults to true, so the prompt opens for
+          essentially every account on load and stays open until dismissed. A
+          queue whose head never leaves is not a queue. The two can collide on
+          a phone, so the install panel moves to the top instead of hiding. */}
+      {!tourOpen && (
+        <InstallApp placement="floating" avoidBottom={sharePromptOpen} />
+      )}
 
       {sharePromptOpen && !tourOpen && draft.is_published && (
         <Paper className="dashboard-share-prompt" elevation={10}>
