@@ -13731,3 +13731,86 @@ a {
     display: none;
   }
 }
+
+/* ---- Mobile audit fixes ---------------------------------------------------
+   From a 390x844 and 360x740 pass over the public pages. Nothing was clipped
+   or horizontally scrolling; these are the two things that were wrong --
+   controls too small to hit, and body copy too small to read.
+
+   Hit areas grow, ink does not: every control below keeps its visual weight
+   and gains only an invisible box. WCAG 2.2 AA (SC 2.5.8) sets 24x24 CSS px
+   for a standalone control, Apple's guidance is 44x44. */
+
+/* Was 47x13 -- a standalone breadcrumb, so no inline-text exemption applies. */
+.seo-breadcrumbs a {
+  display: inline-block;
+  padding-block: 6px;
+}
+
+/* Was 23px tall: one pixel under the minimum, on every SEO page. The homepage
+   footer is a separate set of classes and was 21px, so it needs naming too. */
+.seo-nav > div > a:not(.seo-button),
+.seo-footer nav a,
+.marketing-footer > div a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* The dot itself is drawn in ::after and stays 8px; only the button grows. */
+.example-carousel__dots button {
+  width: 44px;
+  height: 44px;
+}
+
+/* Was 30x30 -- the smallest control on a profile page, sitting beside the
+   deliberately oversized QR button. */
+.profile-brand-row .MuiIconButton-root {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* MUI's small button is ~37px, which put every primary call to action on a
+   phone under the target. Scoped to coarse pointers so desktop density is
+   untouched and a tablet gets the same benefit as a phone. */
+@media (pointer: coarse) {
+  .MuiButton-root {
+    min-height: 44px;
+  }
+}
+
+/* Readability. Body copy rendered at 11.2-11.8px on a phone against an iOS
+   convention of 16px, and the mono eyebrow labels at 9.3px. Phone widths only:
+   at desktop scale these blocks are one column among several rather than the
+   whole screen, and the smaller sizes are deliberate there. */
+@media (max-width: 700px) {
+  .marketing-hero__claim > span,
+  .import-starter__intro > span,
+  .seo-eyebrow {
+    font-size: 0.75rem;
+  }
+
+  .marketing-hero__claim > .MuiTypography-root,
+  .import-starter__intro > .MuiTypography-root,
+  /* The paragraph the SEO import panel puts directly in .import-starter. */
+  .import-starter > .MuiTypography-root {
+    font-size: 0.95rem;
+  }
+
+  /* The helper under the username field. Its base rule carries !important --
+     added to outrank MUI's generated body1 class -- so matching it is the only
+     way to override, and the parent scope keeps this the more specific of the
+     two. */
+  .username-claim .username-claim__helper {
+    font-size: 0.95rem !important;
+  }
+
+  /* Higher specificity than the rule above, so it needs naming outright. */
+  .import-starter--compact .import-starter__intro .MuiTypography-root {
+    font-size: 0.95rem;
+  }
+
+  .marketing-import-option__toggle {
+    font-size: 0.88rem;
+  }
+}
