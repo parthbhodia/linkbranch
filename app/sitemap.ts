@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BRAND_URL, publicProfileUrl } from "@/lib/brand";
 import { exampleProfiles } from "@/lib/example-profiles";
+import { countActiveLinks, isSubstantivePage } from "@/lib/page-quality";
 import { seoPages } from "@/lib/seo-pages";
 import { createClient } from "@/lib/supabase/server";
 
@@ -75,7 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = await createClient();
     const { data } = await supabase
       .from("profiles")
-      .select("username,updated_at")
+      .select("id,username,updated_at,created_at,bio,avatar_path")
       .eq("is_published", true)
       // Submitting a noindex URL is a Search Console coverage error against
       // this property, and spends crawl budget on a page that can never index.
@@ -84,12 +85,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .order("updated_at", { ascending: false })
       .limit(5000);
 
-    publishedProfiles = (data ?? []).map((profile) => ({
-      url: publicProfileUrl(profile.username),
-      lastModified: new Date(profile.updated_at),
-      changeFrequency: "weekly" as const,
-      priority: 0.55,
-    }));
+    const candidates = data ?? [];
+    // A bio was the whole bar before this, and is_published is true from signup
+    // (see lib/page-quality), so anything registered and typed into once was
+    // being submitted to Google. Everything in the sitemap borrows the domain's
+    // standing, which is what makes a free page worth farming.
+    const linkCounts = await countActiveLinks(
+      supabase,
+      candidates.map((profile) => profile.id),
+    );
+
+    publishedProfiles = candidates
+      .filter((profile) =>
+        isSubstantivePage({
+          bio: profile.bio,
+          avatarPath: profile.avatar_path,
+          createdAt: profile.created_at,
+          activeLinkCount: linkCounts.get(profile.id) ?? 0,
+        }),
+      )
+      .map((profile) => ({
+        url: publicProfileUrl(profile.username),
+        lastModified: new Date(profile.updated_at),
+        changeFrequency: "weekly" as const,
+        priority: 0.55,
+      }));
   } catch {
     // Keep the marketing sitemap available during local builds or temporary
     // database outages. The hourly refresh will repopulate profile entries.
