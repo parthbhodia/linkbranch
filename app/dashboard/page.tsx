@@ -15,6 +15,7 @@ import {
 import { type DashboardConnection } from "@/components/connections-inbox";
 import { type DashboardFaq } from "@/components/faq-editor";
 import { type DashboardHighlight } from "@/components/highlights-editor";
+import { isAdminEmail } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -129,6 +130,7 @@ export default async function DashboardPage() {
     <Dashboard
       profile={profile as DashboardProfile}
       email={user.email ?? ""}
+      isAdmin={isAdminEmail(user.email)}
       links={(links ?? []) as DashboardLink[]}
       referrals={(referrals ?? []) as DashboardReferral[]}
       socials={(socials ?? []) as DashboardSocial[]}

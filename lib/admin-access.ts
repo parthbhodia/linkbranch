@@ -9,15 +9,28 @@
  * Fails closed: an unset or empty variable admits nobody, so a missing
  * environment variable cannot silently open the page up.
  */
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-
-  const allowed = (process.env.ADMIN_EMAILS ?? "")
+function allowlist(): string[] {
+  return (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
+}
 
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+
+  const allowed = allowlist();
   if (allowed.length === 0) return false;
 
   return allowed.includes(email.trim().toLowerCase());
+}
+
+/**
+ * How many addresses are configured. For the rejection log on /admin only:
+ * "unset" and "set but does not include you" are the same 404 from outside,
+ * and telling those apart is the difference between a five-minute fix and an
+ * afternoon. The count, never the addresses.
+ */
+export function adminAllowlistCount(): number {
+  return allowlist().length;
 }
