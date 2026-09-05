@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline · Cueful</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        background: #faf9f1;
+        color: #1b1c18;
+        font: 400 16px/1.6 "Avenir Next", Avenir, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      p {
+        margin: 0 auto 22px;
+        max-width: 30ch;
+        color: #5e6256;
+      }
+      a {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: #20221c;
+        color: #faf9f1;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      b {
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You're offline</h1>
+      <!-- Deliberately not a cached copy of the card: /card is per-user, and
+           serving a stored one would show whoever opens the app next the
+           previous person's code. -->
+      <p>
+        Your card needs a connection to load. Once you're back online it will
+        open straight away.
+      </p>
+      <a href="/card">Try again</a>
+    </main>
+  </body>
+</html>

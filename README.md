@@ -42,6 +42,55 @@ Run the SQL files in `supabase/migrations` in filename order. They create:
 Never expose a Supabase secret or service-role key through a `NEXT_PUBLIC_`
 environment variable.
 
+## Apple Wallet passes
+
+`/api/wallet/<username>` serves the profile as a signed `.pkpass`, and `/card`
+offers it as **Add to Apple Wallet**. It is worth having alongside the QR
+screen because it wins on things a web page cannot control: it opens from the
+lock screen, Wallet forces the display to maximum brightness for a barcode, and
+it syncs to Apple Watch without a watch app. The format shipped in iOS 6 and
+has stayed compatible, so it works on far older iPhones than any recent
+sharing feature.
+
+The barcode carries the same profile URL `/card` encodes, so a scanner cannot
+tell the two apart.
+
+**Passes are static.** There is no update web service, so a pass shows the
+profile as it was when it was downloaded — edit your details and you must add
+the card again. The pass says so on its back. Adding live updates means four
+registration endpoints, a device registry, and APNs push; it is deliberately
+not built until someone asks for it.
+
+Signing needs an Apple Developer Program membership and a Pass Type ID
+certificate. Set these five, all server-only, none prefixed `NEXT_PUBLIC_`:
+
+| Variable | Notes |
+| --- | --- |
+| `APPLE_PASS_TYPE_ID` | e.g. `pass.bio.cueful.card` |
+| `APPLE_TEAM_ID` | 10-character team identifier |
+| `APPLE_PASS_SIGNER_CERT_BASE64` | Pass certificate, PEM, base64 |
+| `APPLE_PASS_SIGNER_KEY_BASE64` | Its private key, PEM, base64 |
+| `APPLE_WWDR_CERT_BASE64` | **G4 only** — G2/G3/G5/G6 fail validation |
+
+`APPLE_PASS_SIGNER_KEY_PASSPHRASE` is needed only if the key is encrypted.
+
+With any of them missing the feature turns itself off: the route 404s and the
+button never renders. A leaked signing certificate lets anyone issue passes in
+your name, so treat these like the service-role key.
+
+Extracting the PEMs from the `.p12` Keychain exports:
+
+```bash
+openssl pkcs12 -in Certificates.p12 -clcerts -nokeys -out signerCert.pem
+openssl pkcs12 -in Certificates.p12 -nocerts -out signerKey.pem
+base64 -w0 signerCert.pem
+```
+
+Pass images live in `assets/wallet` and are regenerated from the 512px
+monogram with `node scripts/generate-wallet-images.mjs`. They are read at
+request time, so `next.config.ts` traces them into the serverless bundle
+explicitly — nothing imports them and tracing cannot otherwise infer it.
+
 ### Supabase MCP server
 
 `.mcp.json` is checked in, so Claude Code picks the server up on clone and

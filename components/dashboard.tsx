@@ -71,6 +71,7 @@ import {
   HighlightsEditor,
   type DashboardHighlight,
 } from "@/components/highlights-editor";
+import { InstallApp } from "@/components/install-app";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
 import {
   resolveSeoDescription,
@@ -404,6 +405,7 @@ function StatCard({
 export function Dashboard({
   profile,
   email,
+  isAdmin,
   links,
   referrals,
   socials,
@@ -418,6 +420,7 @@ export function Dashboard({
 }: {
   profile: DashboardProfile;
   email: string;
+  isAdmin: boolean;
   links: DashboardLink[];
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
@@ -2886,6 +2889,16 @@ export function Dashboard({
                     fullWidth
                     disabled
                   />
+                  {/* Only for someone who already has the access, so this
+                      tells nobody else that /admin exists. It answers the one
+                      question the 404 cannot: whether the address above is the
+                      one in ADMIN_EMAILS. */}
+                  {isAdmin ? (
+                    <Typography variant="body2" color="text.secondary">
+                      This address is on the admin allowlist —{" "}
+                      <Link href="/admin">open the funnel</Link>.
+                    </Typography>
+                  ) : null}
                 </div>
               </Paper>
 
@@ -3748,6 +3761,20 @@ export function Dashboard({
             </div>
           </Paper>
         </div>
+      )}
+
+      {/* The card screen also offers this, but you only reach that screen by
+          already knowing where it is. The dashboard is the first thing a
+          signed-in person sees, so the offer has to exist here too.
+
+          Only the tour suppresses it -- that one is a modal over the whole
+          screen. It used to wait on the share prompt as well, which silently
+          meant never: is_published defaults to true, so the prompt opens for
+          essentially every account on load and stays open until dismissed. A
+          queue whose head never leaves is not a queue. The two can collide on
+          a phone, so the install panel moves to the top instead of hiding. */}
+      {!tourOpen && (
+        <InstallApp placement="floating" avoidBottom={sharePromptOpen} />
       )}
 
       {sharePromptOpen && !tourOpen && draft.is_published && (

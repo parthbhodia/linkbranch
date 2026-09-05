@@ -13,6 +13,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 // /dashboard route exists, their page is unreachable however the URL resolves.
 // Middleware decides resolution; the reserved table stops the name being taken.
 const APP_ROUTES = new Set([
+  "admin",
   "auth",
   "card",
   "claim",

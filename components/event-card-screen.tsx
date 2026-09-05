@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { AddToWalletButton } from "@/components/add-to-wallet-button";
 import { publicProfileUrl } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 
@@ -32,11 +33,14 @@ export function EventCardScreen({
   username,
   displayName,
   initialEventTag,
+  walletEnabled,
 }: {
   profileId: string;
   username: string;
   displayName: string;
   initialEventTag: string;
+  /** False when the deployment has no Apple signing certificate configured. */
+  walletEnabled: boolean;
 }) {
   const profileUrl = publicProfileUrl(username);
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -186,6 +190,8 @@ export function EventCardScreen({
             ? "Everyone who scans this today lands under that name."
             : "Set an event and today’s contacts arrive already grouped."}
         </Typography>
+
+        {walletEnabled && <AddToWalletButton username={username} />}
       </div>
 
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="xs">

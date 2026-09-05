@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { ServiceWorkerRegistrar } from "@/components/service-worker";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
@@ -81,6 +82,7 @@ export default function RootLayout({
           <ThemeProvider>{children}</ThemeProvider>
         </AppRouterCacheProvider>
         <Analytics />
+        <ServiceWorkerRegistrar />
         {/* Absent unless NEXT_PUBLIC_GA_ID is set, so nothing is loaded in
             development or in previews that have no measurement id configured.
             Vercel Analytics above stays: it is cookieless, so it keeps

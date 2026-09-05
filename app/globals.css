@@ -1539,9 +1539,34 @@ a {
   text-align: left;
 }
 
+/*
+ * Was 0.64rem -- about 10px, below the floor for a mono face at 700 weight,
+ * and this is the one place the page states whose it is.
+ */
 .profile-handle {
   color: var(--muted);
-  font: 700 0.64rem var(--font-mono), monospace;
+  font: 700 0.8rem var(--font-mono), monospace;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * The QR is the reason this row exists on a phone, so it gets a real target
+ * rather than matching the chrome around it: a larger glyph, a ring to read as
+ * pressable, and 44px of touch area.
+ */
+.profile-qr-button.MuiIconButton-root {
+  padding: 8px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  opacity: 0.85;
+}
+
+.profile-qr-button.MuiIconButton-root .MuiSvgIcon-root {
+  font-size: 1.5rem;
+}
+
+.profile-qr-button.MuiIconButton-root:hover {
+  opacity: 1;
 }
 
 .public-template .profile-copy {
@@ -11720,28 +11745,36 @@ a {
   padding: 20px clamp(28px, 5vw, 72px) 34px;
 }
 
+/* Filled rather than a hairline outline in muted text. It was styled like a
+   footer credit, which is what it used to say; as a call to action it has to
+   be legible against whatever background the creator picked, so it carries its
+   own surface instead of borrowing the page's. */
 .profile-supporter-badge a {
-  min-height: 42px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 14px;
-  border: 1px solid currentColor;
+  gap: 9px;
+  padding: 12px 22px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   border-radius: 999px;
-  color: var(--muted);
-  font-size: 0.72rem;
+  background: var(--surface);
+  box-shadow: 0 10px 26px -14px rgba(27, 28, 24, 0.5);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .profile-supporter-badge a:hover {
-  color: var(--ink);
   transform: translateY(-2px);
+  box-shadow: 0 16px 32px -14px rgba(27, 28, 24, 0.55);
 }
 
 .profile-supporter-badge b {
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
+  font-weight: 800;
   letter-spacing: -0.04em;
 }
 
@@ -13134,6 +13167,24 @@ a {
   font-size: 0.86rem;
 }
 
+/*
+ * Deliberately quiet. This screen is fixed black-on-white for scanner
+ * contrast, and a filled button here would compete with the code for
+ * attention at exactly the wrong moment.
+ */
+.event-card__wallet {
+  margin-top: 0.35rem;
+  border-color: #d3d5cd;
+  color: #3f4239;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.event-card__wallet:hover {
+  border-color: #3f4239;
+  background: transparent;
+}
+
 /* Voice dictation, shared by the exchange form and the sort session. */
 .voice-note {
   align-self: flex-start;
@@ -13331,4 +13382,450 @@ a {
 @media (max-width: 420px) {
   .sort__pile { min-height: 62px; font-size: 0.78rem !important; }
   .sort__pile kbd { display: none; }
+}
+
+/* ---- Install suggestion --------------------------------------------------
+   Sits above the card screen rather than over it: at an event the card is the
+   thing being held up to someone, and a floating panel across it would be in
+   the way at exactly the wrong moment. */
+
+.install-app {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  align-items: start;
+  margin: 12px;
+  padding: 16px 44px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.install-app__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.install-app__copy h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.install-app__copy .MuiTypography-body2 {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.install-app__steps {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.install-app__steps svg {
+  vertical-align: -2px;
+}
+
+.install-app__actions {
+  grid-column: 2;
+}
+
+/* Scoped to the parent to outrank MUI's own .MuiButtonBase-root, which sets
+   position: relative at the same specificity and is injected after this file,
+   so the plain class lost on source order and the button sat in the grid flow
+   -- leaving the reserved space in the padding above it empty. */
+.install-app .install-app__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+@media (min-width: 620px) {
+  .install-app {
+    margin: 16px auto;
+    max-width: 560px;
+  }
+}
+
+/* The badge sets its own foreground now, so the custom-theme override that
+   pushed it to muted would undo exactly what makes it readable. */
+.public-template.profile-theme-custom .profile-supporter-badge a {
+  background: var(--profile-surface);
+  color: var(--profile-text) !important;
+}
+
+.install-app__note {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+/* Floating placement, used by the dashboard. The workspace shell is
+   height: 100svh with overflow: hidden, so an in-flow panel does not sit above
+   it -- it pushes the entire workspace past the bottom of the window.
+
+   Bottom left, because the share prompt owns the bottom right corner. They are
+   mutually exclusive today, but a panel that moves depending on what else is
+   on screen is worse than one that has its own place. */
+.install-app--floating {
+  position: fixed;
+  z-index: 1200;
+  inset: auto auto 24px 24px;
+  margin: 0;
+  width: min(390px, calc(100vw - 48px));
+  box-shadow: 0 18px 46px rgba(14, 15, 13, 0.22);
+}
+
+@media (max-width: 700px) {
+  .install-app--floating {
+    /* Clear of the fixed mobile nav: 72px tall, 10px off the bottom, plus the
+       safe area on a notched phone -- which is exactly where this shows up. */
+    inset: auto 12px calc(96px + env(safe-area-inset-bottom)) 12px;
+    width: auto;
+  }
+}
+
+/* ---- Admin ---------------------------------------------------------------
+   Internal, one reader, never indexed. Styled to be scannable rather than
+   branded: the point is reading numbers, not looking like the product. */
+
+.admin-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 80px;
+  display: grid;
+  gap: 18px;
+  color: var(--ink);
+}
+
+.admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-eyebrow {
+  margin: 0;
+  font: 700 0.68rem var(--font-mono), monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.admin-head h1 {
+  margin: 6px 0 4px;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.admin-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.admin-head a {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.admin-card h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.admin-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-card__top h2 {
+  margin: 0;
+}
+
+.admin-card__top p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-funnel {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-funnel li {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-funnel__label b {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.admin-funnel__label small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.admin-funnel__bar {
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.admin-funnel__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 7px;
+  background: var(--lime);
+  /* Zero-width bars still read as a row rather than vanishing. */
+  min-width: 2px;
+}
+
+.admin-funnel__figures {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 132px;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-funnel__figures b {
+  font-size: 1rem;
+}
+
+.admin-funnel__figures small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.admin-funnel__figures em {
+  font-style: normal;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #b3261e;
+}
+
+.admin-funnel__figures em.is-flat {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.admin-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.admin-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-stats div {
+  display: grid;
+  gap: 2px;
+}
+
+.admin-stats dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-stats dd {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-stats dd small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.admin-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.admin-table th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-table td:first-child {
+  font-family: var(--font-mono), monospace;
+}
+
+@media (max-width: 640px) {
+  .admin-funnel li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  /* The bar is decoration; on a narrow screen the numbers matter more. */
+  .admin-funnel__bar {
+    display: none;
+  }
+}
+
+/* ---- Mobile audit fixes ---------------------------------------------------
+   From a 390x844 and 360x740 pass over the public pages. Nothing was clipped
+   or horizontally scrolling; these are the two things that were wrong --
+   controls too small to hit, and body copy too small to read.
+
+   Hit areas grow, ink does not: every control below keeps its visual weight
+   and gains only an invisible box. WCAG 2.2 AA (SC 2.5.8) sets 24x24 CSS px
+   for a standalone control, Apple's guidance is 44x44. */
+
+/* Was 47x13 -- a standalone breadcrumb, so no inline-text exemption applies. */
+.seo-breadcrumbs a {
+  display: inline-block;
+  padding-block: 6px;
+}
+
+/* Was 23px tall: one pixel under the minimum, on every SEO page. The homepage
+   footer is a separate set of classes and was 21px, so it needs naming too. */
+.seo-nav > div > a:not(.seo-button),
+.seo-footer nav a,
+.marketing-footer > div a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* The dot itself is drawn in ::after and stays 8px; only the button grows. */
+.example-carousel__dots button {
+  width: 44px;
+  height: 44px;
+}
+
+/* Was 30x30 -- the smallest control on a profile page, sitting beside the
+   deliberately oversized QR button. */
+.profile-brand-row .MuiIconButton-root {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* MUI's small button is ~37px, which put every primary call to action on a
+   phone under the target. Scoped to coarse pointers so desktop density is
+   untouched and a tablet gets the same benefit as a phone. */
+@media (pointer: coarse) {
+  .MuiButton-root {
+    min-height: 44px;
+  }
+}
+
+/* Readability. Body copy rendered at 11.2-11.8px on a phone against an iOS
+   convention of 16px, and the mono eyebrow labels at 9.3px. Phone widths only:
+   at desktop scale these blocks are one column among several rather than the
+   whole screen, and the smaller sizes are deliberate there. */
+@media (max-width: 700px) {
+  .marketing-hero__claim > span,
+  .import-starter__intro > span,
+  .seo-eyebrow {
+    font-size: 0.75rem;
+  }
+
+  .marketing-hero__claim > .MuiTypography-root,
+  .import-starter__intro > .MuiTypography-root,
+  /* The paragraph the SEO import panel puts directly in .import-starter. */
+  .import-starter > .MuiTypography-root {
+    font-size: 0.95rem;
+  }
+
+  /* The helper under the username field. Its base rule carries !important --
+     added to outrank MUI's generated body1 class -- so matching it is the only
+     way to override, and the parent scope keeps this the more specific of the
+     two. */
+  .username-claim .username-claim__helper {
+    font-size: 0.95rem !important;
+  }
+
+  /* Higher specificity than the rule above, so it needs naming outright. */
+  .import-starter--compact .import-starter__intro .MuiTypography-root {
+    font-size: 0.95rem;
+  }
+
+  .marketing-import-option__toggle {
+    font-size: 0.88rem;
+  }
+}
+
+/* When the share prompt owns the bottom of the screen, the install panel goes
+   to the top rather than waiting for a prompt that may never be dismissed.
+   Anchoring to the opposite edge avoids having to guess the other card's
+   height, which varies with its copy. */
+.install-app--floating.install-app--top {
+  inset: calc(12px + env(safe-area-inset-top)) 24px auto 24px;
+}
+
+@media (max-width: 700px) {
+  .install-app--floating.install-app--top {
+    inset: calc(10px + env(safe-area-inset-top)) 12px auto 12px;
+    width: auto;
+  }
 }

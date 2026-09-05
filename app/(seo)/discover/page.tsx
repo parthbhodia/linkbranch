@@ -4,6 +4,7 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import { publicProfilePath, publicProfileUrl } from "@/lib/brand";
 import { exampleProfiles } from "@/lib/example-profiles";
+import { countActiveLinks, isSubstantivePage } from "@/lib/page-quality";
 import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,6 +34,7 @@ type DiscoverProfile = {
   avatar_path: string | null;
   template: string;
   updated_at: string;
+  created_at: string;
   referrals: number;
 };
 
@@ -42,7 +44,7 @@ export default async function DiscoverPage() {
     supabase
       .from("profiles")
       .select(
-        "id,username,display_name,headline,headline_accent,bio,avatar_path,template,updated_at",
+        "id,username,display_name,headline,headline_accent,bio,avatar_path,template,updated_at,created_at",
       )
       .eq("is_published", true)
       .eq("is_discoverable", true)
@@ -65,7 +67,25 @@ export default async function DiscoverPage() {
     );
   });
 
-  const discoverProfiles: DiscoverProfile[] = (profiles ?? [])
+  // The same bar the sitemap uses. is_discoverable defaults to true (see
+  // lib/page-quality), so this list is not the opt-in set the copy below
+  // describes -- it is everyone who has not opted out, which on a free product
+  // includes whoever registered a page to point a link somewhere.
+  const candidates = profiles ?? [];
+  const linkCounts = await countActiveLinks(
+    supabase,
+    candidates.map((profile) => profile.id),
+  );
+
+  const discoverProfiles: DiscoverProfile[] = candidates
+    .filter((profile) =>
+      isSubstantivePage({
+        bio: profile.bio,
+        avatarPath: profile.avatar_path,
+        createdAt: profile.created_at,
+        activeLinkCount: linkCounts.get(profile.id) ?? 0,
+      }),
+    )
     .map((profile) => ({
       ...profile,
       referrals: referralCounts.get(profile.id) ?? 0,
