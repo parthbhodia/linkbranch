@@ -1456,7 +1456,11 @@ export function OnboardingWizard({
                     items={links.map((item) => item.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <Stack spacing={2} sx={{ mt: 2.5 }}>
+                    {/* .links-editor is the container the row layout queries
+                        against. Without it the rows keep their four-column
+                        desktop grid inside this ~500px form column and the
+                        title field ends up a few dozen pixels wide. */}
+                    <Stack className="links-editor" spacing={2} sx={{ mt: 2.5 }}>
                       {links.map((item) => (
                         <SortableLinkEditor
                           key={item.id}
