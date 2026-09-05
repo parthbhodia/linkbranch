@@ -19,6 +19,7 @@ import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
+import MapRounded from "@mui/icons-material/MapRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
 import StorefrontOutlined from "@mui/icons-material/StorefrontOutlined";
@@ -62,6 +63,7 @@ import {
   type DashboardMediaEmbed,
   type DashboardProduct,
 } from "@/components/commerce-media-editor";
+import { LocationPicker } from "@/components/location-picker";
 import {
   ConnectionsInbox,
   type DashboardConnection,
@@ -128,6 +130,10 @@ export type DashboardProfile = {
   bio: string;
   location: string;
   show_location: boolean;
+  map_lat: number | null;
+  map_lng: number | null;
+  map_address: string;
+  show_map: boolean;
   tags: string[];
   template: string;
   avatar_path: string | null;
@@ -190,7 +196,8 @@ export type DashboardEvent = {
     | "referral_open"
     | "referral_copy"
     | "product_open"
-    | "media_open";
+    | "media_open"
+    | "directions_open";
   link_id: number | null;
   referral_id: number | null;
   product_id: number | null;
@@ -604,6 +611,9 @@ export function Dashboard({
     const mediaOpens = filteredEvents.filter(
       (event) => event.event_type === "media_open",
     ).length;
+    const directionsOpens = filteredEvents.filter(
+      (event) => event.event_type === "directions_open",
+    ).length;
     const outboundClicks = linkOpens + referralOpens + productOpens + mediaOpens;
 
     const content = new Map<
@@ -759,6 +769,7 @@ export function Dashboard({
       referralCopies,
       productOpens,
       mediaOpens,
+      directionsOpens,
       ctr:
         filteredViews.length > 0
           ? Math.min(100, Math.round((outboundClicks / filteredViews.length) * 100))
@@ -1055,6 +1066,10 @@ export function Dashboard({
         bio: draft.bio.trim(),
         location: draft.location.trim(),
         show_location: draft.show_location,
+        map_lat: draft.map_lat ?? null,
+        map_lng: draft.map_lng ?? null,
+        map_address: (draft.map_address ?? "").trim(),
+        show_map: draft.show_map ?? true,
         tags: draft.tags
           .map((tag) => tag.trim())
           .filter(Boolean)
@@ -1830,6 +1845,34 @@ export function Dashboard({
                 }
                 label="Show location publicly"
               />
+              <Paper className="workspace-map-editor" variant="outlined">
+                <div className="workspace-panel__heading">
+                  <Box>
+                    <Typography variant="h3">Map</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A pin and a “Get directions” button on your page, for a
+                      shop, studio or venue. Leave it empty if you have no
+                      premises to send people to.
+                    </Typography>
+                  </Box>
+                  <MapRounded />
+                </div>
+                <LocationPicker
+                  value={{
+                    lat: draft.map_lat ?? null,
+                    lng: draft.map_lng ?? null,
+                    address: draft.map_address ?? "",
+                    show: draft.show_map ?? true,
+                  }}
+                  onChange={(next) => {
+                    update("map_lat", next.lat);
+                    update("map_lng", next.lng);
+                    update("map_address", next.address);
+                    update("show_map", next.show);
+                  }}
+                  suggestedQuery={draft.location}
+                />
+              </Paper>
               <Paper className="workspace-seo-editor" variant="outlined">
                 <div className="workspace-panel__heading">
                   <Box>
@@ -2635,6 +2678,9 @@ export function Dashboard({
                     { label: "Outbound clicks", value: analytics.outboundClicks },
                     { label: "Referral opens", value: analytics.referralOpens },
                     { label: "Code copies", value: analytics.referralCopies },
+                    ...(typeof draft.map_lat === "number"
+                      ? [{ label: "Directions requests", value: analytics.directionsOpens }]
+                      : []),
                   ].map((stage) => {
                     const share =
                       analytics.views > 0

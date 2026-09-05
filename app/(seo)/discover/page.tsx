@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "Discover Creator Link Pages | Cueful",
   description:
-    "Explore opt-in Cueful profiles from creators, freelancers, musicians, and referral curators.",
+    "Explore Cueful profiles from creators, freelancers, musicians, shops, and referral curators.",
   alternates: { canonical: "/discover" },
   openGraph: {
     title: "Discover Creator Link Pages | Cueful",
@@ -68,9 +68,9 @@ export default async function DiscoverPage() {
   });
 
   // The same bar the sitemap uses. is_discoverable defaults to true (see
-  // lib/page-quality), so this list is not the opt-in set the copy below
-  // describes -- it is everyone who has not opted out, which on a free product
-  // includes whoever registered a page to point a link somewhere.
+  // lib/page-quality), so this is everyone who has not opted out -- which on a
+  // free product includes whoever registered a page to point a link somewhere.
+  // The copy below says as much; it used to claim an opt-in directory.
   const candidates = profiles ?? [];
   const linkCounts = await countActiveLinks(
     supabase,
@@ -125,11 +125,12 @@ export default async function DiscoverPage() {
       </nav>
 
       <header className="discover-hero">
-        <p className="seo-eyebrow">OPT-IN CREATOR DIRECTORY</p>
+        <p className="seo-eyebrow">CREATOR DIRECTORY</p>
         <h1>Pages worth opening.</h1>
         <p>
-          A rotating collection of creators who chose to be discovered. Published
-          referrals lift a profile in the list; nobody is enrolled automatically.
+          A rotating collection of published Cueful pages with something on them.
+          Published referrals lift a profile in the list, and any creator can
+          leave the directory from their dashboard settings.
         </p>
         <Link className="seo-button" href="/auth?mode=signup&utm_source=discover">
           Create your page
@@ -177,7 +178,7 @@ export default async function DiscoverPage() {
         <section className="discover-empty">
           <div>
             <p className="seo-eyebrow">FOUNDING DIRECTORY</p>
-            <h2>The first opt-in profiles will appear here.</h2>
+            <h2>The first profiles will appear here.</h2>
             <p>
               Until then, these working examples show the range Cueful is
               designed to support.

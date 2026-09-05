@@ -15,6 +15,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 const APP_ROUTES = new Set([
   "admin",
   "auth",
+  "blog",
   "card",
   "claim",
   "dashboard",

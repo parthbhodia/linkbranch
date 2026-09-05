@@ -218,7 +218,7 @@ export default async function AdminPage() {
         <section className="admin-card">
           <h2>Directory exposure</h2>
           {/* is_discoverable defaults to true, so this is everyone who has not
-              opted out -- not the opt-in set /discover claims to list. */}
+              opted out, which is what /discover now says it lists. */}
           <dl className="admin-stats">
             <div>
               <dt>Published</dt>

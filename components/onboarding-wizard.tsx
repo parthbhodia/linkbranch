@@ -95,6 +95,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableLinkEditor } from "@/components/links-editor";
+import { LocationPicker, type MapPinDraft } from "@/components/location-picker";
+import { WhatsAppOrderButton } from "@/components/whatsapp-order-button";
+import { COMMON_CURRENCIES, guessCurrency } from "@/lib/currency-guess";
 import { ReferralsEditor } from "@/components/referrals-editor";
 import { normalizeHttpUrl } from "@/lib/urls";
 import {
@@ -132,6 +135,8 @@ type ShopItemDraft = {
   title: string;
   description: string;
   price: string;
+  /** ISO 4217. Guessed from the browser locale; the table default is USD. */
+  currency: string;
   destination_url: string;
   category: "merch" | "service";
   cta_label: string;
@@ -254,6 +259,10 @@ export type OnboardingInitialData = {
     bio: string;
     location: string;
     show_location: boolean;
+    map_lat: number | null;
+    map_lng: number | null;
+    map_address: string;
+    show_map: boolean;
     avatar_path: string | null;
     // Needed to tell whether the creator has switched template, and to carry
     // their uploaded assets across when the palette is reset.
@@ -298,6 +307,12 @@ function normalizeReferralColor(value: string | null | undefined, index = 0) {
 
 
 
+// The wizard runs in the browser, but the guess is still guarded: the table
+// default is USD, and a shop in Pune should not have to notice that.
+function defaultCurrency() {
+  return guessCurrency(typeof navigator === "undefined" ? undefined : navigator.language);
+}
+
 export function OnboardingWizard({
   initialTemplate,
   initialData,
@@ -316,6 +331,12 @@ export function OnboardingWizard({
   // of the page. Blank URLs, like the starter links: an incomplete row is
   // dropped at save rather than published half-finished.
   const [shopItems, setShopItems] = useState<ShopItemDraft[]>([]);
+  const [mapPin, setMapPin] = useState<MapPinDraft>({
+    lat: initialData.profile.map_lat ?? null,
+    lng: initialData.profile.map_lng ?? null,
+    address: initialData.profile.map_address ?? "",
+    show: initialData.profile.show_map ?? true,
+  });
   const [musicEmbed, setMusicEmbed] = useState<MusicEmbedDraft>({
     title: MUSIC_EXAMPLE.title,
     provider: MUSIC_EXAMPLE.provider,
@@ -525,6 +546,8 @@ export function OnboardingWizard({
         title: "",
         description: "",
         price: "",
+        currency: defaultCurrency(),
+        
         destination_url: "",
         category: "merch",
         cta_label: "View details",
@@ -585,6 +608,7 @@ export function OnboardingWizard({
           title: example.title,
           description: example.description,
           price: "",
+          currency: defaultCurrency(),
           destination_url: "",
           category: example.category,
           cta_label: example.ctaLabel,
@@ -912,6 +936,10 @@ export function OnboardingWizard({
         bio,
         location,
         show_location: showLocation,
+        map_lat: mapPin.lat,
+        map_lng: mapPin.lng,
+        map_address: mapPin.address.trim(),
+        show_map: mapPin.show,
         template: initialTemplate,
         is_published: true,
       },
@@ -961,6 +989,7 @@ export function OnboardingWizard({
               ? Number.parseFloat(item.price)
               : null,
             category: item.category,
+            currency: item.currency,
             destination_url: normalizeHttpUrl(item.destination_url),
             cta_label: item.cta_label,
             position: index,
@@ -1231,6 +1260,23 @@ export function OnboardingWizard({
                     }
                     label="Show location on profile"
                   />
+                  {detailKind === "shop" && (
+                    <Box className="form-grid__wide">
+                      <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Where to find you
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5 }}>
+                        A map and a “Get directions” button on your page. Search
+                        your address, paste your Google Maps link, or use this
+                        phone’s location while you are at the shop.
+                      </Typography>
+                      <LocationPicker
+                        value={mapPin}
+                        onChange={setMapPin}
+                        suggestedQuery={location}
+                      />
+                    </Box>
+                  )}
                 </div>
               </Paper>
 
@@ -1456,7 +1502,11 @@ export function OnboardingWizard({
                     items={links.map((item) => item.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <Stack spacing={2} sx={{ mt: 2.5 }}>
+                    {/* .links-editor is the container the row layout queries
+                        against. Without it the rows keep their four-column
+                        desktop grid inside this ~500px form column and the
+                        title field ends up a few dozen pixels wide. */}
+                    <Stack className="links-editor" spacing={2} sx={{ mt: 2.5 }}>
                       {links.map((item) => (
                         <SortableLinkEditor
                           key={item.id}
@@ -1507,13 +1557,27 @@ export function OnboardingWizard({
                             fullWidth
                           />
                           <TextField
+                            label="Currency"
+                            select
+                            value={COMMON_CURRENCIES.includes(item.currency) ? item.currency : "USD"}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { currency: event.target.value })
+                            }
+                            sx={{ width: 112, flexShrink: 0 }}
+                          >
+                            {COMMON_CURRENCIES.map((code) => (
+                              <MenuItem key={code} value={code}>{code}</MenuItem>
+                            ))}
+                          </TextField>
+                          <TextField
                             label="Price"
                             value={item.price}
                             onChange={(event) =>
                               updateShopItem(item.id, { price: event.target.value })
                             }
                             placeholder="120"
-                            sx={{ width: 140 }}
+                            sx={{ width: 120, flexShrink: 0 }}
+                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
                           />
                           <IconButton
                             aria-label={`Remove ${item.title || "item"}`}
@@ -1542,6 +1606,15 @@ export function OnboardingWizard({
                           helperText="Where this item opens. Leave blank to skip this card."
                           fullWidth
                         />
+                        <Box>
+                          <WhatsAppOrderButton
+                            itemTitle={item.title}
+                            currentUrl={item.destination_url}
+                            onPick={(url, ctaLabel) =>
+                              updateShopItem(item.id, { destination_url: url, cta_label: ctaLabel })
+                            }
+                          />
+                        </Box>
                       </Stack>
                     ))}
                   </Stack>

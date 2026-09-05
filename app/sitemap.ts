@@ -3,6 +3,7 @@ import { BRAND_URL, publicProfileUrl } from "@/lib/brand";
 import { exampleProfiles } from "@/lib/example-profiles";
 import { countActiveLinks, isSubstantivePage } from "@/lib/page-quality";
 import { seoPages } from "@/lib/seo-pages";
+import { blogPosts } from "@/lib/blog/posts";
 import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 3600;
@@ -46,6 +47,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${BRAND_URL}/blog`,
+      lastModified: new Date(blogPosts[0]?.updated ?? blogPosts[0]?.published ?? updatedAt),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...blogPosts.map((post) => ({
+      url: post.url,
+      lastModified: new Date(post.updated ?? post.published),
+      changeFrequency: "monthly" as const,
+      priority: 0.65,
+    })),
     ...seoPages.map((page) => ({
       url: `${BRAND_URL}${page.path}`,
       lastModified: updatedAt,
