@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { isAdminEmail } from "@/lib/admin-access";
+import { adminAllowlistCount, isAdminEmail } from "@/lib/admin-access";
 import { buildActivationFunnel, worstStage, type FunnelAccount } from "@/lib/funnel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -60,7 +60,18 @@ export default async function AdminPage() {
   // 404 rather than 403 for a signed-in non-admin: a forbidden page confirms
   // the route exists and is worth attacking. Also covers ADMIN_EMAILS being
   // unset, which admits nobody by design.
-  if (!isAdminEmail(user.email)) notFound();
+  if (!isAdminEmail(user.email)) {
+    // The 404 is deliberately indistinguishable from a missing route, which
+    // also makes it impossible to tell "ADMIN_EMAILS is unset" from "your
+    // address is not the one in it" -- the two ways this realistically fails.
+    // Runtime logs are private to the project, so the answer goes there rather
+    // than on screen.
+    console.warn(
+      `[admin] refused ${user.email ?? "(no email on session)"}; ` +
+        `ADMIN_EMAILS has ${adminAllowlistCount()} address(es)`,
+    );
+    notFound();
+  }
 
   // Service role from here on. RLS scopes profiles to published-or-own and
   // hides other people's views and clicks entirely, so the ordinary client

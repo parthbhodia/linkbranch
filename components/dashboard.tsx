@@ -405,6 +405,7 @@ function StatCard({
 export function Dashboard({
   profile,
   email,
+  isAdmin,
   links,
   referrals,
   socials,
@@ -419,6 +420,7 @@ export function Dashboard({
 }: {
   profile: DashboardProfile;
   email: string;
+  isAdmin: boolean;
   links: DashboardLink[];
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
@@ -2887,6 +2889,16 @@ export function Dashboard({
                     fullWidth
                     disabled
                   />
+                  {/* Only for someone who already has the access, so this
+                      tells nobody else that /admin exists. It answers the one
+                      question the 404 cannot: whether the address above is the
+                      one in ADMIN_EMAILS. */}
+                  {isAdmin ? (
+                    <Typography variant="body2" color="text.secondary">
+                      This address is on the admin allowlist —{" "}
+                      <Link href="/admin">open the funnel</Link>.
+                    </Typography>
+                  ) : null}
                 </div>
               </Paper>
 
