@@ -40,6 +40,7 @@ import {
   PUBLIC_ASSET_BUCKET,
   validateImage,
 } from "@/lib/storage";
+import { WhatsAppOrderButton } from "@/components/whatsapp-order-button";
 
 export type DashboardProduct = {
   id: number;
@@ -509,6 +510,24 @@ export function CommerceMediaEditor({
                     className="commerce-editor__wide"
                     disabled={savingProduct}
                   />
+                  <div className="commerce-editor__wide">
+                    <WhatsAppOrderButton
+                      itemTitle={productDraft.title}
+                      currentUrl={productDraft.url}
+                      disabled={savingProduct}
+                      onPick={(url, ctaLabel) =>
+                        setProductDraft({
+                          ...productDraft,
+                          url,
+                          // Keep a label the owner typed; replace only the default.
+                          cta:
+                            productDraft.cta.trim() && productDraft.cta !== EMPTY_PRODUCT_DRAFT.cta
+                              ? productDraft.cta
+                              : ctaLabel,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
               </div>
               <aside className="commerce-editor__preview" aria-live="polite">

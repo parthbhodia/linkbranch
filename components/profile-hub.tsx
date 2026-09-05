@@ -2,6 +2,8 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { FindUs } from "@/components/find-us";
+import type { PublicMapLocation } from "@/lib/map-location";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
@@ -63,7 +65,8 @@ type TrackTarget = {
     | "referral_open"
     | "referral_copy"
     | "product_open"
-    | "media_open";
+    | "media_open"
+    | "directions_open";
   linkId?: number;
   referralId?: number;
   productId?: number;
@@ -383,6 +386,7 @@ export function ProfileHub({
   eventTag,
   showSaveContact = false,
   showExchange = false,
+  mapLocation = null,
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -398,6 +402,8 @@ export function ProfileHub({
   eventTag?: string | null;
   showSaveContact?: boolean;
   showExchange?: boolean;
+  /** The Find-us block: a pin, an address and a directions button. */
+  mapLocation?: PublicMapLocation | null;
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -1157,6 +1163,15 @@ export function ProfileHub({
                 ))}
               </div>
             </section>
+          )}
+
+          {mapLocation && !isSearching && (
+            <FindUs
+              location={mapLocation}
+              onDirections={() =>
+                track("Opening directions", { eventType: "directions_open" })
+              }
+            />
           )}
 
           {currentResultsCount === 0 && isSearching && (

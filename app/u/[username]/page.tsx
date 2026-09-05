@@ -17,6 +17,7 @@ import { publicAssetUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { defaultProfileTheme } from "@/lib/theme-config";
 import type { CreatorProfile } from "@/lib/types";
+import { publicMapLocation } from "@/lib/map-location";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
 
@@ -348,6 +349,7 @@ export default async function PublicProfilePage({
         eventTag={profile.current_event_tag}
         showSaveContact={Boolean(profile.show_save_contact)}
         showExchange={Boolean(profile.show_exchange)}
+        mapLocation={publicMapLocation(profile)}
       />
     </>
   );
