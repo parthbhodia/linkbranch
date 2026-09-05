@@ -52,6 +52,12 @@ import {
   socialPlatformOptions,
 } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
+import type { StarterPurpose } from "@/lib/starter-purposes";
+import {
+  MUSIC_EXAMPLE,
+  shopItemExamples,
+  starterDetailKind,
+} from "@/lib/starter-details";
 import {
   IMPORT_DRAFT_STORAGE_KEY,
   readImportedProfileDraft,
@@ -121,19 +127,21 @@ type SocialDraft = {
   url: string;
 };
 
-type StarterPurpose =
-  | "sales"
-  | "realtor"
-  | "recruiter"
-  | "trades"
-  | "creator"
-  | "freelancer"
-  | "coach"
-  | "musician"
-  | "referral"
-  | "local-shop"
-  | "whatsapp-business"
-  | "business-links";
+type ShopItemDraft = {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  destination_url: string;
+  category: "merch" | "service";
+  cta_label: string;
+};
+
+type MusicEmbedDraft = {
+  title: string;
+  provider: string;
+  url: string;
+};
 
 const starterPurposes: Array<{
   id: StarterPurpose;
@@ -304,6 +312,15 @@ export function OnboardingWizard({
   const [starterPurpose, setStarterPurpose] = useState<StarterPurpose | null>(
     initialData.links.length ? null : "creator",
   );
+  // Shop items and a music player, for the purposes where those are the point
+  // of the page. Blank URLs, like the starter links: an incomplete row is
+  // dropped at save rather than published half-finished.
+  const [shopItems, setShopItems] = useState<ShopItemDraft[]>([]);
+  const [musicEmbed, setMusicEmbed] = useState<MusicEmbedDraft>({
+    title: MUSIC_EXAMPLE.title,
+    provider: MUSIC_EXAMPLE.provider,
+    url: "",
+  });
   const [displayName, setDisplayName] = useState(initialData.profile.display_name);
   const [greeting, setGreeting] = useState(initialData.profile.greeting);
   const [headline, setHeadline] = useState(initialData.profile.headline);
@@ -498,6 +515,33 @@ export function OnboardingWizard({
     });
   }
 
+  const detailKind = starterDetailKind(starterPurpose);
+
+  function addShopItem() {
+    setShopItems((current) => [
+      ...current,
+      {
+        id: Math.max(0, ...current.map((item) => item.id)) + 1,
+        title: "",
+        description: "",
+        price: "",
+        destination_url: "",
+        category: "merch",
+        cta_label: "View details",
+      },
+    ]);
+  }
+
+  function updateShopItem(id: number, patch: Partial<ShopItemDraft>) {
+    setShopItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
+
+  function removeShopItem(id: number) {
+    setShopItems((current) => current.filter((item) => item.id !== id));
+  }
+
   function applyStarterPurpose(purpose: StarterPurpose) {
     const preset = starterPurposes.find((item) => item.id === purpose);
     if (!preset) return;
@@ -531,6 +575,25 @@ export function OnboardingWizard({
         };
       }),
     );
+    // Seed the category-specific section too, so the shop or music block opens
+    // already showing the shape of what goes in it.
+    const kind = starterDetailKind(purpose);
+    if (kind === "shop") {
+      setShopItems(
+        shopItemExamples(purpose).map((example, index) => ({
+          id: index + 1,
+          title: example.title,
+          description: example.description,
+          price: "",
+          destination_url: "",
+          category: example.category,
+          cta_label: example.ctaLabel,
+        })),
+      );
+    } else {
+      setShopItems([]);
+    }
+
     setNotice({
       message: `${preset.name} starter links added. Replace the blank URLs with yours.`,
       severity: "success",
@@ -871,6 +934,56 @@ export function OnboardingWizard({
     if (error) {
       setNotice({ message: error.message, severity: "error" });
       return;
+    }
+
+    // save_profile_bundle has no products or media_embeds argument, so these
+    // are written directly -- the owner insert policies on both tables cover
+    // it. Seeded only when the creator has none yet: setup can be re-entered
+    // from the dashboard, and a second pass must not duplicate what is there
+    // or overwrite anything curated since.
+    const completedShopItems = shopItems.filter(
+      (item) => item.title.trim() && item.destination_url.trim(),
+    );
+    if (completedShopItems.length > 0) {
+      const { count } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", initialData.profile.id);
+      if (!count) {
+        await supabase.from("products").insert(
+          completedShopItems.map((item, index) => ({
+            user_id: initialData.profile.id,
+            title: item.title.trim(),
+            description: item.description.trim(),
+            // A blank or unparseable price is simply no price, which the card
+            // renders without rather than refusing to save.
+            price_amount: Number.isFinite(Number.parseFloat(item.price))
+              ? Number.parseFloat(item.price)
+              : null,
+            category: item.category,
+            destination_url: normalizeHttpUrl(item.destination_url),
+            cta_label: item.cta_label,
+            position: index,
+          })),
+        );
+      }
+    }
+
+    if (musicEmbed.url.trim() && musicEmbed.title.trim()) {
+      const { count } = await supabase
+        .from("media_embeds")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", initialData.profile.id);
+      if (!count) {
+        await supabase.from("media_embeds").insert({
+          user_id: initialData.profile.id,
+          title: musicEmbed.title.trim(),
+          provider: musicEmbed.provider,
+          url: normalizeHttpUrl(musicEmbed.url),
+          layout: "player",
+          position: 0,
+        });
+      }
     }
 
     // save_profile_bundle writes `template` but never touches `theme_config`,
@@ -1361,6 +1474,138 @@ export function OnboardingWizard({
                   </SortableContext>
                 </DndContext>
               </Paper>
+
+              {detailKind === "shop" ? (
+                <Paper variant="outlined" className="form-section">
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                    <Box>
+                      <Typography component="h2" variant="h3">What you sell</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Cards with a price, above your links. Replace the example
+                        wording — anything left without a link is skipped.
+                      </Typography>
+                    </Box>
+                    <Button
+                      startIcon={<AddRounded />}
+                      onClick={addShopItem}
+                      sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+                    >
+                      Add item
+                    </Button>
+                  </Stack>
+
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    {shopItems.map((item) => (
+                      <Stack key={item.id} spacing={1.5} className="setup-detail-row">
+                        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                          <TextField
+                            label="Item"
+                            value={item.title}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { title: event.target.value.slice(0, 100) })
+                            }
+                            fullWidth
+                          />
+                          <TextField
+                            label="Price"
+                            value={item.price}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { price: event.target.value })
+                            }
+                            placeholder="120"
+                            sx={{ width: 140 }}
+                          />
+                          <IconButton
+                            aria-label={`Remove ${item.title || "item"}`}
+                            onClick={() => removeShopItem(item.id)}
+                          >
+                            <DeleteOutlineRounded />
+                          </IconButton>
+                        </Stack>
+                        <TextField
+                          label="Description"
+                          value={item.description}
+                          onChange={(event) =>
+                            updateShopItem(item.id, {
+                              description: event.target.value.slice(0, 240),
+                            })
+                          }
+                          fullWidth
+                        />
+                        <TextField
+                          label="Link"
+                          value={item.destination_url}
+                          onChange={(event) =>
+                            updateShopItem(item.id, { destination_url: event.target.value })
+                          }
+                          placeholder="https://"
+                          helperText="Where this item opens. Leave blank to skip this card."
+                          fullWidth
+                        />
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Paper>
+              ) : null}
+
+              {detailKind === "music" ? (
+                <Paper variant="outlined" className="form-section">
+                  <Box>
+                    <Typography component="h2" variant="h3">Your music</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      A player on your page rather than another link out. Paste a
+                      track, album or playlist URL.
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={1.5}>
+                      <TextField
+                        label="Title"
+                        value={musicEmbed.title}
+                        onChange={(event) =>
+                          setMusicEmbed((current) => ({
+                            ...current,
+                            title: event.target.value.slice(0, 100),
+                          }))
+                        }
+                        fullWidth
+                      />
+                      <TextField
+                        label="Where from"
+                        select
+                        value={musicEmbed.provider}
+                        onChange={(event) =>
+                          setMusicEmbed((current) => ({
+                            ...current,
+                            provider: event.target.value,
+                          }))
+                        }
+                        sx={{ width: 190 }}
+                      >
+                        <MenuItem value="spotify">Spotify</MenuItem>
+                        <MenuItem value="apple_music">Apple Music</MenuItem>
+                        <MenuItem value="youtube">YouTube</MenuItem>
+                        <MenuItem value="soundcloud">SoundCloud</MenuItem>
+                        <MenuItem value="bandcamp">Bandcamp</MenuItem>
+                      </TextField>
+                    </Stack>
+                    <TextField
+                      label="Link"
+                      value={musicEmbed.url}
+                      onChange={(event) =>
+                        setMusicEmbed((current) => ({
+                          ...current,
+                          url: event.target.value,
+                        }))
+                      }
+                      placeholder="https://open.spotify.com/album/..."
+                      helperText="Leave blank to skip the player."
+                      fullWidth
+                    />
+                  </Stack>
+                </Paper>
+              ) : null}
 
               <Paper variant="outlined" className="form-section">
                 <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
