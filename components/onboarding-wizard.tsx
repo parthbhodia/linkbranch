@@ -97,6 +97,8 @@ import {
 import { SortableLinkEditor } from "@/components/links-editor";
 import { LocationPicker, type MapPinDraft } from "@/components/location-picker";
 import { WhatsAppOrderButton } from "@/components/whatsapp-order-button";
+import { WallpaperUploader } from "@/components/wallpaper-uploader";
+import type { PreparedWallpaper } from "@/lib/wallpaper";
 import { COMMON_CURRENCIES, guessCurrency } from "@/lib/currency-guess";
 import { ReferralsEditor } from "@/components/referrals-editor";
 import { normalizeHttpUrl } from "@/lib/urls";
@@ -331,6 +333,17 @@ export function OnboardingWizard({
   // of the page. Blank URLs, like the starter links: an incomplete row is
   // dropped at save rather than published half-finished.
   const [shopItems, setShopItems] = useState<ShopItemDraft[]>([]);
+  // The wallpaper is saved as soon as the creator confirms it, like the avatar:
+  // it lives in theme_config, which save_profile_bundle never writes.
+  const [wallpaperPath, setWallpaperPath] = useState<string | null>(
+    () =>
+      resolveProfileTheme(
+        initialData.profile.theme_config,
+        initialData.profile.template ?? initialTemplate,
+      ).wallpaperPath ?? null,
+  );
+  const [pendingWallpaper, setPendingWallpaper] = useState<PreparedWallpaper | null>(null);
+  const [wallpaperBusy, setWallpaperBusy] = useState(false);
   const [mapPin, setMapPin] = useState<MapPinDraft>({
     lat: initialData.profile.map_lat ?? null,
     lng: initialData.profile.map_lng ?? null,
@@ -622,6 +635,66 @@ export function OnboardingWizard({
       message: `${preset.name} starter links added. Replace the blank URLs with yours.`,
       severity: "success",
     });
+  }
+
+  async function saveWallpaper(prepared: PreparedWallpaper) {
+    setWallpaperBusy(true);
+    const supabase = createClient();
+    const path = `${initialData.profile.id}/wallpapers/wallpaper-${crypto.randomUUID()}.${imageExtension(prepared.file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PUBLIC_ASSET_BUCKET)
+      .upload(path, prepared.file, {
+        cacheControl: "31536000",
+        contentType: prepared.file.type,
+        upsert: false,
+      });
+    if (uploadError) {
+      setWallpaperBusy(false);
+      throw new Error(uploadError.message);
+    }
+
+    const theme = resolveProfileTheme(
+      initialData.profile.theme_config,
+      initialData.profile.template ?? initialTemplate,
+    );
+    const { error } = await supabase
+      .from("profiles")
+      .update({ theme_config: { ...theme, wallpaperPath: path } })
+      .eq("id", initialData.profile.id);
+    if (error) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
+      setWallpaperBusy(false);
+      throw new Error(error.message);
+    }
+
+    if (wallpaperPath) {
+      await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([wallpaperPath]);
+    }
+    setWallpaperPath(path);
+    setWallpaperBusy(false);
+    setNotice({ message: "Wallpaper saved. It shows behind your whole page.", severity: "success" });
+  }
+
+  async function removeWallpaper() {
+    if (!wallpaperPath) return;
+    setWallpaperBusy(true);
+    const supabase = createClient();
+    const theme = resolveProfileTheme(
+      initialData.profile.theme_config,
+      initialData.profile.template ?? initialTemplate,
+    );
+    const { error } = await supabase
+      .from("profiles")
+      .update({ theme_config: { ...theme, wallpaperPath: null } })
+      .eq("id", initialData.profile.id);
+    if (error) {
+      setWallpaperBusy(false);
+      throw new Error(error.message);
+    }
+    await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([wallpaperPath]);
+    setWallpaperPath(null);
+    setWallpaperBusy(false);
+    setNotice({ message: "Wallpaper removed.", severity: "success" });
   }
 
   async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1033,7 +1106,9 @@ export function OnboardingWizard({
           theme_config: {
             ...next,
             logoPath: previous.logoPath ?? null,
-            wallpaperPath: previous.wallpaperPath ?? null,
+            // From state, not from initialData: it may have been set or
+            // removed a minute ago in this very wizard.
+            wallpaperPath: wallpaperPath ?? null,
           },
         })
         .eq("id", initialData.profile.id);
@@ -1184,6 +1259,15 @@ export function OnboardingWizard({
                     </Typography>
                   </Box>
                 </Stack>
+                <Box sx={{ mt: 2.5 }}>
+                  <WallpaperUploader
+                    currentUrl={publicAssetUrl(wallpaperPath)}
+                    busy={wallpaperBusy}
+                    onPreview={setPendingWallpaper}
+                    onSave={saveWallpaper}
+                    onRemove={removeWallpaper}
+                  />
+                </Box>
               </Paper>
 
               <Paper variant="outlined" className="form-section">
@@ -1740,7 +1824,20 @@ export function OnboardingWizard({
               </IconButton>
             </Tooltip>
           </div>
-          <div className={`setup-phone setup-phone--${initialTemplate}`}>
+          <div
+            className={`setup-phone setup-phone--${initialTemplate}${
+              pendingWallpaper || wallpaperPath ? " setup-phone--has-wallpaper" : ""
+            }`}
+            style={
+              pendingWallpaper || wallpaperPath
+                ? ({
+                    "--setup-wallpaper": `url("${
+                      pendingWallpaper?.previewUrl ?? publicAssetUrl(wallpaperPath)
+                    }")`,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
             <Avatar className="setup-phone__avatar" src={publicAssetUrl(avatarPath)}>
               {initials}
             </Avatar>

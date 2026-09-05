@@ -18,6 +18,8 @@ import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
+import { WallpaperUploader } from "@/components/wallpaper-uploader";
+import type { PreparedWallpaper } from "@/lib/wallpaper";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import MapRounded from "@mui/icons-material/MapRounded";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
@@ -510,6 +512,9 @@ export function Dashboard({
   const [brandingUploading, setBrandingUploading] = useState<
     null | "logo" | "wallpaper"
   >(null);
+  // A wallpaper that has been chosen and shrunk but not yet saved. The live
+  // preview shows it so the creator judges it in place before uploading.
+  const [pendingWallpaper, setPendingWallpaper] = useState<PreparedWallpaper | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -548,6 +553,7 @@ export function Dashboard({
   const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
   const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
   const wallpaperUrl = publicAssetUrl(activeTheme.wallpaperPath);
+  const previewWallpaperUrl = pendingWallpaper?.previewUrl ?? wallpaperUrl;
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
     displayName: draft.display_name,
@@ -1334,16 +1340,12 @@ export function Dashboard({
 
   async function uploadBrandAsset(
     kind: "logo" | "wallpaper",
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
+    file: File,
+  ): Promise<boolean> {
     const validationError = validateImage(file);
     if (validationError) {
       setNotice({ severity: "error", message: validationError });
-      return;
+      return false;
     }
 
     setBrandingUploading(kind);
@@ -1361,7 +1363,7 @@ export function Dashboard({
     if (uploadError) {
       setBrandingUploading(null);
       setNotice({ severity: "error", message: uploadError.message });
-      return;
+      return false;
     }
 
     const previousPath =
@@ -1381,7 +1383,7 @@ export function Dashboard({
       await supabase.storage.from(PUBLIC_ASSET_BUCKET).remove([path]);
       setBrandingUploading(null);
       setNotice({ severity: "error", message: profileError.message });
-      return;
+      return false;
     }
 
     if (previousPath) {
@@ -1395,6 +1397,7 @@ export function Dashboard({
       message: kind === "logo" ? "Brand logo updated." : "Wallpaper updated.",
     });
     router.refresh();
+    return true;
   }
 
   async function removeBrandAsset(kind: "logo" | "wallpaper") {
@@ -2384,60 +2387,16 @@ export function Dashboard({
                     </ButtonBase>
                   ))}
                 </div>
-                <div className="workspace-branding-row">
-                  <span className="workspace-branding-row__preview workspace-branding-row__preview--wallpaper">
-                    {wallpaperUrl ? (
-                      <Box component="img" src={wallpaperUrl} alt="" />
-                    ) : (
-                      <Typography variant="caption">Custom wallpaper</Typography>
-                    )}
-                  </span>
-                  <Box>
-                    <Typography fontWeight={850}>Your wallpaper</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Optional image layered behind your page. JPG, PNG, or WebP.
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      useFlexGap
-                      flexWrap="wrap"
-                      sx={{ mt: 1.25 }}
-                    >
-                      <Button
-                        component="label"
-                        variant="outlined"
-                        disabled={brandingUploading !== null}
-                        startIcon={
-                          brandingUploading === "wallpaper" ? (
-                            <CircularProgress size={16} />
-                          ) : (
-                            <PhotoCameraOutlined />
-                          )
-                        }
-                      >
-                        {wallpaperUrl ? "Replace wallpaper" : "Upload wallpaper"}
-                        <input
-                          hidden
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={(event) =>
-                            uploadBrandAsset("wallpaper", event)
-                          }
-                        />
-                      </Button>
-                      {wallpaperUrl && (
-                        <Button
-                          color="inherit"
-                          disabled={brandingUploading !== null}
-                          onClick={() => removeBrandAsset("wallpaper")}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </Stack>
-                  </Box>
-                </div>
+                <WallpaperUploader
+                  currentUrl={wallpaperUrl}
+                  busy={brandingUploading === "wallpaper"}
+                  onPreview={setPendingWallpaper}
+                  onSave={async (prepared) => {
+                    const saved = await uploadBrandAsset("wallpaper", prepared.file);
+                    if (!saved) throw new Error("The wallpaper was not saved. See the message above.");
+                  }}
+                  onRemove={() => removeBrandAsset("wallpaper")}
+                />
                 <div className="workspace-design-group" style={{ marginTop: 18 }}>
                   <Typography variant="h3">Contact form</Typography>
                   <Typography
@@ -2516,7 +2475,11 @@ export function Dashboard({
                           hidden
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          onChange={(event) => uploadBrandAsset("logo", event)}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            event.target.value = "";
+                            if (file) void uploadBrandAsset("logo", file);
+                          }}
                         />
                       </Button>
                       {brandingLogoUrl && (
@@ -3530,11 +3493,11 @@ export function Dashboard({
       <aside
         className={`workspace-preview workspace-preview--${draft.template} ${profileThemeClassName(
           activeTheme,
-          { wallpaperUrl },
+          { wallpaperUrl: previewWallpaperUrl },
         )}`}
         style={
           profileThemeStyle(activeTheme, {
-            wallpaperUrl,
+            wallpaperUrl: previewWallpaperUrl,
           }) as React.CSSProperties
         }
         aria-label="Live page preview"
@@ -3549,11 +3512,11 @@ export function Dashboard({
         <div
           className={`workspace-phone workspace-phone--${draft.template} ${profileThemeClassName(
             activeTheme,
-            { wallpaperUrl },
+            { wallpaperUrl: previewWallpaperUrl },
           )}`}
           style={
             profileThemeStyle(activeTheme, {
-              wallpaperUrl,
+              wallpaperUrl: previewWallpaperUrl,
             }) as React.CSSProperties
           }
         >
