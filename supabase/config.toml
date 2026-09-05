@@ -1,0 +1,22 @@
+# Supabase CLI config.
+#
+# WARNING -- read before running `supabase config push`.
+#
+# `config push` writes this file's ENTIRE auth section to the linked project.
+# Any remote setting not represented here reverts to the CLI default. This file
+# currently declares email templates and nothing else, so pushing it as-is would
+# reset site_url, redirect allow-lists, provider config, rate limits, and the
+# SMTP block you just configured.
+#
+# Until this config is filled out to match production, treat the templates below
+# as source files and paste them into Auth -> Emails -> Templates by hand.
+
+project_id = "gmpsrdcylnmreecyeyqs"
+
+[auth.email.template.confirmation]
+subject = "Confirm your Cueful address"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Cueful password"
+content_path = "./supabase/templates/recovery.html"

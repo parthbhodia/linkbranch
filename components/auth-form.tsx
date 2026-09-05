@@ -22,6 +22,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
 import { publicProfileAddress } from "@/lib/brand";
+import { stashPendingEmail } from "@/lib/pending-email";
 
 type AuthMode = "login" | "signup";
 
@@ -106,16 +107,28 @@ export function AuthForm() {
 
       if (error) {
         setMessage({ severity: "error", text: error.message });
+      } else if (data.user && data.user.identities?.length === 0) {
+        // Supabase's email-enumeration protection does not error when the
+        // address is already registered and confirmed. It returns a decoy user
+        // with no identities and no session, which is otherwise indistinguishable
+        // from a fresh signup -- so without this branch the visitor is sent to
+        // "check your inbox" to wait for an email that never comes.
+        setMessage({
+          severity: "error",
+          text: "An account with this email already exists. Sign in instead.",
+        });
       } else if (data.session) {
         router.push(nextPath);
         router.refresh();
       } else {
+        stashPendingEmail(email);
         router.push("/auth/check-email?type=confirmation");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         if (error.code === "email_not_confirmed") {
+          stashPendingEmail(email);
           router.push("/auth/check-email?type=confirmation");
           return;
         }

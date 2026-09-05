@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SendRounded from "@mui/icons-material/SendRounded";
 import {
   Alert,
@@ -10,9 +10,17 @@ import {
   TextField,
 } from "@mui/material";
 import { createClient } from "@/lib/supabase/client";
+import { readPendingEmail } from "@/lib/pending-email";
 
 export function ResendConfirmationForm() {
   const [email, setEmail] = useState("");
+  // The page server-renders, and sessionStorage only exists on the client, so
+  // the stashed address can only arrive after mount. This is the "sync from an
+  // external system" case the rule below exists to carve out for: it costs one
+  // extra render on an otherwise static page, which is a better trade than
+  // putting the address in the URL where history and logs would keep it.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setEmail(readPendingEmail()), []);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<{
     severity: "success" | "error";
@@ -36,7 +44,17 @@ export function ResendConfirmationForm() {
     setSending(false);
     setMessage(
       error
-        ? { severity: "error", text: error.message }
+        ? {
+            severity: "error",
+            // Supabase throttles auth mail per recipient -- the SMTP settings
+            // put that at 60 seconds, so someone who signs up and immediately
+            // hits resend lands here. Its own copy quotes an interval that does
+            // not match what we configured, so say it ourselves.
+            text:
+              error.code === "over_email_send_rate_limit"
+                ? "A confirmation email just went out. Give it a minute before asking for another."
+                : error.message,
+          }
         : {
             severity: "success",
             text: "A fresh confirmation email is on its way.",
