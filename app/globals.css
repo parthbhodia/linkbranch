@@ -10323,58 +10323,6 @@ a {
 
 /* ---- Testimonial ------------------------------------------------------ */
 
-.marketing-voice {
-  width: 100%;
-  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 980px) / 2));
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: 14px;
-}
-
-.marketing-voice__portrait {
-  position: relative;
-  width: min(420px, 72%);
-  aspect-ratio: 4 / 3;
-  margin: 0 0 clamp(28px, 4vw, 52px);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--surface);
-}
-
-.marketing-voice__portrait img {
-  object-fit: cover;
-}
-
-.marketing-voice blockquote {
-  margin: 0;
-}
-
-.marketing-voice blockquote .MuiTypography-root {
-  font-size: clamp(1.7rem, 3.6vw, 3.1rem);
-  font-weight: 700;
-  line-height: 1.04;
-  letter-spacing: -0.045em;
-  text-wrap: balance;
-}
-
-.marketing-voice__by {
-  display: grid;
-  gap: 4px;
-  margin-top: clamp(20px, 3vw, 34px);
-}
-
-.marketing-voice__by b {
-  font-size: 0.95rem;
-}
-
-.marketing-voice__by span {
-  color: var(--muted);
-  font: 500 0.68rem "DM Mono", monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .marketing-evidence {
   width: 100%;
   padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));

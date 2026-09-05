@@ -108,23 +108,6 @@ const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, index) => {
   return qrNoise(row, column);
 });
 
-// PLACEHOLDER TESTIMONIAL -- not a real customer quote. Nova is an invented
-// persona and the portrait is stock.
-//
-// The attribution used to carry an "example page" qualifier marking it as a
-// sample; that was removed by request, so this now reads as a genuine
-// endorsement from a real customer. Replace it with a real quote from a named
-// person who has given permission before this reaches production -- an invented
-// testimonial presented as real is a false endorsement whatever the rest of the
-// page says.
-const testimonial = {
-  quote:
-    "Twelve links and no idea which one worked. Now the drop sits up top — and when merch started outselling tickets, I saw it in a day and moved merch first.",
-  name: "Nova",
-  role: "Musician",
-  avatar: "/marketing/hero-collage-statement.jpg",
-};
-
 const homepageFeatures = [
   {
     href: "/templates/referral-links-for-creators",
@@ -887,24 +870,6 @@ export function MarketingHome() {
           <article><small>OFFER OPENS</small><b>92</b><span>+18% this week</span></article>
           <article><small>CODE COPIES</small><b>67</b><span>36% copy rate</span></article>
         </div>
-      </section>
-
-      <section className="marketing-voice">
-        <figure className="marketing-voice__portrait">
-          <Image
-            src={testimonial.avatar}
-            alt=""
-            fill
-            sizes="(max-width: 700px) 70vw, 420px"
-          />
-        </figure>
-        <blockquote>
-          <Typography component="p">“{testimonial.quote}”</Typography>
-        </blockquote>
-        <figcaption className="marketing-voice__by">
-          <b>{testimonial.name}</b>
-          <span>{testimonial.role}</span>
-        </figcaption>
       </section>
 
       <section className="marketing-cta">

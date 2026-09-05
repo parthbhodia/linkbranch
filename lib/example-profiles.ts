@@ -228,8 +228,8 @@ export const exampleProfiles: ExampleProfile[] = [
     ],
     profile: {
       username: "lea-shop",
-      initials: "HC",
-      displayName: "Harbor Café",
+      initials: "LS",
+      displayName: "Lea Studio",
       greeting: "Hi, I’m",
       headline: "Handmade goods with a",
       headlineAccent: "soft finish.",
