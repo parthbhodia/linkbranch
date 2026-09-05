@@ -322,6 +322,9 @@ export function MarketingHome() {
           <Button component={Link} href="/link-in-bio-tools" color="inherit">
             Compare tools
           </Button>
+          <Button component={Link} href="/blog" color="inherit">
+            Blog
+          </Button>
           {/* Nothing else in the app links to the editor, so a signed-in user
               landing here had no route back to it — the button said "Sign in"
               even though /auth redirects them straight to the dashboard. */}
@@ -889,6 +892,7 @@ export function MarketingHome() {
         <BrandMark />
         <Typography>Clear links. Useful signals.</Typography>
         <div>
+          <Link href="/blog">Blog</Link>
           <Link href="/digital-business-card">Digital business card</Link>
           <Link href="/cueful-vs-linktree">Cueful vs Linktree</Link>
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>

@@ -148,7 +148,10 @@ export function SeoResourcePage({ page }: { page: SeoPageConfig }) {
           cueful.
         </Link>
         <div>
-          <Link href="/link-in-bio-tools">Compare tools</Link>
+          <Link href="/blog">Blog</Link>
+          <Link className="seo-nav__secondary" href="/link-in-bio-tools">
+            Compare tools
+          </Link>
           <Link href="/templates">Templates</Link>
           <Link className="seo-button seo-button--small" href="/auth">
             Start free
@@ -361,6 +364,7 @@ export function SeoResourcePage({ page }: { page: SeoPageConfig }) {
         <Link href="/">cueful.</Link>
         <p>Free link-in-bio pages for creators who value clarity.</p>
         <nav aria-label="Footer navigation">
+          <Link href="/blog">Blog</Link>
           <Link href="/digital-business-card">Digital business card</Link>
           <Link href="/free-linktree-alternative">Switch from Linktree</Link>
           <Link href="/best-link-in-bio-tools">Compare tools</Link>
