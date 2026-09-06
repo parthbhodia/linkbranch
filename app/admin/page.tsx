@@ -4,6 +4,7 @@ import { adminAllowlistCount, isAdminEmail } from "@/lib/admin-access";
 import { buildActivationFunnel, worstStage, type FunnelAccount } from "@/lib/funnel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { summariseViews, type ViewRow } from "@/lib/views-summary";
 
 export const metadata = {
   title: "Admin | Cueful",
@@ -93,7 +94,12 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false })
       .limit(ROW_LIMIT),
     admin.from("links").select("user_id").eq("is_active", true).limit(50000),
-    admin.from("profile_views").select("profile_id,device_type").limit(100000),
+    admin
+      .from("profile_views")
+      // referrer and occurred_at are for the traffic summary; the funnel only
+      // needs profile_id and device_type.
+      .select("profile_id,device_type,country_code,referrer,occurred_at")
+      .limit(100000),
     admin.from("click_events").select("profile_id").limit(100000),
     admin.from("claim_drafts").select("first_viewed_at,claimed_at,expires_at").limit(ROW_LIMIT),
   ]);
@@ -111,6 +117,10 @@ export default async function AdminPage() {
     "profile_id",
   );
   const clickCounts = tally(clicks, "profile_id");
+
+  const traffic = summariseViews((views ?? []) as ViewRow[]);
+  // The summary counts by profile id; the table wants handles.
+  const handleById = new Map(accounts.map((a) => [a.id, a.username]));
 
   const stages = buildActivationFunnel({
     accounts,
@@ -180,6 +190,107 @@ export default async function AdminPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="admin-card">
+        <div className="admin-card__top">
+          <h2>Views</h2>
+          <p>
+            {traffic.bots} of {traffic.total} filtered as bots (
+            {pct(traffic.botPct)})
+          </p>
+        </div>
+
+        <dl className="admin-stats">
+          <div>
+            <dt>Human views</dt>
+            <dd>{traffic.human}</dd>
+          </div>
+          <div>
+            <dt>Last 7 days</dt>
+            <dd>
+              {traffic.last7}
+              <small>
+                {traffic.trendPct === null
+                  ? "no prior week"
+                  : `${traffic.trendPct >= 0 ? "+" : ""}${pct(traffic.trendPct)} vs prior 7`}
+              </small>
+            </dd>
+          </div>
+          <div>
+            <dt>Profiles seen</dt>
+            <dd>{traffic.topProfiles.length >= 10 ? "10+" : traffic.topProfiles.length}</dd>
+          </div>
+        </dl>
+
+        {traffic.human === 0 ? (
+          <p className="admin-empty">No human views recorded yet.</p>
+        ) : (
+          <div className="admin-split">
+            <div>
+              {/* An empty referrer is the only signal we have that someone
+                  scanned a code rather than followed a link -- GA4 files both
+                  as Direct and cannot tell them apart. */}
+              <h3 className="admin-subhead">Where they came from</h3>
+              <ul className="admin-bars">
+                {traffic.referrers.map((row) => (
+                  <li key={row.label}>
+                    <span>{row.label}</span>
+                    <div className="admin-bars__bar" aria-hidden="true">
+                      <span style={{ width: `${row.pct}%` }} />
+                    </div>
+                    <b>{row.count}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="admin-subhead">Device</h3>
+              <ul className="admin-bars">
+                {traffic.devices.map((row) => (
+                  <li key={row.label}>
+                    <span>{row.label}</span>
+                    <div className="admin-bars__bar" aria-hidden="true">
+                      <span style={{ width: `${row.pct}%` }} />
+                    </div>
+                    <b>{row.count}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {traffic.topProfiles.length > 0 && (
+          <>
+            <h3 className="admin-subhead">Most viewed pages</h3>
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Handle</th>
+                    <th>Human views</th>
+                    <th>Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {traffic.topProfiles.map((row) => (
+                    <tr key={row.profileId}>
+                      <td>
+                        {handleById.has(row.profileId)
+                          ? `@${handleById.get(row.profileId)}`
+                          : "(deleted)"}
+                      </td>
+                      <td>{row.count}</td>
+                      <td>{pct((row.count / traffic.human) * 100)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </section>
 
       <div className="admin-split">

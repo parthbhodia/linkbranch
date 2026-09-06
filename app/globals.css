@@ -14486,3 +14486,64 @@ a {
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
 }
+
+/* Sub-headings inside a card that already has an h2. */
+.admin-subhead {
+  margin: 22px 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+}
+
+/*
+ * The referrer and device breakdowns. Lighter than .admin-funnel: these are
+ * independent slices of one total, not a sequence, so they get no drop column
+ * and a thinner bar to keep the funnel above them the dominant chart.
+ */
+.admin-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.admin-bars li {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) 2fr auto;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.admin-bars li > span:first-child {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-bars__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.admin-bars__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--lime);
+  min-width: 2px;
+}
+
+.admin-bars b {
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+}
