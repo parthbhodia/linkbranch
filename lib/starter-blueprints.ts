@@ -21,7 +21,7 @@ import type { StarterPurpose } from "@/lib/starter-purposes";
  * For a shop the products are the page and the links are secondary, so
  * putting links first buries the thing they came to do.
  */
-export type StarterLead = "links" | "products" | "music";
+export type StarterLead = "links" | "products" | "music" | "timeline";
 
 export type StarterRails = {
   /**
@@ -121,6 +121,17 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     rails: BOOKING,
     lead: "links",
     ...LINKS_STEP,
+  },
+  student: {
+    greeting: PERSONAL,
+    headline: "Studying, building, and",
+    headlineAccent: "looking for work.",
+    // A CV link and a portfolio, not a booking tool or a music rack.
+    rails: NO_RAILS,
+    lead: "timeline",
+    stepTitle: "Your background and where to find it",
+    stepSubtitle:
+      "Education and experience come first, then your CV, portfolio and profiles.",
   },
   musician: {
     greeting: PERSONAL,

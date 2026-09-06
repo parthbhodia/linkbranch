@@ -20,6 +20,7 @@ export const STARTER_PURPOSES = [
   "creator",
   "freelancer",
   "coach",
+  "student",
   "musician",
   "referral",
   "local-shop",

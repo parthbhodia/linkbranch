@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { defaultProfileTheme } from "@/lib/theme-config";
 import type { CreatorProfile } from "@/lib/types";
 import { publicMapLocation } from "@/lib/map-location";
+import type { TimelineEntry } from "@/lib/timeline";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
 
@@ -209,6 +210,7 @@ export default async function PublicProfilePage({
     { data: mediaEmbeds },
     { data: faqs },
     { data: highlights },
+    { data: timeline },
   ] =
     await Promise.all([
       supabase
@@ -255,6 +257,14 @@ export default async function PublicProfilePage({
         .select("id,image_path,title,destination_url,position,expires_at")
         .eq("user_id", profile.id)
         .gt("expires_at", new Date().toISOString())
+        .order("position"),
+      supabase
+        .from("profile_timeline")
+        .select(
+          "id,kind,title,organisation,location,started_on,ended_on,is_current,description",
+        )
+        .eq("user_id", profile.id)
+        .eq("is_active", true)
         .order("position"),
     ]);
 
@@ -350,6 +360,7 @@ export default async function PublicProfilePage({
         showSaveContact={Boolean(profile.show_save_contact)}
         showExchange={Boolean(profile.show_exchange)}
         mapLocation={publicMapLocation(profile)}
+        timeline={(timeline ?? []) as TimelineEntry[]}
       />
     </>
   );

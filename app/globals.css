@@ -14687,3 +14687,82 @@ a {
   min-width: 34px;
   text-align: right;
 }
+
+/* ---- Background: education and experience on a public page -------------- */
+
+.profile-timeline__group + .profile-timeline__group {
+  margin-top: 22px;
+}
+
+.profile-timeline__kind {
+  display: block;
+  margin-bottom: 10px;
+  opacity: 0.62;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.profile-timeline ol {
+  margin: 0;
+  padding: 0 0 0 22px;
+  list-style: none;
+  /* One rule down the left, so the entries read as a single run of time
+     rather than as separate cards. */
+  border-left: 2px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.profile-timeline li {
+  position: relative;
+}
+
+.profile-timeline li + li {
+  margin-top: 20px;
+}
+
+.profile-timeline li::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: -27px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.42;
+}
+
+.profile-timeline h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.profile-timeline__where {
+  margin-top: 1px;
+  opacity: 0.78;
+}
+
+.profile-timeline__range {
+  display: block;
+  margin: 2px 0 4px;
+  opacity: 0.6;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+/* The shared editor, in setup and the dashboard. */
+.timeline-editor__row {
+  padding: 16px;
+  border: 1px solid #dedfd8;
+  border-radius: 14px;
+  background: #fbfbf8;
+}
+
+@media (max-width: 640px) {
+  .timeline-editor__where {
+    flex-direction: column;
+  }
+}

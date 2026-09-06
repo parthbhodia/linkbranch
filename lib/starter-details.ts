@@ -16,7 +16,7 @@
 
 import type { StarterPurpose } from "@/lib/starter-purposes";
 
-export type StarterDetailKind = "shop" | "music" | null;
+export type StarterDetailKind = "shop" | "music" | "timeline" | null;
 
 /** Which extra section, if any, a purpose unlocks. */
 export function starterDetailKind(
@@ -30,6 +30,10 @@ export function starterDetailKind(
       return "shop";
     case "musician":
       return "music";
+    // Education and experience: the one thing a student has to show that
+    // links cannot express.
+    case "student":
+      return "timeline";
     default:
       return null;
   }
