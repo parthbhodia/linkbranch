@@ -77,6 +77,8 @@ import {
   type DashboardHighlight,
 } from "@/components/highlights-editor";
 import { InstallApp } from "@/components/install-app";
+import { TimelinePanel } from "@/components/timeline-panel";
+import type { TimelineEntry } from "@/lib/timeline";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
 import {
   resolveSeoDescription,
@@ -424,6 +426,7 @@ export function Dashboard({
   events,
   views,
   products,
+  timeline,
   mediaEmbeds,
   faqs,
   highlights,
@@ -439,6 +442,7 @@ export function Dashboard({
   events: DashboardEvent[];
   views: DashboardView[];
   products: DashboardProduct[];
+  timeline: TimelineEntry[];
   mediaEmbeds: DashboardMediaEmbed[];
   faqs: DashboardFaq[];
   highlights: DashboardHighlight[];
@@ -2129,6 +2133,9 @@ export function Dashboard({
                 initialProducts={products}
                 initialMedia={mediaEmbeds}
               />
+              {/* Editable after setup, unlike the shop items when they first
+                  shipped -- that gap is what started this whole thread. */}
+              <TimelinePanel profileId={profile.id} initialEntries={timeline} />
               <Paper className="commerce-disclosure" variant="outlined">
                 <Box>
                   <Typography className="section-label">TRUST & DISCLOSURE</Typography>

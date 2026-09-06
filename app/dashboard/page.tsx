@@ -17,6 +17,7 @@ import { type DashboardFaq } from "@/components/faq-editor";
 import { type DashboardHighlight } from "@/components/highlights-editor";
 import { isAdminEmail } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/server";
+import type { TimelineEntry } from "@/lib/timeline";
 
 export const metadata = {
   title: "Dashboard | Cueful",
@@ -46,6 +47,7 @@ export default async function DashboardPage() {
     { data: socials },
     { data: events },
     { data: views },
+    { data: timeline },
     { data: products },
     { data: mediaEmbeds },
     { data: faqs },
@@ -84,6 +86,13 @@ export default async function DashboardPage() {
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
+      supabase
+        .from("profile_timeline")
+        .select(
+          "id,kind,title,organisation,location,started_on,ended_on,is_current,description",
+        )
+        .eq("user_id", user.id)
+        .order("position"),
       supabase
         .from("products")
         .select(
@@ -137,6 +146,7 @@ export default async function DashboardPage() {
       events={(events ?? []) as DashboardEvent[]}
       views={(views ?? []) as DashboardView[]}
       products={(products ?? []) as DashboardProduct[]}
+      timeline={(timeline ?? []) as TimelineEntry[]}
       mediaEmbeds={(mediaEmbeds ?? []) as DashboardMediaEmbed[]}
       faqs={(faqs ?? []) as DashboardFaq[]}
       highlights={(highlights ?? []) as DashboardHighlight[]}

@@ -86,6 +86,23 @@ describe("what leads the step", () => {
     assert.equal(starterDetailKind("musician"), "music");
   });
 
+  it("leads the student with their background", () => {
+    assert.equal(STARTER_BLUEPRINTS.student.lead, "timeline");
+    assert.equal(starterDetailKind("student"), "timeline");
+  });
+
+  it("keeps the lead and the extra section in step for every purpose", () => {
+    const expected = { shop: "products", music: "music", timeline: "timeline" };
+    for (const id of purposes) {
+      const kind = starterDetailKind(id);
+      assert.equal(
+        STARTER_BLUEPRINTS[id].lead,
+        kind ? expected[kind] : "links",
+        id,
+      );
+    }
+  });
+
   it("renames the step wherever links no longer lead", () => {
     for (const id of purposes) {
       const { lead, stepTitle } = STARTER_BLUEPRINTS[id];

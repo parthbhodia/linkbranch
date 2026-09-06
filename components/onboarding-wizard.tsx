@@ -103,6 +103,12 @@ import { SortableLinkEditor } from "@/components/links-editor";
 import { LocationPicker, type MapPinDraft } from "@/components/location-picker";
 import { WhatsAppOrderButton } from "@/components/whatsapp-order-button";
 import { WallpaperUploader } from "@/components/wallpaper-uploader";
+import {
+  TimelineEditor,
+  emptyTimelineDraft,
+  type TimelineDraft,
+} from "@/components/timeline-editor";
+import { STUDENT_TIMELINE_EXAMPLES, isCompleteEntry } from "@/lib/timeline";
 import type { PreparedWallpaper } from "@/lib/wallpaper";
 import { COMMON_CURRENCIES, guessCurrency } from "@/lib/currency-guess";
 import { ReferralsEditor } from "@/components/referrals-editor";
@@ -210,6 +216,13 @@ const starterPurposes: Array<{
     note: "Consultation, free guide, and proof",
     icon: <SchoolOutlined />,
     links: ["Book a consultation", "Download my free guide", "Read client results"],
+  },
+  {
+    id: "student",
+    name: "Student",
+    note: "Course, internships, CV, and portfolio",
+    icon: <SchoolOutlined />,
+    links: ["My CV or resume", "See my projects", "Connect on LinkedIn", "My GitHub"],
   },
   {
     id: "musician",
@@ -338,6 +351,7 @@ export function OnboardingWizard({
   // of the page. Blank URLs, like the starter links: an incomplete row is
   // dropped at save rather than published half-finished.
   const [shopItems, setShopItems] = useState<ShopItemDraft[]>([]);
+  const [timeline, setTimeline] = useState<TimelineDraft[]>([]);
   // The wallpaper is saved as soon as the creator confirms it, like the avatar:
   // it lives in theme_config, which save_profile_bundle never writes.
   const [wallpaperPath, setWallpaperPath] = useState<string | null>(
@@ -659,6 +673,19 @@ export function OnboardingWizard({
       );
     } else {
       setShopItems([]);
+    }
+
+    if (kind === "timeline") {
+      setTimeline(
+        STUDENT_TIMELINE_EXAMPLES.map((example, index) => ({
+          ...emptyTimelineDraft(index + 1, example.kind),
+          title: example.title,
+          organisation: example.organisation,
+          description: example.description,
+        })),
+      );
+    } else {
+      setTimeline([]);
     }
 
     setNotice({
@@ -1101,6 +1128,32 @@ export function OnboardingWizard({
       }
     }
 
+    const completedTimeline = timeline.filter(isCompleteEntry);
+    if (completedTimeline.length > 0) {
+      const { count } = await supabase
+        .from("profile_timeline")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", initialData.profile.id);
+      if (!count) {
+        await supabase.from("profile_timeline").insert(
+          completedTimeline.map((row, index) => ({
+            user_id: initialData.profile.id,
+            kind: row.kind,
+            title: row.title.trim(),
+            organisation: row.organisation.trim(),
+            location: row.location.trim(),
+            // <input type="month"> gives yyyy-mm; the column is a date, and
+            // only the month is ever displayed.
+            started_on: row.started_on ? `${row.started_on}-01` : null,
+            ended_on: row.is_current || !row.ended_on ? null : `${row.ended_on}-01`,
+            is_current: row.is_current,
+            description: row.description.trim(),
+            position: index,
+          })),
+        );
+      }
+    }
+
     if (musicEmbed.url.trim() && musicEmbed.title.trim()) {
       const { count } = await supabase
         .from("media_embeds")
@@ -1387,6 +1440,26 @@ export function OnboardingWizard({
     </Fragment>
   );
 
+  const timelineBlock = (
+    <Fragment key="timeline">
+              {detailKind === "timeline" ? (
+                <Paper variant="outlined" className="form-section">
+                  <Box>
+                    <Typography component="h2" variant="h3">Your background</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Education and experience, most recent first on your page.
+                      Replace the example wording — rows without a title and a
+                      place are skipped.
+                    </Typography>
+                  </Box>
+                  <Box sx={{ mt: 2 }}>
+                    <TimelineEditor value={timeline} onChange={setTimeline} disabled={saving} />
+                  </Box>
+                </Paper>
+              ) : null}
+    </Fragment>
+  );
+
   const musicBlock = (
     <Fragment key="music">
               {detailKind === "music" ? (
@@ -1452,10 +1525,12 @@ export function OnboardingWizard({
 
   const contentBlocks =
     lead === "products"
-      ? [shopBlock, linksBlock, musicBlock]
+      ? [shopBlock, linksBlock, musicBlock, timelineBlock]
       : lead === "music"
-        ? [musicBlock, linksBlock, shopBlock]
-        : [linksBlock, shopBlock, musicBlock];
+        ? [musicBlock, linksBlock, shopBlock, timelineBlock]
+        : lead === "timeline"
+          ? [timelineBlock, linksBlock, shopBlock, musicBlock]
+          : [linksBlock, shopBlock, musicBlock, timelineBlock];
 
   return (
     <main className="setup-shell">

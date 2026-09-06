@@ -51,6 +51,7 @@ import { creatorBadgeUrl } from "@/lib/referrals";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { publicProfileAddress } from "@/lib/brand";
 import { publicAssetUrl } from "@/lib/storage";
+import { formatRange, timelineByKind, type TimelineEntry } from "@/lib/timeline";
 import { parseShareSource, withShareSource, withoutShareSource } from "@/lib/share-source";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -388,6 +389,7 @@ export function ProfileHub({
   showSaveContact = false,
   showExchange = false,
   mapLocation = null,
+  timeline = [],
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -405,6 +407,8 @@ export function ProfileHub({
   showExchange?: boolean;
   /** The Find-us block: a pin, an address and a directions button. */
   mapLocation?: PublicMapLocation | null;
+  /** Education and experience, for a student or anyone with a background worth showing. */
+  timeline?: TimelineEntry[];
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -1200,6 +1204,53 @@ export function ProfileHub({
                   </article>
                 ))}
               </div>
+            </section>
+          )}
+
+          {timeline.length > 0 && !isSearching && (
+            <section className="content-section profile-timeline" aria-labelledby="background-heading">
+              <div className="section-heading">
+                <Typography id="background-heading" component="h2" className="section-label">
+                  Background
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Most recent first
+                </Typography>
+              </div>
+              {(["experience", "education"] as const).map((kind) => {
+                const entries = timelineByKind(timeline)[kind];
+                if (entries.length === 0) return null;
+                return (
+                  <div className="profile-timeline__group" key={kind}>
+                    <Typography variant="caption" className="profile-timeline__kind">
+                      {kind === "experience" ? "EXPERIENCE" : "EDUCATION"}
+                    </Typography>
+                    <ol>
+                      {entries.map((item) => {
+                        const range = formatRange(item);
+                        return (
+                          <li key={item.id}>
+                            <Typography component="h3">{item.title}</Typography>
+                            <Typography variant="body2" className="profile-timeline__where">
+                              {[item.organisation, item.location].filter(Boolean).join(" · ")}
+                            </Typography>
+                            {range && (
+                              <Typography variant="caption" className="profile-timeline__range">
+                                {range}
+                              </Typography>
+                            )}
+                            {item.description && (
+                              <Typography variant="body2" color="text.secondary">
+                                {item.description}
+                              </Typography>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                );
+              })}
             </section>
           )}
 
