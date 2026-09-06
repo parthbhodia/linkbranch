@@ -3292,6 +3292,12 @@ export function Dashboard({
                     Copy page link
                   </Button>
                 </Stack>
+
+                {/* Always rendered, whatever was dismissed before and whatever
+                    the browser is: someone reading this card went looking for
+                    it, and until now a single "not now" could hide the only
+                    way to install for good. */}
+                <InstallApp requested />
               </Paper>
 
               <Paper
