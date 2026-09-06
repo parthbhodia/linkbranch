@@ -14486,3 +14486,144 @@ a {
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
 }
+
+/* ---- Share kit: the two printed formats ---------------------------------- */
+
+/* One folded face of the table tent: A5 landscape, so the card lies down. */
+.share-kit__preview--tent {
+  width: min(100%, 420px);
+  aspect-ratio: 1.414;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.share-kit__preview--tent .share-kit__card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "qr heading"
+    "qr name"
+    "qr pill";
+  align-content: center;
+  gap: 4px 18px;
+  padding: 16px 18px;
+}
+
+.share-kit__preview--tent .share-kit__qr {
+  grid-area: qr;
+  align-self: center;
+  width: 108px;
+  margin: 0;
+}
+
+.share-kit__preview--tent .share-kit__card > strong {
+  grid-area: heading;
+  align-self: end;
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.share-kit__preview--tent .share-kit__card > span {
+  grid-area: name;
+}
+
+.share-kit__preview--tent .share-kit__pill {
+  grid-area: pill;
+  align-self: start;
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/* One label off the sticker sheet, at roughly its printed size. */
+.share-kit__preview--sticker {
+  width: min(100%, 210px);
+  aspect-ratio: 0.86;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.share-kit__preview--sticker .share-kit__brand,
+.share-kit__preview--sticker .share-kit__footer,
+.share-kit__preview--sticker .share-kit__card > span,
+.share-kit__preview--sticker .share-kit__pill {
+  display: none;
+}
+
+.share-kit__preview--sticker .share-kit__card {
+  justify-content: center;
+  padding: 12px;
+}
+
+.share-kit__preview--sticker .share-kit__card > strong {
+  order: 2;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.share-kit__preview--sticker .share-kit__qr {
+  order: 1;
+  width: 100%;
+  margin: 0;
+}
+
+.share-kit__stage-note {
+  display: block;
+  margin-top: 12px;
+  max-width: 300px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Four formats do not fit one row on a narrow control column. */
+.share-kit__formats {
+  flex-wrap: wrap;
+}
+
+.share-kit__formats .MuiToggleButton-root {
+  flex: 1 0 44%;
+}
+
+/* The dashboard rail gained a route to the full-screen code, which nothing
+   on desktop previously offered. */
+.workspace-rail__card {
+  margin-top: auto;
+  color: #191a17 !important;
+}
+
+.profile-owner-card {
+  color: inherit;
+}
+
+@media (max-width: 900px) {
+  .share-kit__preview--tent {
+    width: min(100%, 330px);
+  }
+
+  .share-kit__preview--sticker {
+    width: min(100%, 180px);
+  }
+}
+
+/* The offer shown the moment a page goes live: the one time we know the
+   creator is looking at a finished page and might show it to someone. */
+.published-card-offer {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  padding: 32px 28px 26px !important;
+  text-align: center;
+}
+
+.published-card-offer > svg {
+  width: 46px;
+  height: 46px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #eaf7c9;
+  color: #3f5a00;
+}
+
+.published-card-offer .MuiButton-root:first-of-type {
+  margin-top: 8px;
+}

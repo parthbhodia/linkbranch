@@ -80,7 +80,7 @@ export default async function DashboardPage() {
         .limit(5000),
       supabase
         .from("profile_views")
-        .select("occurred_at,device_type,country_code,referrer,event_tag")
+        .select("occurred_at,device_type,country_code,referrer,event_tag,source")
         .eq("profile_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),

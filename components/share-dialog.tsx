@@ -22,8 +22,34 @@ import {
 } from "@mui/material";
 import QRCode from "qrcode";
 import { publicProfileUrl } from "@/lib/brand";
+import { withShareSource, type ShareSource } from "@/lib/share-source";
 
-type ShareFormat = "square" | "poster";
+type ShareFormat = "square" | "poster" | "tent" | "sticker";
+
+/**
+ * Each format is scanned from a different surface, so each carries its own
+ * tag and the dashboard can say which one is actually working.
+ */
+const FORMAT_SOURCE: Record<ShareFormat, ShareSource> = {
+  square: "square",
+  poster: "poster",
+  tent: "tent",
+  sticker: "sticker",
+};
+
+const FORMAT_LABELS: Record<ShareFormat, string> = {
+  square: "Square post",
+  poster: "Print poster",
+  tent: "Table tent",
+  sticker: "Sticker sheet",
+};
+
+const FORMAT_NOTES: Record<ShareFormat, string> = {
+  square: "1080 x 1080 for a feed or a story.",
+  poster: "A4 at 150 dpi. Print and pin it up.",
+  tent: "A5 folded down the middle: one face for each side of the table.",
+  sticker: "Twelve labels on A4. Cut and stick them wherever people queue.",
+};
 type ShareThemeId = "paper" | "signal" | "blush";
 
 type ShareTheme = {
@@ -128,6 +154,8 @@ function downloadBlob(blob: Blob, filename: string) {
 const HEADING_MAX = 70;
 
 const DEFAULT_HEADINGS: Record<ShareFormat, string> = {
+  tent: "Scan for our links",
+  sticker: "Scan me",
   square: "All my useful links, one scan.",
   poster: "SCAN FOR MY LINKS",
 };
@@ -167,6 +195,193 @@ function wrapHeading(
   return lines;
 }
 
+/**
+ * One readable face of the table tent, drawn at the origin. Called twice: the
+ * second time under a 180-degree rotation, so a sheet folded down the middle
+ * reads correctly from both sides of a table.
+ */
+function drawTentFace(
+  context: CanvasRenderingContext2D,
+  {
+    width,
+    height,
+    theme,
+    qrImage,
+    heading,
+    displayName,
+    profileUrl,
+  }: {
+    width: number;
+    height: number;
+    theme: ShareTheme;
+    qrImage: CanvasImageSource;
+    heading: string;
+    displayName: string;
+    profileUrl: string;
+  },
+) {
+  context.fillStyle = theme.background;
+  context.fillRect(0, 0, width, height);
+  drawGrid(context, width, height, theme.ink, 64);
+
+  const padding = 64;
+  const cardWidth = width - padding * 2;
+  const cardHeight = height - padding * 2;
+  roundedRect(context, padding, padding, cardWidth, cardHeight, 44);
+  context.fillStyle = theme.surface;
+  context.fill();
+  context.strokeStyle = `${theme.ink}2a`;
+  context.lineWidth = 3;
+  context.stroke();
+
+  const qrSize = Math.min(cardHeight - 190, 400);
+  const qrX = padding + 56;
+  const qrY = padding + (cardHeight - qrSize) / 2;
+  context.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+
+  const textX = qrX + qrSize + 52;
+  const textWidth = width - padding - 48 - textX;
+  context.fillStyle = theme.ink;
+  context.font = "900 62px 'Avenir Next', Avenir, sans-serif";
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  const lines = wrapHeading(context, heading, textWidth);
+  lines.forEach((line, index) => {
+    context.fillText(line, textX, qrY + 76 + index * 70);
+  });
+
+  context.globalAlpha = 0.66;
+  context.font = "600 30px 'Avenir Next', Avenir, sans-serif";
+  context.fillText(displayName, textX, qrY + 76 + lines.length * 70 + 22);
+  context.globalAlpha = 1;
+
+  const pillHeight = 76;
+  const pillY = qrY + qrSize - pillHeight;
+  const pillWidth = Math.min(textWidth, 460);
+  roundedRect(context, textX, pillY, pillWidth, pillHeight, pillHeight / 2);
+  context.fillStyle = theme.accent;
+  context.fill();
+  context.fillStyle = theme.ink;
+  context.font = "800 26px 'SFMono-Regular', Consolas, monospace";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(
+    profileUrl.replace("https://", ""),
+    textX + pillWidth / 2,
+    pillY + pillHeight / 2,
+  );
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+}
+
+/**
+ * A4 folded down the middle. The top half is drawn upside down so that once
+ * folded, each side of the table reads a right-way-up face.
+ */
+function drawTent(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  args: {
+    theme: ShareTheme;
+    qrImage: CanvasImageSource;
+    heading: string;
+    displayName: string;
+    profileUrl: string;
+  },
+) {
+  const half = height / 2;
+  const face = { ...args, width, height: half };
+
+  context.save();
+  context.translate(0, half);
+  drawTentFace(context, face);
+  context.restore();
+
+  context.save();
+  context.translate(width, half);
+  context.rotate(Math.PI);
+  drawTentFace(context, face);
+  context.restore();
+
+  // The fold line, dashed so it reads as an instruction rather than a border.
+  context.save();
+  context.strokeStyle = `${args.theme.ink}55`;
+  context.lineWidth = 2;
+  context.setLineDash([14, 12]);
+  context.beginPath();
+  context.moveTo(0, half);
+  context.lineTo(width, half);
+  context.stroke();
+  context.restore();
+}
+
+/** Twelve cut-out labels on A4, for counters, packaging and shop windows. */
+function drawStickerSheet(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  {
+    theme,
+    qrImage,
+    heading,
+    username,
+  }: {
+    theme: ShareTheme;
+    qrImage: CanvasImageSource;
+    heading: string;
+    username: string;
+  },
+) {
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+
+  const columns = 3;
+  const rows = 4;
+  const margin = 60;
+  const cellWidth = (width - margin * 2) / columns;
+  const cellHeight = (height - margin * 2) / rows;
+  const inset = 14;
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const x = margin + column * cellWidth + inset;
+      const y = margin + row * cellHeight + inset;
+      const w = cellWidth - inset * 2;
+      const h = cellHeight - inset * 2;
+
+      // Cut guide first, so the label art sits on top of it.
+      context.save();
+      context.strokeStyle = "#c9c9c2";
+      context.lineWidth = 2;
+      context.setLineDash([9, 9]);
+      roundedRect(context, x - inset / 2, y - inset / 2, w + inset, h + inset, 26);
+      context.stroke();
+      context.restore();
+
+      roundedRect(context, x, y, w, h, 22);
+      context.fillStyle = theme.surface;
+      context.fill();
+      context.strokeStyle = `${theme.ink}22`;
+      context.lineWidth = 2;
+      context.stroke();
+
+      const qrSize = Math.min(w - 56, h - 116);
+      context.drawImage(qrImage, x + (w - qrSize) / 2, y + 24, qrSize, qrSize);
+
+      context.fillStyle = theme.ink;
+      context.textAlign = "center";
+      context.font = "900 24px 'Avenir Next', Avenir, sans-serif";
+      context.fillText(heading, x + w / 2, y + 24 + qrSize + 34, w - 28);
+      context.globalAlpha = 0.66;
+      context.font = "700 18px 'SFMono-Regular', Consolas, monospace";
+      context.fillText(`@${username}`, x + w / 2, y + 24 + qrSize + 62, w - 28);
+      context.globalAlpha = 1;
+      context.textAlign = "left";
+    }
+  }
+}
+
 async function exportShareAsset({
   format,
   theme,
@@ -192,6 +407,35 @@ async function exportShareAsset({
   canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable");
+
+  if (format === "tent" || format === "sticker") {
+    const image = await loadCanvasImage(qrDataUrl);
+    if (format === "tent") {
+      drawTent(context, width, height, {
+        theme,
+        qrImage: image,
+        heading,
+        displayName,
+        profileUrl,
+      });
+    } else {
+      drawStickerSheet(context, width, height, {
+        theme,
+        qrImage: image,
+        heading,
+        username,
+      });
+    }
+    const sheet = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => (result ? resolve(result) : reject(new Error("Export failed"))),
+        "image/png",
+        1,
+      );
+    });
+    downloadBlob(sheet, `cueful-${username}-${format}.png`);
+    return;
+  }
 
   context.fillStyle = theme.background;
   context.fillRect(0, 0, width, height);
@@ -294,9 +538,13 @@ export function ShareDialog({
   const heading = headings[format]?.trim() || DEFAULT_HEADINGS[format];
   const [qrAsset, setQrAsset] = useState<{
     themeId: ShareThemeId | "";
+    format: ShareFormat | "";
     png: string;
     svg: string;
-  }>({ themeId: "", png: "", svg: "" });
+  }>({ themeId: "", format: "", png: "", svg: "" });
+  // Its own code, because the signature is tagged differently from whichever
+  // format is selected above and is generated whatever that selection is.
+  const [signatureQr, setSignatureQr] = useState("");
   const [exporting, setExporting] = useState(false);
   const [notice, setNotice] = useState<{
     message: string;
@@ -306,8 +554,9 @@ export function ShareDialog({
     () => shareThemes.find((item) => item.id === themeId) ?? shareThemes[0],
     [themeId],
   );
-  const qrDataUrl = qrAsset.themeId === themeId ? qrAsset.png : "";
-  const qrSvgDataUrl = qrAsset.themeId === themeId ? qrAsset.svg : "";
+  const assetMatches = qrAsset.themeId === themeId && qrAsset.format === format;
+  const qrDataUrl = assetMatches ? qrAsset.png : "";
+  const qrSvgDataUrl = assetMatches ? qrAsset.svg : "";
 
   useEffect(() => {
     if (!open) return;
@@ -321,13 +570,18 @@ export function ShareDialog({
       },
     };
 
+    // Each format encodes its own tag, so the dashboard can tell a scan off a
+    // table tent from a scan off a poster.
+    const taggedUrl = withShareSource(profileUrl, FORMAT_SOURCE[format]);
+
     void Promise.all([
-      QRCode.toDataURL(profileUrl, { ...options, width: 720 }),
-      QRCode.toString(profileUrl, { ...options, type: "svg" }),
+      QRCode.toDataURL(taggedUrl, { ...options, width: 720 }),
+      QRCode.toString(taggedUrl, { ...options, type: "svg" }),
     ])
       .then(([png, svg]) =>
         setQrAsset({
           themeId: theme.id,
+          format,
           png,
           svg: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
         }),
@@ -338,7 +592,66 @@ export function ShareDialog({
           severity: "error",
         }),
       );
-  }, [open, profileUrl, theme]);
+  }, [open, profileUrl, theme, format]);
+
+  useEffect(() => {
+    if (!open) return;
+    void QRCode.toDataURL(withShareSource(profileUrl, "signature"), {
+      width: 264,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#1b1c18", light: "#ffffff" },
+    })
+      .then(setSignatureQr)
+      .catch(() => setSignatureQr(""));
+  }, [open, profileUrl]);
+
+  /**
+   * An email signature is pasted, not downloaded, so it goes on the clipboard
+   * as HTML with a plain-text alternative for clients that refuse rich paste.
+   * The QR is inlined as a data URL: a signature that hotlinks an image gets
+   * blocked by most mail clients, and one that references a file gets lost.
+   */
+  async function copyEmailSignature() {
+    if (!signatureQr) return;
+    const url = withShareSource(profileUrl, "signature");
+    const display = url.replace("https://", "");
+    const html = [
+      '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif">',
+      "<tr>",
+      `<td style="padding-right:14px;vertical-align:middle"><img src="${signatureQr}" width="88" height="88" alt="Scan for ${displayName} on Cueful" style="display:block;border:0" /></td>`,
+      '<td style="vertical-align:middle;border-left:2px solid #dedfd8;padding-left:14px">',
+      `<div style="font-size:15px;font-weight:bold;color:#1b1c18">${displayName}</div>`,
+      `<div style="font-size:13px;color:#5e6256;padding-top:2px">All my links, one page</div>`,
+      `<div style="font-size:13px;padding-top:4px"><a href="${url}" style="color:#496800;text-decoration:none">${display}</a></div>`,
+      "</td></tr></table>",
+    ].join("");
+    const plain = `${displayName} — all my links, one page: ${url}`;
+
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plain], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        // Older Safari has no ClipboardItem; the raw markup still pastes into
+        // any signature editor that accepts HTML source.
+        await navigator.clipboard.writeText(html);
+      }
+      setNotice({
+        message: "Email signature copied. Paste it into your mail signature settings.",
+        severity: "success",
+      });
+    } catch {
+      setNotice({
+        message: "The signature could not be copied",
+        severity: "error",
+      });
+    }
+  }
 
   async function copyUrl() {
     try {
@@ -384,7 +697,7 @@ export function ShareDialog({
         heading,
       });
       setNotice({
-        message: `${format === "square" ? "Square post" : "Poster"} downloaded`,
+        message: `${FORMAT_LABELS[format]} downloaded`,
         severity: "success",
       });
     } catch {
@@ -424,13 +737,20 @@ export function ShareDialog({
                 <ToggleButtonGroup
                   exclusive
                   fullWidth
+                  className="share-kit__formats"
                   value={format}
                   onChange={(_, value: ShareFormat | null) => value && setFormat(value)}
                   aria-label="Share asset format"
                 >
-                  <ToggleButton value="square">Square post</ToggleButton>
-                  <ToggleButton value="poster">Print poster</ToggleButton>
+                  {(Object.keys(FORMAT_LABELS) as ShareFormat[]).map((item) => (
+                    <ToggleButton value={item} key={item}>
+                      {FORMAT_LABELS[item]}
+                    </ToggleButton>
+                  ))}
                 </ToggleButtonGroup>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
+                  {FORMAT_NOTES[format]}
+                </Typography>
               </Box>
 
               <Box>
@@ -454,7 +774,9 @@ export function ShareDialog({
                   helperText={
                     headings[format]?.trim()
                       ? `${headings[format]?.length ?? 0}/${HEADING_MAX} · clear to restore the default`
-                      : "Fits two lines on the card. Longer text is trimmed."
+                      : format === "sticker"
+                        ? "One short line on each label. Keep it to a few words."
+                        : "Fits two lines on the card. Longer text is trimmed."
                   }
                 />
               </Box>
@@ -512,6 +834,14 @@ export function ShareDialog({
                   >
                     QR SVG
                   </Button>
+                  <Button
+                    size="small"
+                    startIcon={<ContentCopyRounded />}
+                    onClick={copyEmailSignature}
+                    disabled={!signatureQr}
+                  >
+                    Email signature
+                  </Button>
                 </Stack>
               </Box>
 
@@ -558,6 +888,13 @@ export function ShareDialog({
                   <span>ONE PAGE · BETTER CLICKS</span>
                 </div>
               </div>
+              {(format === "tent" || format === "sticker") && (
+                <Typography variant="caption" className="share-kit__stage-note">
+                  {format === "tent"
+                    ? "One of the two faces. The sheet prints both, folded down the middle."
+                    : "One label. The sheet prints twelve, with cut guides."}
+                </Typography>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -571,9 +908,7 @@ export function ShareDialog({
             onClick={downloadShareAsset}
             disabled={!qrDataUrl || exporting}
           >
-            {exporting
-              ? "Preparing…"
-              : `Download ${format === "square" ? "square PNG" : "poster PNG"}`}
+            {exporting ? "Preparing…" : `Download ${FORMAT_LABELS[format]}`}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { parseShareSource } from "@/lib/share-source";
 import { createClient } from "@/lib/supabase/server";
 
 function deviceType(userAgent: string) {
@@ -10,7 +11,7 @@ function deviceType(userAgent: string) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: { profileId?: unknown; referrer?: unknown };
+  let body: { profileId?: unknown; referrer?: unknown; source?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -29,10 +30,14 @@ export async function POST(request: NextRequest) {
     typeof body.referrer === "string" && body.referrer.length <= 2048
       ? body.referrer
       : null;
+  // Unrecognised values become null rather than an error: the tag is on a
+  // printed sticker somewhere, and a typo in it should still record the visit.
+  const source = parseShareSource(body.source);
   const supabase = await createClient();
   const { error } = await supabase.from("profile_views").insert({
     profile_id: profileId,
     referrer,
+    source,
     country_code: countryCode,
     device_type: deviceType(request.headers.get("user-agent") ?? ""),
   });

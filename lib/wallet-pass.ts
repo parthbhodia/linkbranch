@@ -19,6 +19,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PKPass } from "passkit-generator";
+import { withShareSource } from "@/lib/share-source";
 
 export type WalletPassInput = {
   profileId: string;
@@ -212,7 +213,9 @@ export async function buildWalletPass(
 
   pass.setBarcodes({
     format: "PKBarcodeFormatQR",
-    message: input.profileUrl,
+    // The barcode is tagged so a scan off someone's Wallet is counted as one.
+    // The two text fields above stay clean: they are read by people.
+    message: withShareSource(input.profileUrl, "wallet"),
     // Wallet's documented encoding for QR payloads. UTF-8 is silently rejected
     // by some scanners; the URL is ASCII either way.
     messageEncoding: "iso-8859-1",
