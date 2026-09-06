@@ -51,6 +51,7 @@ import { creatorBadgeUrl } from "@/lib/referrals";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import { publicProfileAddress } from "@/lib/brand";
 import { publicAssetUrl } from "@/lib/storage";
+import { parseShareSource, withShareSource, withoutShareSource } from "@/lib/share-source";
 import { createClient } from "@/lib/supabase/client";
 import {
   profileThemeClassName,
@@ -416,6 +417,7 @@ export function ProfileHub({
       : null,
   );
   const viewRecorded = useRef(false);
+  const [showCardOffer, setShowCardOffer] = useState(published);
 
   const [isOwner, setIsOwner] = useState(false);
 
@@ -424,14 +426,35 @@ export function ProfileHub({
     if (!databaseProfileId || viewRecorded.current) return;
     viewRecorded.current = true;
 
+    // ?s= is written into every code and printed asset we generate. Read it
+    // before it is cleaned off the address bar below, so a scan is recorded
+    // as a scan rather than as anonymous direct traffic.
+    const source = parseShareSource(
+      new URL(window.location.href).searchParams.get("s"),
+    );
+
     void fetch("/api/analytics/view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         profileId: databaseProfileId,
         referrer: document.referrer || null,
+        source,
       }),
     });
+
+    // Take the tag off the address bar once it is counted: it belongs to the
+    // one scan that brought this visitor here, and must not ride along when
+    // they copy the link or share the page onward. Cleared whether or not it
+    // parsed, since a mangled tag off a printed sticker is still ours and
+    // still ugly in the address bar.
+    if (new URL(window.location.href).searchParams.has("s")) {
+      window.history.replaceState(
+        null,
+        "",
+        withoutShareSource(window.location.href),
+      );
+    }
   }, [databaseProfileId]);
 
   useEffect(() => {
@@ -455,7 +478,7 @@ export function ProfileHub({
   useEffect(() => {
     if (!qrOpen || qrDataUrl) return;
     let active = true;
-    QRCode.toDataURL(window.location.href, {
+    QRCode.toDataURL(withShareSource(withoutShareSource(window.location.href), "qr"), {
       width: 720,
       margin: 1,
       // Fixed high-contrast ink on paper, not the page theme -- a themed code
@@ -618,6 +641,21 @@ export function ProfileHub({
           <div className="profile-brand-row">
             <Stack direction="row" spacing={0.5} alignItems="center">
               <span className="profile-handle">@{profile.username}</span>
+              {/* Only the owner sees this: the full-screen code is a tool for
+                  the person holding the phone, not for a visitor. */}
+              {isOwner && (
+                <Tooltip title="Show my code full screen" arrow>
+                  <IconButton
+                    size="small"
+                    component={Link}
+                    href="/card"
+                    aria-label="Show my code full screen"
+                    className="profile-owner-card"
+                  >
+                    <QrCode2Rounded fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               <Tooltip title="Share this page" arrow>
                 <IconButton size="small" onClick={sharePage} aria-label="Share this page">
                   <IosShareRounded fontSize="small" />
@@ -1260,6 +1298,41 @@ export function ProfileHub({
               Save PNG
             </Button>
           </Stack>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showCardOffer}
+        onClose={() => setShowCardOffer(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogContent className="published-card-offer">
+          <QrCode2Rounded aria-hidden="true" />
+          <Typography component="h2" variant="h3">
+            Your page is live. Now show it.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Your code fills the screen and keeps the phone awake, so you can
+            hold it out and let someone scan it. It works on a counter, at a
+            stall, across a table.
+          </Typography>
+          <Button
+            component={Link}
+            href="/card"
+            variant="contained"
+            startIcon={<QrCode2Rounded />}
+            fullWidth
+          >
+            Show my code
+          </Button>
+          <Button
+            color="inherit"
+            fullWidth
+            onClick={() => setShowCardOffer(false)}
+          >
+            Not now
+          </Button>
         </DialogContent>
       </Dialog>
 
