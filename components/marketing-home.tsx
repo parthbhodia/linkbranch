@@ -359,8 +359,8 @@ export function MarketingHome() {
             <span>everything you create.</span>
           </Typography>
           <Typography className="marketing-hero__body">
-            Build a customizable, ad-free link-in-bio page for Instagram,
-            TikTok, YouTube, and every other platform.
+            A free, ad-free page for your links, shop, and referral codes.
+            See which of your codes people actually copy.
           </Typography>
           <div className="marketing-hero__claim">
             <span>CLAIM YOUR CUEFUL URL</span>
