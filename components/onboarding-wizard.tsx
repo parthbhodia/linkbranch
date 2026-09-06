@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import AddRounded from "@mui/icons-material/AddRounded";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
@@ -53,6 +53,11 @@ import {
 } from "@/lib/social-platforms";
 import { createClient } from "@/lib/supabase/client";
 import type { StarterPurpose } from "@/lib/starter-purposes";
+import {
+  CONTACT_QUICK_ADDS,
+  GENERAL_QUICK_ADDS,
+  starterBlueprint,
+} from "@/lib/starter-blueprints";
 import {
   MUSIC_EXAMPLE,
   shopItemExamples,
@@ -550,6 +555,14 @@ export function OnboardingWizard({
   }
 
   const detailKind = starterDetailKind(starterPurpose);
+  const blueprint = starterBlueprint(starterPurpose);
+  // Before a purpose is picked, keep what always shipped: links lead, and the
+  // booking and quick-add rails stay visible.
+  const rails = blueprint?.rails ?? { music: [], booking: true, contact: true };
+  const lead = blueprint?.lead ?? "links";
+  const railMusic = musicQuickAdds.filter((provider) =>
+    rails.music.includes(provider.id),
+  );
 
   function addShopItem() {
     setShopItems((current) => [
@@ -582,6 +595,23 @@ export function OnboardingWizard({
     const preset = starterPurposes.find((item) => item.id === purpose);
     if (!preset) return;
     setStarterPurpose(purpose);
+
+    // Only overwrite the opening line while it is still the untouched default:
+    // someone who comes back and re-picks must not lose wording they wrote.
+    const plan = starterBlueprint(purpose);
+    if (plan) {
+      setGreeting((current) =>
+        current === initialData.profile.greeting ? plan.greeting : current,
+      );
+      setHeadline((current) =>
+        current === initialData.profile.headline ? plan.headline : current,
+      );
+      setHeadlineAccent((current) =>
+        current === initialData.profile.headline_accent
+          ? plan.headlineAccent
+          : current,
+      );
+    }
     setLinks(
       preset.links.map((title, index) => {
         const lower = title.toLowerCase();
@@ -1141,6 +1171,292 @@ export function OnboardingWizard({
     router.refresh();
   }
 
+  const linksBlock = (
+    <Fragment key="links">
+              <Paper variant="outlined" className="form-section">
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                  <Box>
+                    <Typography component="h2" variant="h3">Links</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Add at least one destination. Keep drafts hidden or spotlight one link.
+                    </Typography>
+                  </Box>
+                  <Button startIcon={<AddRounded />} onClick={() => addLink()}>
+                    Add link
+                  </Button>
+                </Stack>
+                <div className="link-quick-add">
+                  {railMusic.length > 0 && (
+                    <>
+                      <Typography variant="caption" color="text.secondary">
+                        {railMusic.length > 2 ? "MUSIC EMBED" : "VIDEO & AUDIO"}
+                      </Typography>
+                  <div>
+                    {railMusic.map((provider) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={provider.id}
+                        startIcon={provider.icon}
+                        onClick={() => addMusicLink(provider.id)}
+                      >
+                        {provider.label}
+                      </Button>
+                    ))}
+                  </div>
+                    </>
+                  )}
+                  {rails.booking && (
+                    <>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1.25, display: "block" }}
+                      >
+                        BOOK A CALL
+                      </Typography>
+                  <div>
+                    {bookingProviders.map((provider) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={provider.id}
+                        startIcon={provider.icon}
+                        onClick={() => addBookingLink(provider.id)}
+                      >
+                        {provider.label}
+                      </Button>
+                    ))}
+                  </div>
+                    </>
+                  )}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1.25, display: "block" }}
+                  >
+                    QUICK ADD
+                  </Typography>
+                  <div>
+                    {(rails.contact
+                      ? CONTACT_QUICK_ADDS
+                      : GENERAL_QUICK_ADDS
+                    ).map((item) => (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        key={item.title}
+                        onClick={() => addLink(item.title, item.url)}
+                      >
+                        {item.title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <DndContext
+                  sensors={dragSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={reorderLinks}
+                >
+                  <SortableContext
+                    items={links.map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {/* .links-editor is the container the row layout queries
+                        against. Without it the rows keep their four-column
+                        desktop grid inside this ~500px form column and the
+                        title field ends up a few dozen pixels wide. */}
+                    <Stack className="links-editor" spacing={2} sx={{ mt: 2.5 }}>
+                      {links.map((item) => (
+                        <SortableLinkEditor
+                          key={item.id}
+                          item={item}
+                          uploading={uploadingThumbnailId === item.id}
+                          onUpdate={updateLink}
+                          onFeature={featureLink}
+                          onVisibility={toggleLinkVisibility}
+                          onRemove={removeLink}
+                          onUpload={uploadLinkThumbnail}
+                          onRemoveThumbnail={removeLinkThumbnail}
+                        />
+                      ))}
+                    </Stack>
+                  </SortableContext>
+                </DndContext>
+              </Paper>
+    </Fragment>
+  );
+
+  const shopBlock = (
+    <Fragment key="shop">
+              {detailKind === "shop" ? (
+                <Paper variant="outlined" className="form-section">
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                    <Box>
+                      <Typography component="h2" variant="h3">What you sell</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Cards with a price, above your links. Replace the example
+                        wording — anything left without a link is skipped.
+                      </Typography>
+                    </Box>
+                    <Button
+                      startIcon={<AddRounded />}
+                      onClick={addShopItem}
+                      sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+                    >
+                      Add item
+                    </Button>
+                  </Stack>
+
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    {shopItems.map((item) => (
+                      <Stack key={item.id} spacing={1.5} className="setup-detail-row">
+                        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                          <TextField
+                            label="Item"
+                            value={item.title}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { title: event.target.value.slice(0, 100) })
+                            }
+                            fullWidth
+                          />
+                          <TextField
+                            label="Currency"
+                            select
+                            value={COMMON_CURRENCIES.includes(item.currency) ? item.currency : "USD"}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { currency: event.target.value })
+                            }
+                            sx={{ width: 112, flexShrink: 0 }}
+                          >
+                            {COMMON_CURRENCIES.map((code) => (
+                              <MenuItem key={code} value={code}>{code}</MenuItem>
+                            ))}
+                          </TextField>
+                          <TextField
+                            label="Price"
+                            value={item.price}
+                            onChange={(event) =>
+                              updateShopItem(item.id, { price: event.target.value })
+                            }
+                            placeholder="120"
+                            sx={{ width: 120, flexShrink: 0 }}
+                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
+                          />
+                          <IconButton
+                            aria-label={`Remove ${item.title || "item"}`}
+                            onClick={() => removeShopItem(item.id)}
+                          >
+                            <DeleteOutlineRounded />
+                          </IconButton>
+                        </Stack>
+                        <TextField
+                          label="Description"
+                          value={item.description}
+                          onChange={(event) =>
+                            updateShopItem(item.id, {
+                              description: event.target.value.slice(0, 240),
+                            })
+                          }
+                          fullWidth
+                        />
+                        <TextField
+                          label="Link"
+                          value={item.destination_url}
+                          onChange={(event) =>
+                            updateShopItem(item.id, { destination_url: event.target.value })
+                          }
+                          placeholder="https://"
+                          helperText="Where this item opens. Leave blank to skip this card."
+                          fullWidth
+                        />
+                        <Box>
+                          <WhatsAppOrderButton
+                            itemTitle={item.title}
+                            currentUrl={item.destination_url}
+                            onPick={(url, ctaLabel) =>
+                              updateShopItem(item.id, { destination_url: url, cta_label: ctaLabel })
+                            }
+                          />
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Paper>
+              ) : null}
+    </Fragment>
+  );
+
+  const musicBlock = (
+    <Fragment key="music">
+              {detailKind === "music" ? (
+                <Paper variant="outlined" className="form-section">
+                  <Box>
+                    <Typography component="h2" variant="h3">Your music</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      A player on your page rather than another link out. Paste a
+                      track, album or playlist URL.
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={1.5}>
+                      <TextField
+                        label="Title"
+                        value={musicEmbed.title}
+                        onChange={(event) =>
+                          setMusicEmbed((current) => ({
+                            ...current,
+                            title: event.target.value.slice(0, 100),
+                          }))
+                        }
+                        fullWidth
+                      />
+                      <TextField
+                        label="Where from"
+                        select
+                        value={musicEmbed.provider}
+                        onChange={(event) =>
+                          setMusicEmbed((current) => ({
+                            ...current,
+                            provider: event.target.value,
+                          }))
+                        }
+                        sx={{ width: 190 }}
+                      >
+                        <MenuItem value="spotify">Spotify</MenuItem>
+                        <MenuItem value="apple_music">Apple Music</MenuItem>
+                        <MenuItem value="youtube">YouTube</MenuItem>
+                        <MenuItem value="soundcloud">SoundCloud</MenuItem>
+                        <MenuItem value="bandcamp">Bandcamp</MenuItem>
+                      </TextField>
+                    </Stack>
+                    <TextField
+                      label="Link"
+                      value={musicEmbed.url}
+                      onChange={(event) =>
+                        setMusicEmbed((current) => ({
+                          ...current,
+                          url: event.target.value,
+                        }))
+                      }
+                      placeholder="https://open.spotify.com/album/..."
+                      helperText="Leave blank to skip the player."
+                      fullWidth
+                    />
+                  </Stack>
+                </Paper>
+              ) : null}
+    </Fragment>
+  );
+
+  const contentBlocks =
+    lead === "products"
+      ? [shopBlock, linksBlock, musicBlock]
+      : lead === "music"
+        ? [musicBlock, linksBlock, shopBlock]
+        : [linksBlock, shopBlock, musicBlock];
+
   return (
     <main className="setup-shell">
       <header className="setup-topbar">
@@ -1183,12 +1499,15 @@ export function OnboardingWizard({
                 STEP {activeStep + 1} OF 3
               </Typography>
               <Typography component="h1" variant="h2" sx={{ mt: 0.75 }}>
-                {activeStep === 1 ? "Profile details" : "Add your links"}
+                {activeStep === 1
+                  ? "Profile details"
+                  : (blueprint?.stepTitle ?? "Add your links")}
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 1 }}>
                 {activeStep === 1
                   ? "This information appears at the top of your public page."
-                  : "Add the places you want visitors to go. You can reorder these later."}
+                  : (blueprint?.stepSubtitle ??
+                    "Add the places you want visitors to go. You can reorder these later.")}
               </Typography>
             </Box>
             <Chip label={templateName} size="small" variant="outlined" />
@@ -1504,265 +1823,12 @@ export function OnboardingWizard({
             </Stack>
           ) : (
             <Stack spacing={3} className="setup-form">
-              <Paper variant="outlined" className="form-section">
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-                  <Box>
-                    <Typography component="h2" variant="h3">Links</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Add at least one destination. Keep drafts hidden or spotlight one link.
-                    </Typography>
-                  </Box>
-                  <Button startIcon={<AddRounded />} onClick={() => addLink()}>
-                    Add link
-                  </Button>
-                </Stack>
-                <div className="link-quick-add">
-                  <Typography variant="caption" color="text.secondary">
-                    MUSIC EMBED
-                  </Typography>
-                  <div>
-                    {musicQuickAdds.map((provider) => (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        key={provider.id}
-                        startIcon={provider.icon}
-                        onClick={() => addMusicLink(provider.id)}
-                      >
-                        {provider.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1.25, display: "block" }}
-                  >
-                    BOOK A CALL
-                  </Typography>
-                  <div>
-                    {bookingProviders.map((provider) => (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        key={provider.id}
-                        startIcon={provider.icon}
-                        onClick={() => addBookingLink(provider.id)}
-                      >
-                        {provider.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1.25, display: "block" }}
-                  >
-                    QUICK ADD
-                  </Typography>
-                  <div>
-                    {[
-                      { title: "WhatsApp Business", url: "https://wa.me/" },
-                      { title: "Watch my latest video", url: "" },
-                      { title: "Join my community", url: "" },
-                    ].map((item) => (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        key={item.title}
-                        onClick={() => addLink(item.title, item.url)}
-                      >
-                        {item.title}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <DndContext
-                  sensors={dragSensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={reorderLinks}
-                >
-                  <SortableContext
-                    items={links.map((item) => item.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {/* .links-editor is the container the row layout queries
-                        against. Without it the rows keep their four-column
-                        desktop grid inside this ~500px form column and the
-                        title field ends up a few dozen pixels wide. */}
-                    <Stack className="links-editor" spacing={2} sx={{ mt: 2.5 }}>
-                      {links.map((item) => (
-                        <SortableLinkEditor
-                          key={item.id}
-                          item={item}
-                          uploading={uploadingThumbnailId === item.id}
-                          onUpdate={updateLink}
-                          onFeature={featureLink}
-                          onVisibility={toggleLinkVisibility}
-                          onRemove={removeLink}
-                          onUpload={uploadLinkThumbnail}
-                          onRemoveThumbnail={removeLinkThumbnail}
-                        />
-                      ))}
-                    </Stack>
-                  </SortableContext>
-                </DndContext>
-              </Paper>
+              {/* Order follows the purpose. For a shop the products are the
+                  page and the links are secondary; leading with links buried
+                  the section they came to fill in, which is how this was
+                  reported. */}
+              {contentBlocks}
 
-              {detailKind === "shop" ? (
-                <Paper variant="outlined" className="form-section">
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-                    <Box>
-                      <Typography component="h2" variant="h3">What you sell</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Cards with a price, above your links. Replace the example
-                        wording — anything left without a link is skipped.
-                      </Typography>
-                    </Box>
-                    <Button
-                      startIcon={<AddRounded />}
-                      onClick={addShopItem}
-                      sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
-                    >
-                      Add item
-                    </Button>
-                  </Stack>
-
-                  <Stack spacing={2} sx={{ mt: 2 }}>
-                    {shopItems.map((item) => (
-                      <Stack key={item.id} spacing={1.5} className="setup-detail-row">
-                        <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                          <TextField
-                            label="Item"
-                            value={item.title}
-                            onChange={(event) =>
-                              updateShopItem(item.id, { title: event.target.value.slice(0, 100) })
-                            }
-                            fullWidth
-                          />
-                          <TextField
-                            label="Currency"
-                            select
-                            value={COMMON_CURRENCIES.includes(item.currency) ? item.currency : "USD"}
-                            onChange={(event) =>
-                              updateShopItem(item.id, { currency: event.target.value })
-                            }
-                            sx={{ width: 112, flexShrink: 0 }}
-                          >
-                            {COMMON_CURRENCIES.map((code) => (
-                              <MenuItem key={code} value={code}>{code}</MenuItem>
-                            ))}
-                          </TextField>
-                          <TextField
-                            label="Price"
-                            value={item.price}
-                            onChange={(event) =>
-                              updateShopItem(item.id, { price: event.target.value })
-                            }
-                            placeholder="120"
-                            sx={{ width: 120, flexShrink: 0 }}
-                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
-                          />
-                          <IconButton
-                            aria-label={`Remove ${item.title || "item"}`}
-                            onClick={() => removeShopItem(item.id)}
-                          >
-                            <DeleteOutlineRounded />
-                          </IconButton>
-                        </Stack>
-                        <TextField
-                          label="Description"
-                          value={item.description}
-                          onChange={(event) =>
-                            updateShopItem(item.id, {
-                              description: event.target.value.slice(0, 240),
-                            })
-                          }
-                          fullWidth
-                        />
-                        <TextField
-                          label="Link"
-                          value={item.destination_url}
-                          onChange={(event) =>
-                            updateShopItem(item.id, { destination_url: event.target.value })
-                          }
-                          placeholder="https://"
-                          helperText="Where this item opens. Leave blank to skip this card."
-                          fullWidth
-                        />
-                        <Box>
-                          <WhatsAppOrderButton
-                            itemTitle={item.title}
-                            currentUrl={item.destination_url}
-                            onPick={(url, ctaLabel) =>
-                              updateShopItem(item.id, { destination_url: url, cta_label: ctaLabel })
-                            }
-                          />
-                        </Box>
-                      </Stack>
-                    ))}
-                  </Stack>
-                </Paper>
-              ) : null}
-
-              {detailKind === "music" ? (
-                <Paper variant="outlined" className="form-section">
-                  <Box>
-                    <Typography component="h2" variant="h3">Your music</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      A player on your page rather than another link out. Paste a
-                      track, album or playlist URL.
-                    </Typography>
-                  </Box>
-
-                  <Stack spacing={2} sx={{ mt: 2 }}>
-                    <Stack direction="row" spacing={1.5}>
-                      <TextField
-                        label="Title"
-                        value={musicEmbed.title}
-                        onChange={(event) =>
-                          setMusicEmbed((current) => ({
-                            ...current,
-                            title: event.target.value.slice(0, 100),
-                          }))
-                        }
-                        fullWidth
-                      />
-                      <TextField
-                        label="Where from"
-                        select
-                        value={musicEmbed.provider}
-                        onChange={(event) =>
-                          setMusicEmbed((current) => ({
-                            ...current,
-                            provider: event.target.value,
-                          }))
-                        }
-                        sx={{ width: 190 }}
-                      >
-                        <MenuItem value="spotify">Spotify</MenuItem>
-                        <MenuItem value="apple_music">Apple Music</MenuItem>
-                        <MenuItem value="youtube">YouTube</MenuItem>
-                        <MenuItem value="soundcloud">SoundCloud</MenuItem>
-                        <MenuItem value="bandcamp">Bandcamp</MenuItem>
-                      </TextField>
-                    </Stack>
-                    <TextField
-                      label="Link"
-                      value={musicEmbed.url}
-                      onChange={(event) =>
-                        setMusicEmbed((current) => ({
-                          ...current,
-                          url: event.target.value,
-                        }))
-                      }
-                      placeholder="https://open.spotify.com/album/..."
-                      helperText="Leave blank to skip the player."
-                      fullWidth
-                    />
-                  </Stack>
-                </Paper>
-              ) : null}
 
               <Paper variant="outlined" className="form-section">
                 <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
