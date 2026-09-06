@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import QRCode from "qrcode";
 import { AddToWalletButton } from "@/components/add-to-wallet-button";
+import { withShareSource } from "@/lib/share-source";
 import { publicProfileUrl } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 
@@ -56,7 +57,9 @@ export function EventCardScreen({
 
   useEffect(() => {
     let active = true;
-    QRCode.toDataURL(profileUrl, {
+    // Tagged, so a scan from the phone you are holding out is counted as a
+    // scan rather than as anonymous direct traffic.
+    QRCode.toDataURL(withShareSource(profileUrl, "card"), {
       width: 1080,
       margin: 1,
       // Highest correction level: this code gets scanned at an angle, in bad

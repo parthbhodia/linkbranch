@@ -18,6 +18,7 @@ import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
+import { SHARE_SOURCE_LABELS, isScanSource, parseShareSource } from "@/lib/share-source";
 import { WallpaperUploader } from "@/components/wallpaper-uploader";
 import type { PreparedWallpaper } from "@/lib/wallpaper";
 import SearchRounded from "@mui/icons-material/SearchRounded";
@@ -215,6 +216,8 @@ export type DashboardView = {
   device_type: string | null;
   country_code: string | null;
   referrer: string | null;
+  /** Sharing surface the visit came from (?s=). Null for an ordinary visit. */
+  source?: string | null;
   /** Which event was running when the page was opened. '' when none was. */
   event_tag?: string | null;
 };
@@ -767,8 +770,29 @@ export function Dashboard({
         ? regionNames.of(countries[0].label) ?? countries[0].label
         : countries[0]?.label ?? "—";
 
+    // Scans are the physical surfaces: a code held out, printed, or in Wallet.
+    // Kept apart from a tapped link, which the referrer already explains.
+    const scanned = filteredViews.filter((view) =>
+      isScanSource(parseShareSource(view.source)),
+    );
+    const scansBySurface = new Map<string, number>();
+    for (const view of scanned) {
+      const source = parseShareSource(view.source);
+      if (!source) continue;
+      const label = SHARE_SOURCE_LABELS[source];
+      scansBySurface.set(label, (scansBySurface.get(label) ?? 0) + 1);
+    }
+    const topScanSurface =
+      [...scansBySurface.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
     return {
       views: filteredViews.length,
+      scans: scanned.length,
+      topScanSurface,
+      scanShare:
+        filteredViews.length > 0
+          ? Math.round((scanned.length / filteredViews.length) * 100)
+          : 0,
       outboundClicks,
       linkOpens,
       referralOpens,
@@ -1613,6 +1637,16 @@ export function Dashboard({
             </Tooltip>
           ))}
         </nav>
+        <Tooltip title="Show my code" placement="right" arrow>
+          <IconButton
+            className="workspace-rail__card"
+            component={Link}
+            href="/card"
+            aria-label="Show my code full screen"
+          >
+            <QrCode2Rounded />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Show dashboard tour" placement="right" arrow>
           <IconButton
             className="workspace-rail__help"
@@ -2551,6 +2585,18 @@ export function Dashboard({
                 label="CODE COPIES"
                 value={analytics.referralCopies}
                 note={`${analytics.copyRate}% of offer opens`}
+              />
+              {/* The one number a market stall or a conference cares about,
+                  and the one no other link-in-bio tool reports: a QR scan has
+                  no referrer, so without the ?s= tag it is invisible. */}
+              <StatCard
+                label="QR SCANS"
+                value={analytics.scans}
+                note={
+                  analytics.scans > 0
+                    ? `${analytics.scanShare}% of views · mostly ${analytics.topScanSurface}`
+                    : "Show your code to start counting"
+                }
               />
 
               <Paper className="workspace-analytics__chart-card" variant="outlined">
