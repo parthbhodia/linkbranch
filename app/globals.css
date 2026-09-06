@@ -6749,6 +6749,7 @@ a {
 }
 
 .setup-phone {
+  --setup-phone-bg: #faf9f1;
   min-height: 520px;
   padding: 38px 24px 24px;
   display: flex;
@@ -6761,11 +6762,14 @@ a {
 }
 
 .setup-phone--after-dark {
+  --setup-phone-bg: #11130f;
   color: #f4ffe4;
   background: #11130f;
 }
 
 .setup-phone--soft-studio {
+  /* A flat stand-in for the gradient below; color-mix cannot take a gradient. */
+  --setup-phone-bg: #f3edfd;
   color: #392a34;
   background: linear-gradient(155deg, #fff8fb, #e7e1ff);
 }
@@ -14404,4 +14408,81 @@ a {
   .blog-cta {
     padding: 22px;
   }
+}
+
+/* ---- Wallpaper picker, shared by the dashboard and setup ----------------- */
+
+.wallpaper-uploader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dedfd8;
+  border-radius: 16px;
+  background: #fbfbf8;
+}
+
+.wallpaper-uploader__thumb {
+  flex-shrink: 0;
+  width: 72px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed #aeb2a5;
+  border-radius: 14px;
+  background: #fff;
+  color: #6e7267;
+  text-align: center;
+}
+
+.wallpaper-uploader__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wallpaper-uploader__requirements {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.wallpaper-uploader__requirements li + li {
+  margin-top: 3px;
+}
+
+.wallpaper-uploader__pending {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f1f2ea;
+}
+
+@media (max-width: 600px) {
+  .wallpaper-uploader {
+    flex-direction: column;
+  }
+
+  .wallpaper-uploader__thumb {
+    width: 100%;
+    height: 96px;
+  }
+}
+
+/* The setup preview phone paints the chosen wallpaper the way the public page
+   will: covered, centred, under a tint of the template's background. */
+.setup-phone--has-wallpaper {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--setup-phone-bg) 62%, transparent),
+      color-mix(in srgb, var(--setup-phone-bg) 78%, transparent)
+    ),
+    var(--setup-wallpaper);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
