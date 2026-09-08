@@ -110,8 +110,13 @@ export function installGuidance(facts: BrowserFacts): InstallGuidance {
 export const GUIDANCE_COPY: Record<InstallGuidance["kind"], string> = {
   prompt: "",
   "ios-safari": "Tap Share in Safari's toolbar, then Add to Home Screen.",
+  // Was "only Safari can", which stopped being true in iOS 16.4: Apple added an
+  // API that lets any browser register a real Home Screen web app, and those
+  // launch standalone like Safari's. Older iOS still needs Safari, hence the
+  // second sentence rather than a version sniff -- the fallback costs one line
+  // and cannot be wrong.
   "ios-other":
-    "Only Safari can add an app to the iPhone home screen. Open this page in Safari and the option appears under Share.",
+    "Tap Share in your browser's toolbar, then Add to Home Screen. On iOS 16.3 or older, do it in Safari instead.",
   "android-menu":
     "Open your browser's menu and choose Install app, or Add to home screen.",
   "desktop-chromium":
