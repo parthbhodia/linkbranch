@@ -14788,3 +14788,27 @@ a {
     flex-direction: column;
   }
 }
+
+/*
+ * The résumé download. Deliberately quiet and below the exchange block: a
+ * visitor reads the page first and asks for the file second, so it should not
+ * compete with the links above it.
+ */
+.profile-resume {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 4px;
+}
+
+.profile-resume .MuiButton-root {
+  text-transform: none;
+  letter-spacing: 0;
+  max-width: 100%;
+}
+
+.profile-resume .MuiButton-root .MuiButton-startIcon + span,
+.profile-resume .MuiButton-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
