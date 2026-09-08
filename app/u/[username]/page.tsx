@@ -357,6 +357,7 @@ export default async function PublicProfilePage({
         highlights={(highlights ?? []) as PublicHighlight[]}
         disclosureText={profile.disclosure_text}
         eventTag={profile.current_event_tag}
+        resumeLabel={profile.resume_path ? (profile.resume_label ?? "Résumé") : null}
         showSaveContact={Boolean(profile.show_save_contact)}
         showExchange={Boolean(profile.show_exchange)}
         mapLocation={publicMapLocation(profile)}

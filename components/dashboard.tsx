@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
@@ -107,12 +108,16 @@ import { creatorInviteUrl } from "@/lib/referrals";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
+  DOCUMENTS_BUCKET,
   faviconExtension,
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
+  resumeContentType,
+  resumeExtension,
   validateFavicon,
   validateImage,
+  validateResume,
 } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -142,6 +147,8 @@ export type DashboardProfile = {
   tags: string[];
   template: string;
   avatar_path: string | null;
+  resume_path: string | null;
+  resume_label: string | null;
   seo_title: string | null;
   seo_description: string | null;
   seo_image_path: string | null;
@@ -514,6 +521,7 @@ export function Dashboard({
   const [analyticsNow] = useState(() => Date.now());
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [resumeUploading, setResumeUploading] = useState(false);
   const [seoImageUploading, setSeoImageUploading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
   const [brandingUploading, setBrandingUploading] = useState<
@@ -1213,6 +1221,89 @@ export function Dashboard({
     update("avatar_path", null);
     setAvatarUploading(false);
     setNotice({ severity: "success", message: "Profile photo removed." });
+    router.refresh();
+  }
+
+  async function uploadResume(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateResume(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setResumeUploading(true);
+    const supabase = createClient();
+    const path = `${profile.id}/resume/cv-${crypto.randomUUID()}.${resumeExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(DOCUMENTS_BUCKET)
+      .upload(path, file, {
+        // Signed URLs are short-lived, so nothing downstream should hold this.
+        cacheControl: "0",
+        contentType: resumeContentType(file),
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath = draft.resume_path;
+    const label = file.name.slice(0, 80);
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ resume_path: path, resume_label: label })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      // The row is what the page reads, so an object it does not reference is
+      // worse than no upload: it lingers in the bucket unreachable and unowned.
+      await supabase.storage.from(DOCUMENTS_BUCKET).remove([path]);
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(DOCUMENTS_BUCKET).remove([previousPath]);
+    }
+
+    update("resume_path", path);
+    update("resume_label", label);
+    setResumeUploading(false);
+    setNotice({ severity: "success", message: "Résumé uploaded." });
+    router.refresh();
+  }
+
+  async function removeResume() {
+    if (!draft.resume_path) return;
+
+    setResumeUploading(true);
+    const supabase = createClient();
+    const previousPath = draft.resume_path;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ resume_path: null, resume_label: null })
+      .eq("id", profile.id);
+
+    if (error) {
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    // Deleted from the bucket too, not just unlinked -- a résumé someone has
+    // taken down should not still exist behind a signed URL.
+    await supabase.storage.from(DOCUMENTS_BUCKET).remove([previousPath]);
+    update("resume_path", null);
+    update("resume_label", null);
+    setResumeUploading(false);
+    setNotice({ severity: "success", message: "Résumé removed." });
     router.refresh();
   }
 
@@ -3038,6 +3129,62 @@ export function Dashboard({
                     }
                     label="Let people send their details back to me"
                   />
+
+                  {/* A recruiter reads the page, then asks for the file. The
+                      bucket is private and the link on the public page is
+                      signed per click, so the document is not sitting at a
+                      permanent address for a crawler to find. */}
+                  <Box className="resume-upload">
+                    <Typography variant="subtitle2">Résumé</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A PDF or Word file, up to 10 MB. Shown as a download on
+                      your page. Remember it usually carries your phone number
+                      and address — anyone with your page can open it.
+                    </Typography>
+                    {draft.resume_path ? (
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                        <Chip
+                          icon={<DescriptionOutlined />}
+                          label={draft.resume_label ?? "Résumé"}
+                          variant="outlined"
+                        />
+                        <Button component="label" size="small" disabled={resumeUploading}>
+                          Replace
+                          <input
+                            type="file"
+                            hidden
+                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={uploadResume}
+                          />
+                        </Button>
+                        <Button
+                          size="small"
+                          color="inherit"
+                          onClick={removeResume}
+                          disabled={resumeUploading}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Button
+                        component="label"
+                        size="small"
+                        variant="outlined"
+                        disabled={resumeUploading}
+                        startIcon={<DescriptionOutlined />}
+                        sx={{ alignSelf: "flex-start" }}
+                      >
+                        {resumeUploading ? "Uploading…" : "Upload a résumé"}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          onChange={uploadResume}
+                        />
+                      </Button>
+                    )}
+                  </Box>
                 </div>
               </Paper>
 
