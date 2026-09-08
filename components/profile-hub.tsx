@@ -7,6 +7,7 @@ import type { PublicMapLocation } from "@/lib/map-location";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import EditRounded from "@mui/icons-material/EditRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
@@ -388,6 +389,7 @@ export function ProfileHub({
   eventTag,
   showSaveContact = false,
   showExchange = false,
+  resumeLabel = null,
   mapLocation = null,
   timeline = [],
 }: {
@@ -405,6 +407,8 @@ export function ProfileHub({
   eventTag?: string | null;
   showSaveContact?: boolean;
   showExchange?: boolean;
+  /** Filename of the uploaded résumé, or null when there is none. */
+  resumeLabel?: string | null;
   /** The Find-us block: a pin, an address and a directions button. */
   mapLocation?: PublicMapLocation | null;
   /** Education and experience, for a student or anyone with a background worth showing. */
@@ -780,6 +784,25 @@ export function ProfileHub({
             allowSaveContact={showSaveContact}
             allowExchange={showExchange}
           />
+        )}
+
+        {/* Served through /api/resume, which signs a short-lived URL per
+            click. The file itself has no public address, so it cannot be
+            crawled or shared on past the moment it was handed over. */}
+        {resumeLabel && (
+          <div className="profile-resume">
+            <Button
+              component="a"
+              href={`/api/resume/${encodeURIComponent(profile.username)}`}
+              target="_blank"
+              rel="noreferrer"
+              variant="outlined"
+              startIcon={<DescriptionOutlined />}
+              onClick={() => track("Opened résumé")}
+            >
+              {resumeLabel}
+            </Button>
+          </div>
         )}
 
         <section className="hub-panel">
