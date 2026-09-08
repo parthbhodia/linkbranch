@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InstallAfterHero } from "@/components/install-after-hero";
 import { MarketingHome } from "@/components/marketing-home";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 
@@ -84,6 +85,14 @@ export default function MarketingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <MarketingHome />
+      {/* The offer only ever existed on /card and the dashboard, both behind
+          sign-in, so someone arriving at cueful.bio on a phone was never shown
+          it -- and on iOS no browser raises one of its own, so our card is the
+          only prompt there will be. Floating rather than inline keeps it off
+          computers, where the browser's own install control already exists and
+          a panel in the marketing flow would just be in the way. It renders
+          nothing once installed, and a dismissal here lasts 30 days. */}
+      <InstallAfterHero />
     </>
   );
 }

@@ -49,6 +49,12 @@ type InstallAppProps = {
    */
   avoidBottom?: boolean;
   /**
+   * Floating only: the dashboard pins a 72px nav to the bottom of a phone
+   * screen, so the card has to sit above it. Nowhere else has one, and a card
+   * floating 96px up from nothing reads as a mistake.
+   */
+  aboveBottomNav?: boolean;
+  /**
    * Show even when the visitor dismissed the suggestion, and on a computer.
    * For the deliberate "Install the app" control in settings: someone who went
    * looking for it is not being nagged, and an earlier "not now" should not be
@@ -69,6 +75,7 @@ type InstallAppProps = {
 export function InstallApp({
   placement = "inline",
   avoidBottom = false,
+  aboveBottomNav = false,
   requested = false,
 }: InstallAppProps) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
@@ -160,7 +167,9 @@ export function InstallApp({
     <aside
       className={`install-app${
         placement === "floating" ? " install-app--floating" : ""
-      }${placement === "floating" && avoidBottom ? " install-app--top" : ""}`}
+      }${placement === "floating" && aboveBottomNav ? " install-app--above-nav" : ""}${
+        placement === "floating" && avoidBottom ? " install-app--top" : ""
+      }`}
     >
       <div className="install-app__icon" aria-hidden="true">
         <InstallMobileRounded />

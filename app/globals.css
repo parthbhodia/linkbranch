@@ -13460,10 +13460,15 @@ a {
 
 @media (max-width: 700px) {
   .install-app--floating {
-    /* Clear of the fixed mobile nav: 72px tall, 10px off the bottom, plus the
-       safe area on a notched phone -- which is exactly where this shows up. */
-    inset: auto 12px calc(96px + env(safe-area-inset-bottom)) 12px;
+    inset: auto 12px calc(12px + env(safe-area-inset-bottom)) 12px;
     width: auto;
+  }
+
+  /* Only the dashboard pins a nav to the bottom: 72px tall, 10px off the
+     bottom, plus the safe area on a notched phone -- which is exactly where
+     this shows up. Elsewhere the card sits where any bottom sheet would. */
+  .install-app--floating.install-app--above-nav {
+    bottom: calc(96px + env(safe-area-inset-bottom));
   }
 }
 

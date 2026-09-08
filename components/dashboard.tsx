@@ -3842,7 +3842,7 @@ export function Dashboard({
           queue whose head never leaves is not a queue. The two can collide on
           a phone, so the install panel moves to the top instead of hiding. */}
       {!tourOpen && (
-        <InstallApp placement="floating" avoidBottom={sharePromptOpen} />
+        <InstallApp placement="floating" aboveBottomNav avoidBottom={sharePromptOpen} />
       )}
 
       {sharePromptOpen && !tourOpen && draft.is_published && (
