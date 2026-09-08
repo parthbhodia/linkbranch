@@ -12249,6 +12249,11 @@ a {
   background: #eff8d5;
 }
 
+.workspace-more__icon--admin {
+  color: #454a42;
+  background: #eef0eb;
+}
+
 .workspace-more__logout {
   min-height: 58px !important;
   margin-top: 12px !important;
@@ -14610,6 +14615,14 @@ a {
    on desktop previously offered. */
 .workspace-rail__card {
   margin-top: auto;
+  color: #191a17 !important;
+}
+
+/* Only rendered for an address on the admin allowlist, so it never widens the
+   rail for anyone else. Follows the code button, which owns the margin-top:auto
+   that pins this cluster to the bottom. */
+.workspace-rail__admin {
+  margin-top: 6px !important;
   color: #191a17 !important;
 }
 
