@@ -13,11 +13,18 @@ import LibraryMusicRounded from "@mui/icons-material/LibraryMusicRounded";
 import MailOutlineRounded from "@mui/icons-material/MailOutlineRounded";
 import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import ShoppingBagRounded from "@mui/icons-material/ShoppingBagRounded";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
+import {
+  STUDENT_DEMO_RESUME,
+  studentDemoProfile,
+  studentDemoTimeline,
+} from "@/lib/demo-data";
+import { formatRange, timelineByKind } from "@/lib/timeline";
 import { musicProviders } from "@/lib/music-providers";
 import {
   getSocialPlatformIcon,
@@ -37,6 +44,17 @@ function formatTaps(total: number) {
 // Pixels per second the examples rail creeps at. Slow enough to read a card
 // while it passes, rather than a ticker.
 const MARQUEE_SPEED = 26;
+
+// The student card is built from the same data /demo/student renders, so the
+// homepage cannot drift from the page it is advertising. One entry of each
+// kind is enough to show the shape.
+const studentPreview = (() => {
+  const { experience, education } = timelineByKind(studentDemoTimeline);
+  return [
+    { kind: "EXPERIENCE", entry: experience[0] },
+    { kind: "EDUCATION", entry: education[0] },
+  ].filter((row) => row.entry);
+})();
 
 // Tiles pull their glyphs from the real provider registries rather than from a
 // separate set of brand logos, so the row can only ever show something the
@@ -716,6 +734,62 @@ export function MarketingHome() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="marketing-students" id="students">
+        <div className="marketing-students__copy">
+          <p className="section-label">FOR STUDENTS</p>
+          <Typography component="h2">
+            Education and experience,
+            <br />
+            <span>under your name.</span>
+          </Typography>
+          <Typography>
+            The part a link list cannot show. Your course and your internships
+            with dates, your CV attached as a PDF, and one code you hold up at a
+            careers fair instead of spelling out an email address.
+          </Typography>
+          <Button
+            component={Link}
+            href="/demo/student"
+            variant="contained"
+            endIcon={<ArrowForwardRounded aria-hidden="true" />}
+          >
+            See a student page
+          </Button>
+        </div>
+
+        <Link
+          className="marketing-students__card"
+          href="/demo/student"
+          aria-label="Open the student profile demo"
+        >
+          <span className="marketing-students__card-head">
+            <i aria-hidden="true">{studentDemoProfile.initials}</i>
+            <span>
+              <b>{studentDemoProfile.displayName}</b>
+              <small>{studentDemoProfile.eyebrow}</small>
+            </span>
+            <ArrowOutwardRounded aria-hidden="true" />
+          </span>
+
+          <span className="marketing-students__timeline">
+            {studentPreview.map(({ kind, entry }) => (
+              <span className="marketing-students__entry" key={kind}>
+                <small>{kind}</small>
+                <b>{entry!.title}</b>
+                <span>
+                  {entry!.organisation} · {formatRange(entry!)}
+                </span>
+              </span>
+            ))}
+          </span>
+
+          <span className="marketing-students__cv">
+            <DescriptionOutlined aria-hidden="true" />
+            {STUDENT_DEMO_RESUME}
+          </span>
+        </Link>
       </section>
 
       <section className="marketing-control">
