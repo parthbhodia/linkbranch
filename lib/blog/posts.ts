@@ -10,6 +10,7 @@ import { post as instagramBioLink } from "@/content/blog/how-to-add-link-in-inst
 import { post as whatsappLinkInBio } from "@/content/blog/whatsapp-link-in-bio";
 import { post as localShopLinkInBio } from "@/content/blog/link-in-bio-for-local-shop";
 import { post as qrOneTap } from "@/content/blog/qr-code-one-tap-iphone";
+import { post as studentLinkInBio } from "@/content/blog/link-in-bio-for-students";
 
 /**
  * A post as written: metadata plus a Markdown body (see lib/blog/markdown.ts
@@ -67,6 +68,7 @@ export const blogPosts: BlogPost[] = [
   whatsappLinkInBio,
   localShopLinkInBio,
   qrOneTap,
+  studentLinkInBio,
 ]
   .map(prepare)
   .sort((a, b) => (a.published < b.published ? 1 : a.published > b.published ? -1 : 0));
