@@ -390,6 +390,7 @@ export function ProfileHub({
   showSaveContact = false,
   showExchange = false,
   resumeLabel = null,
+  resumeHref = null,
   mapLocation = null,
   timeline = [],
 }: {
@@ -409,6 +410,12 @@ export function ProfileHub({
   showExchange?: boolean;
   /** Filename of the uploaded résumé, or null when there is none. */
   resumeLabel?: string | null;
+  /**
+   * Where the résumé button points. Defaults to the signing route, which is
+   * what a real profile wants; the demo overrides it because it has no row to
+   * sign against.
+   */
+  resumeHref?: string | null;
   /** The Find-us block: a pin, an address and a directions button. */
   mapLocation?: PublicMapLocation | null;
   /** Education and experience, for a student or anyone with a background worth showing. */
@@ -793,7 +800,7 @@ export function ProfileHub({
           <div className="profile-resume">
             <Button
               component="a"
-              href={`/api/resume/${encodeURIComponent(profile.username)}`}
+              href={resumeHref ?? `/api/resume/${encodeURIComponent(profile.username)}`}
               target="_blank"
               rel="noreferrer"
               variant="outlined"
