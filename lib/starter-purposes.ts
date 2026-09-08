@@ -29,3 +29,20 @@ export const STARTER_PURPOSES = [
 ] as const;
 
 export type StarterPurpose = (typeof STARTER_PURPOSES)[number];
+
+/**
+ * Read a purpose off a query string.
+ *
+ * The wizard keys links, headlines and whole sections off this value, so an
+ * unrecognised one is dropped rather than carried further and quietly ignored
+ * somewhere less obvious. Nothing here is trusted: the string arrives from a
+ * URL anyone can edit.
+ */
+export function parseStarterPurpose(
+  value: string | null | undefined,
+): StarterPurpose | null {
+  const candidate = typeof value === "string" ? value.trim() : "";
+  return (STARTER_PURPOSES as readonly string[]).includes(candidate)
+    ? (candidate as StarterPurpose)
+    : null;
+}

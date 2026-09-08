@@ -749,13 +749,16 @@ export function MarketingHome() {
             with dates, your CV attached as a PDF, and one code you hold up at a
             careers fair instead of spelling out an email address.
           </Typography>
+          {/* The card beside this is the link to the demo, so the button is the
+              other half of the decision: straight into setup with the student
+              purpose already chosen and its rows filled in. */}
           <Button
             component={Link}
-            href="/demo/student"
+            href="/onboarding?purpose=student"
             variant="contained"
             endIcon={<ArrowForwardRounded aria-hidden="true" />}
           >
-            See a student page
+            Build this page
           </Button>
         </div>
 

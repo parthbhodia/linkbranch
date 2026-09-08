@@ -4,6 +4,7 @@ import {
   type OnboardingInitialData,
 } from "@/components/onboarding-wizard";
 import { createClient } from "@/lib/supabase/server";
+import { parseStarterPurpose } from "@/lib/starter-purposes";
 
 export const metadata = {
   title: "Set up your profile | Cueful",
@@ -19,9 +20,10 @@ export const dynamic = "force-dynamic";
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string; import?: string }>;
+  searchParams: Promise<{ template?: string; import?: string; purpose?: string }>;
 }) {
-  const { template, import: importMode } = await searchParams;
+  const { template, import: importMode, purpose } = await searchParams;
+  const starterPurpose = parseStarterPurpose(purpose);
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,6 +33,7 @@ export default async function OnboardingPage({
     const params = new URLSearchParams();
     if (template) params.set("template", template);
     if (importMode === "1") params.set("import", "1");
+    if (starterPurpose) params.set("purpose", starterPurpose);
     redirect(`/auth?${params.toString()}`);
   }
 
@@ -70,6 +73,7 @@ export default async function OnboardingPage({
       initialTemplate={template ?? profile.template ?? "field-notes"}
       initialData={initialData}
       shouldImport={importMode === "1"}
+      initialPurpose={starterPurpose}
     />
   );
 }
