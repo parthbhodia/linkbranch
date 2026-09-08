@@ -53,7 +53,7 @@ Three or four, not twelve. Each one should survive being clicked by a stranger w
 
 - The project you would actually want looked at
 - GitHub, Behance, a portfolio — whichever is real
-- Your CV as a PDF, linked from Drive or your own site
+- Your CV, which you can attach to the page directly as a PDF or Word file
 - One social, if it is one you would show an employer
 
 Leave off anything that is empty, half-finished, or three years old. A dead link on a page you handed over is worse than one fewer link.
@@ -98,7 +98,7 @@ One address, everywhere the old ones were:
 
 ## What this is not
 
-It is not a CV builder. It will not check your CV against a job description or rewrite your bullet points, and it does not try to. It is the page you hand over — the thing that is current, scannable, and yours — with room to link out to the real document.
+It is not a CV builder. It will not check your CV against a job description or rewrite your bullet points, and it does not try to. It is the page you hand over — the thing that is current, scannable, and yours — with the real document attached to it.
 
 And it is free. No plan gating, no ads on your page, and the address is yours.
 
