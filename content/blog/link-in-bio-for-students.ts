@@ -25,7 +25,7 @@ A CV is a file. It gets attached to an email, downloaded once, and read for abou
 
 A page does not have that problem. It has one address, it is current whenever someone opens it, and you can hand it over in a second without either of you typing an email address.
 
-This is what to put on one, in the order that matters.
+This is what to put on one, in the order that matters. There is a [worked example here](/demo/student) if you would rather see one than read about it.
 
 ## Start with the purpose, not the design
 

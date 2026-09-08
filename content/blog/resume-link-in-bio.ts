@@ -24,7 +24,7 @@ Someone asks for your CV. You send a PDF. It lands in an inbox, gets opened once
 
 None of that is the file's fault. A CV is a detailed document, and detailed documents are bad at first impressions. The problem is that the file is being asked to do two jobs — to be *scanned* and to be *read* — and it is only good at one of them.
 
-Splitting those two jobs is what a page is for.
+Splitting those two jobs is what a page is for. [Here is one already split](/demo/student), if you want to look before reading on.
 
 ## Two layers, two different questions
 
@@ -71,6 +71,10 @@ Two things are true about how it is stored here, and both matter:
 - **Anyone who can see your page can still open it.** The signing protects against the link leaking onward. It does not make the file private. If your page is public, your CV is public.
 
 So: consider taking your home address off it before uploading, and leaving the phone number on if you want to be called. Or leave the file off entirely and put a **Get in touch** link where it would have been. Both are reasonable choices. Uploading without having thought about it is the one to avoid.
+
+:::note
+If you do take the address off, delete the line — do not draw a black box over it. A filled rectangle in a PDF sits *on top of* the text, and the words underneath still come out when someone selects and copies them. People have found their full address in a résumé they thought they had redacted.
+:::
 
 Taking it down later actually takes it down — the file is deleted from storage, not just unlinked from your page. Same when you replace one: the old file goes with it.
 
