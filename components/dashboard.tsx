@@ -34,6 +34,7 @@ import HubOutlined from "@mui/icons-material/HubOutlined";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
+import AdminPanelSettingsOutlined from "@mui/icons-material/AdminPanelSettingsOutlined";
 import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
 import {
   Alert,
@@ -1651,6 +1652,18 @@ export function Dashboard({
             <QrCode2Rounded />
           </IconButton>
         </Tooltip>
+        {isAdmin ? (
+          <Tooltip title="Admin" placement="right" arrow>
+            <IconButton
+              className="workspace-rail__admin"
+              component={Link}
+              href="/admin"
+              aria-label="Open the admin funnel"
+            >
+              <AdminPanelSettingsOutlined />
+            </IconButton>
+          </Tooltip>
+        ) : null}
         <Tooltip title="Show dashboard tour" placement="right" arrow>
           <IconButton
             className="workspace-rail__help"
@@ -2885,6 +2898,18 @@ export function Dashboard({
                   </span>
                   <ChevronRightRounded />
                 </ButtonBase>
+                {isAdmin ? (
+                  <ButtonBase component={Link} href="/admin">
+                    <span className="workspace-more__icon workspace-more__icon--admin">
+                      <AdminPanelSettingsOutlined />
+                    </span>
+                    <span>
+                      <b>Admin</b>
+                      <small>Signup funnel, views, and where they came from</small>
+                    </span>
+                    <ChevronRightRounded />
+                  </ButtonBase>
+                ) : null}
               </div>
               <Button
                 className="workspace-more__logout"
