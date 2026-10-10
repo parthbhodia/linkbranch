@@ -4,6 +4,11 @@ import { adminAllowlistCount, isAdminEmail } from "@/lib/admin-access";
 import { buildActivationFunnel, worstStage, type FunnelAccount } from "@/lib/funnel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import {
+  referralVerdict,
+  summariseReferralLoop,
+  type ReferralAccount,
+} from "@/lib/referral-loop";
 import { summariseViews, type ViewRow } from "@/lib/views-summary";
 
 export const metadata = {
@@ -89,7 +94,7 @@ export default async function AdminPage() {
     admin
       .from("profiles")
       .select(
-        "id,username,display_name,created_at,bio,avatar_path,onboarding_completed,is_published,is_discoverable",
+        "id,username,display_name,created_at,bio,avatar_path,onboarding_completed,is_published,is_discoverable,referred_by",
       )
       .order("created_at", { ascending: false })
       .limit(ROW_LIMIT),
@@ -109,6 +114,7 @@ export default async function AdminPage() {
     display_name: string;
     is_published: boolean;
     is_discoverable: boolean;
+    referred_by: string | null;
   })[];
 
   const activeLinkCounts = tally(links, "user_id");
@@ -129,6 +135,8 @@ export default async function AdminPage() {
     clickCounts,
   });
   const worst = worstStage(stages);
+
+  const referral = summariseReferralLoop(accounts as ReferralAccount[]);
 
   const draftRows = drafts ?? [];
   const draftsOpened = draftRows.filter((d) => d.first_viewed_at !== null).length;
@@ -284,6 +292,75 @@ export default async function AdminPage() {
                       </td>
                       <td>{row.count}</td>
                       <td>{pct((row.count / traffic.human) * 100)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="admin-card">
+        <div className="admin-card__top">
+          <h2>Referral loop</h2>
+          <p>
+            Signups that arrived through a creator&rsquo;s badge or invite link,
+            and whether they turn into finished pages.
+          </p>
+        </div>
+
+        <dl className="admin-stats">
+          <div>
+            <dt>Referred signups</dt>
+            <dd>
+              {referral.referred}
+              <small>{pct(referral.pctReferred)} of all signups</small>
+            </dd>
+          </div>
+          <div>
+            {/* Every published page carries a badge, so this is the number
+                that says how many of them actually brought anyone in. */}
+            <dt>Referrers who converted</dt>
+            <dd>{referral.activeReferrers}</dd>
+          </div>
+          <div>
+            <dt>Finished setup</dt>
+            <dd>
+              {referral.referredActivationPct === null
+                ? "—"
+                : pct(referral.referredActivationPct)}
+              <small>
+                {referral.organicActivationPct === null
+                  ? "no one else to compare"
+                  : `${pct(referral.organicActivationPct)} for everyone else`}
+              </small>
+            </dd>
+          </div>
+        </dl>
+
+        <p className="admin-sub">{referralVerdict(referral)}</p>
+
+        {referral.topReferrers.length > 0 && (
+          <>
+            <h3 className="admin-subhead">Who is bringing people in</h3>
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Handle</th>
+                    <th>Signups referred</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {referral.topReferrers.map((row) => (
+                    <tr key={row.profileId}>
+                      <td>
+                        {handleById.has(row.profileId)
+                          ? `@${handleById.get(row.profileId)}`
+                          : "(deleted)"}
+                      </td>
+                      <td>{row.count}</td>
                     </tr>
                   ))}
                 </tbody>
