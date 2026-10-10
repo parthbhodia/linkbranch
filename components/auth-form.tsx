@@ -22,6 +22,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
 import { parseStarterPurpose } from "@/lib/starter-purposes";
+import {
+  TEMPLATE_PICKER,
+  postAuthDestination,
+} from "@/lib/post-auth-destination";
 import { publicProfileAddress } from "@/lib/brand";
 import { stashPendingEmail } from "@/lib/pending-email";
 
@@ -144,22 +148,19 @@ export function AuthForm() {
           text: "Email or password is incorrect.",
         });
       } else {
-        if (claimToken || isImportFlow) {
+        if (nextPath !== TEMPLATE_PICKER) {
+          // Claim, import and starter-purpose all named somewhere specific.
           router.push(nextPath);
         } else {
           const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed")
             .single();
-          // A finished profile still goes to the dashboard; only someone who
-          // never completed setup gets sent into it, and then with the purpose
-          // they arrived carrying rather than back to the generic picker.
           router.push(
-            profile?.onboarding_completed
-              ? "/dashboard"
-              : starterPurpose
-                ? `/onboarding?purpose=${encodeURIComponent(starterPurpose)}`
-                : "/templates",
+            postAuthDestination({
+              requested: nextPath,
+              onboardingCompleted: Boolean(profile?.onboarding_completed),
+            }),
           );
         }
         router.refresh();
