@@ -144,7 +144,14 @@ export default async function AdminPage() {
       // needs profile_id and device_type.
       .select("profile_id,device_type,country_code,referrer,occurred_at")
       .limit(100000),
-    admin.from("click_events").select("profile_id").limit(100000),
+    // badge_open excluded: the funnel stage is "someone engaged with this
+    // creator's content", and a tap on the Cueful badge in the footer is a
+    // visitor leaving for us, not engagement with anything they published.
+    admin
+      .from("click_events")
+      .select("profile_id")
+      .neq("event_type", "badge_open")
+      .limit(100000),
     admin.from("claim_drafts").select("first_viewed_at,claimed_at,expires_at").limit(ROW_LIMIT),
   ]);
 

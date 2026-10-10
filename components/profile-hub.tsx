@@ -570,6 +570,38 @@ export function ProfileHub({
     }
   }, [databaseProfileId]);
 
+  // The badge navigates in the same tab, so the insert above would be
+  // cancelled by the unload before it left the browser. sendBeacon exists for
+  // exactly this and is handed off to the browser to deliver, which is why
+  // this one event posts to a route instead of going straight to the database.
+  const recordBadgeOpen = useCallback(() => {
+    if (!databaseProfileId) return;
+
+    const body = JSON.stringify({
+      profileId: databaseProfileId,
+      referrer: document.referrer || null,
+    });
+
+    const beaconed =
+      typeof navigator.sendBeacon === "function" &&
+      navigator.sendBeacon(
+        "/api/analytics/badge",
+        new Blob([body], { type: "application/json" }),
+      );
+
+    // sendBeacon returns false when the browser declines to queue it (the
+    // payload is over its limit, or the API is missing entirely). keepalive is
+    // the same promise from fetch, so it survives the unload too.
+    if (!beaconed) {
+      void fetch("/api/analytics/badge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      });
+    }
+  }, [databaseProfileId]);
+
   const copyCode = useCallback(async (
     code: string,
     provider: string,
@@ -1332,7 +1364,10 @@ export function ProfileHub({
           <footer className="profile-supporter-badge">
             {/* This is the growth loop: every visitor to every creator page
                 sees it, so it reads as an invitation rather than a credit. */}
-            <a href={creatorBadgeUrl(profile.username)}>
+            <a
+              href={creatorBadgeUrl(profile.username)}
+              onClick={recordBadgeOpen}
+            >
               <span>Make your own with</span>
               <b>cueful.</b>
               <ArrowOutwardRounded aria-hidden="true" />
