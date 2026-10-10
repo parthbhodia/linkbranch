@@ -79,6 +79,45 @@ export default async function AdminPage() {
     notFound();
   }
 
+  // Everything below reads through the service role client, so without the key
+  // there is nothing to render. createAdminClient throws, and an uncaught throw
+  // in a server component is a blank error page with a digest on it -- which is
+  // indistinguishable, from the browser, from the 404 above. The deletion route
+  // already checks for this variable and says so; this says so too, because the
+  // whole point of the refusal log is that guessing which of two causes you hit
+  // costs an afternoon.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return (
+      <main className="admin-page">
+        <header className="admin-head">
+          <div>
+            <p className="admin-eyebrow">CUEFUL ADMIN</p>
+            <h1>Not configured</h1>
+            <p className="admin-sub">
+              You are on the allowlist. The page cannot read anything.
+            </p>
+          </div>
+        </header>
+
+        <section className="admin-card">
+          <div className="admin-card__top">
+            <h2>SUPABASE_SERVICE_ROLE_KEY is not set here</h2>
+          </div>
+          <p className="admin-sub">
+            Row level security scopes profiles to published-or-own and hides
+            other people&rsquo;s views entirely, so the ordinary client cannot
+            see the accounts that dropped out &mdash; which are the whole point
+            of this page. Set the variable on the deployment and redeploy.
+          </p>
+          <p className="admin-empty">
+            The r&eacute;sum&eacute; download and account deletion read through
+            the same client, so both are off until it is set.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   // Service role from here on. RLS scopes profiles to published-or-own and
   // hides other people's views and clicks entirely, so the ordinary client
   // cannot see the accounts that dropped out -- which are the whole point.
