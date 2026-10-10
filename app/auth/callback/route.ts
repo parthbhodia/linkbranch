@@ -1,23 +1,49 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  TEMPLATE_PICKER,
+  isInternalPath,
+  postAuthDestination,
+} from "@/lib/post-auth-destination";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
-  const requestedNext = requestUrl.searchParams.get("next") ?? "/templates";
-  const next =
-    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-      ? requestedNext
-      : "/templates";
+  const requestedNext = requestUrl.searchParams.get("next");
+  // Kept for the failure branches below, which need somewhere to send people
+  // before there is a session to ask questions about.
+  const next = isInternalPath(requestedNext) ? requestedNext : TEMPLATE_PICKER;
   const supabase = await createClient();
+
+  /**
+   * Where to go once the exchange has worked.
+   *
+   * The caller's `next` is decided before anyone is signed in, so for a plain
+   * sign-in it is always the template picker -- which is why signing in with
+   * Google used to show that picker to people who finished setup long ago.
+   * Now the question is asked at the only point it can be answered.
+   */
+  async function destination() {
+    if (isInternalPath(requestedNext) && requestedNext !== TEMPLATE_PICKER) {
+      return requestedNext;
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .single();
+    return postAuthDestination({
+      requested: requestedNext,
+      onboardingCompleted: Boolean(profile?.onboarding_completed),
+    });
+  }
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return NextResponse.redirect(new URL(await destination(), requestUrl.origin));
     }
 
     // The email can be confirmed successfully while the session exchange fails
@@ -36,7 +62,7 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) {
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return NextResponse.redirect(new URL(await destination(), requestUrl.origin));
     }
 
     return NextResponse.redirect(

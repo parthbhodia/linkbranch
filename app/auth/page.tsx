@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth-form";
+import { GoogleOneTap } from "@/components/google-one-tap";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -19,5 +20,11 @@ export default async function AuthPage() {
     redirect("/dashboard");
   }
 
-  return <AuthForm />;
+  // Only reached when signed out -- the redirect above handles everyone else.
+  return (
+    <>
+      <GoogleOneTap />
+      <AuthForm />
+    </>
+  );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleOneTap } from "@/components/google-one-tap";
 import { MarketingHome } from "@/components/marketing-home";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
 
@@ -83,6 +84,10 @@ export default function MarketingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      {/* The returning-visitor entry point: someone who already has an account
+          and lands here should not have to go and find the sign-in page. It
+          checks for a session itself and renders nothing when there is one. */}
+      <GoogleOneTap />
       <MarketingHome />
     </>
   );
