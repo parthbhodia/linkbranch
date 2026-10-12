@@ -92,7 +92,29 @@ export async function generateMetadata({
     .eq("username", username.toLowerCase())
     .eq("is_published", true)
     .maybeSingle();
-  const title = profile?.seo_title || profile?.display_name || `@${username}`;
+
+  // No row means the handle is unclaimed, or claimed but unpublished. The page
+  // body calls notFound() for both, but the metadata used to keep going and
+  // describe the page as if it existed: title "@<handle>", a self-referential
+  // canonical, populated og: tags, and robots "index, follow". So every typo in
+  // a shared handle was an indexable page that unfurled on social as though it
+  // were somebody's profile, and Next's own noindex -- emitted later, from the
+  // not-found boundary -- landed in the same document as a contradiction.
+  //
+  // The status stays 200 and cannot be fixed here: the root loading.tsx makes
+  // this route stream, so the shell is already flushed by the time the query
+  // comes back empty and notFound() runs. noindex is what search engines
+  // actually honour, and it is now the only robots value in the document.
+  if (!profile) {
+    return {
+      title: "Page not found | Cueful",
+      description:
+        "That Cueful link does not point at a page. The handle may have changed, or the page may have been taken down.",
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const title = profile.seo_title || profile.display_name || `@${username}`;
   const description =
     profile?.seo_description ||
     profile?.bio ||
