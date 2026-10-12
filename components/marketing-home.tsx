@@ -14,13 +14,14 @@ import MailOutlineRounded from "@mui/icons-material/MailOutlineRounded";
 import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import ShoppingBagRounded from "@mui/icons-material/ShoppingBagRounded";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
-import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
+import { Button, IconButton, Tooltip, Typography } from "@mui/material";
 import { BrandMark } from "@/components/brand-mark";
 import { ImportStarter } from "@/components/import-starter";
 import { UsernameClaim } from "@/components/username-claim";
 import { exampleProfiles } from "@/lib/example-profiles";
 import {
   STUDENT_DEMO_RESUME,
+  demoProfile,
   studentDemoProfile,
   studentDemoTimeline,
 } from "@/lib/demo-data";
@@ -55,6 +56,11 @@ const studentPreview = (() => {
     { kind: "EDUCATION", entry: education[0] },
   ].filter((row) => row.entry);
 })();
+
+// The hero card shows one referral offer, and the third demo entry has no
+// code, so pick the first that does: a code row with nothing in it is the one
+// thing that card must not render.
+const firstDemoOffer = demoProfile.referrals.find((offer) => offer.code);
 
 // Tiles pull their glyphs from the real provider registries rather than from a
 // separate set of brand logos, so the row can only ever show something the
@@ -156,28 +162,6 @@ const homepageFeatures = [
   },
 ];
 
-const heroCollage = [
-  {
-    src: "/marketing/hero-collage-friends.jpg",
-    alt: "Creators laughing together outdoors",
-    className: "marketing-hero-collage__tile--friends",
-  },
-  {
-    src: "/marketing/hero-collage-portrait-round.jpg",
-    alt: "Creator wearing a mustard beanie",
-    className: "marketing-hero-collage__tile--round",
-  },
-  {
-    src: "/marketing/hero-collage-portrait-tall.jpg",
-    alt: "Creator outdoors in a purple beanie",
-    className: "marketing-hero-collage__tile--tall",
-  },
-  {
-    src: "/marketing/hero-collage-statement.jpg",
-    alt: "Creator with blue braids blowing bubblegum",
-    className: "marketing-hero-collage__tile--statement",
-  },
-];
 
 export function MarketingHome() {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -366,11 +350,6 @@ export function MarketingHome() {
 
       <section className="marketing-hero">
         <div className="marketing-hero__copy">
-          <Chip
-            className="marketing-kicker"
-            label="LINKS · OFFERS · SIGNALS"
-            variant="outlined"
-          />
           <Typography component="h1">
             One free link for
             <br />
@@ -388,25 +367,6 @@ export function MarketingHome() {
             </Typography>
             <UsernameClaim />
           </div>
-          <div
-            className={`marketing-import-option${importOpen ? " is-open" : ""}`}
-          >
-            <button
-              type="button"
-              className="marketing-import-option__toggle"
-              aria-expanded={importOpen}
-              aria-controls="linktree-import-panel"
-              onClick={() => setImportOpen((open) => !open)}
-            >
-              <span>Already use Linktree?</span>
-              Import your page instead
-            </button>
-            {importOpen && (
-              <div id="linktree-import-panel">
-                <ImportStarter compact />
-              </div>
-            )}
-          </div>
           <div className="marketing-hero__trust" aria-label="Signup benefits">
             <span>
               <CheckRounded aria-hidden="true" /> Free username
@@ -417,25 +377,72 @@ export function MarketingHome() {
           </div>
         </div>
 
-        <div
-          className="marketing-hero-collage"
-          aria-label="Creators growing with Cueful"
+        {/* The hero used to show four stock photographs of people, which said
+            who might use this and never what it makes. A real page holds a
+            visitor roughly six times longer than this homepage does, so the
+            hero now shows one. Labelled as an example, and linked to the live
+            version at /demo rather than being a picture of it. */}
+        <Link
+          className="marketing-hero-card"
+          href="/demo"
+          aria-label="Open the example creator profile"
         >
-          {heroCollage.map((tile) => (
-            <figure
-              className={`marketing-hero-collage__tile ${tile.className}`}
-              key={tile.src}
-            >
-              <Image
-                src={tile.src}
-                alt={tile.alt}
-                fill
-                sizes="(max-width: 900px) 45vw, 280px"
-                priority
-              />
-            </figure>
-          ))}
-        </div>
+          <span className="marketing-hero-card__label">LIVE EXAMPLE</span>
+
+          <span className="marketing-hero-card__head">
+            <i aria-hidden="true">{demoProfile.initials}</i>
+            <span>
+              <b>{demoProfile.displayName}</b>
+              <small>{demoProfile.eyebrow}</small>
+            </span>
+            <ArrowOutwardRounded aria-hidden="true" />
+          </span>
+
+          <span className="marketing-hero-card__links">
+            {demoProfile.links.slice(0, 3).map((link) => (
+              <span className="marketing-hero-card__link" key={link.title}>
+                {link.title}
+              </span>
+            ))}
+          </span>
+
+          {/* The referral rail, which is the part no other link-in-bio page
+              has. Shown exactly as a visitor sees it -- a perk and a code --
+              with no copy count, because inventing a number here would be
+              inventing evidence. The claim about tracking stays in the hero
+              copy, where it is a claim rather than a fabricated statistic. */}
+          {firstDemoOffer && (
+            <span className="marketing-hero-card__offer">
+              <small>{firstDemoOffer.provider}</small>
+              <b>{firstDemoOffer.perk}</b>
+              <code>{firstDemoOffer.code}</code>
+            </span>
+          )}
+        </Link>
+      </section>
+
+      {/* Lifted out of the hero. It asks a second question of someone who
+          has not answered the first, and it only speaks to people who already
+          have a Linktree -- a narrower audience than the hero's. Still on the
+          first scroll, just no longer competing with the claim field. */}
+      <section
+        className={`marketing-import-strip${importOpen ? " is-open" : ""}`}
+      >
+        <button
+          type="button"
+          className="marketing-import-option__toggle"
+          aria-expanded={importOpen}
+          aria-controls="linktree-import-panel"
+          onClick={() => setImportOpen((open) => !open)}
+        >
+          <span>Already use Linktree?</span>
+          Import your page instead
+        </button>
+        {importOpen && (
+          <div id="linktree-import-panel">
+            <ImportStarter compact />
+          </div>
+        )}
       </section>
 
       <section className="marketing-features" id="features">
