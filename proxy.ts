@@ -44,18 +44,32 @@ const APP_ROUTES = new Set([
   "what-does-link-in-bio-mean",
 ]);
 
-const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,29}$/;
+// Case-insensitive: usernames are stored lowercase, so /MKTV and /mktv are the
+// same profile. Without the flag an uppercase link never matched, fell through
+// to the router, and 404'd on a path that has no route.
+const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,29}$/i;
 
 export async function proxy(request: NextRequest) {
   const sessionResponse = await updateSession(request);
   const segments = request.nextUrl.pathname.split("/").filter(Boolean);
 
+  // updateSession refreshes Supabase auth cookies onto its own response, so
+  // anything returned instead of it has to carry them across or a visitor is
+  // signed out on the hop.
+  function withSession(response: NextResponse) {
+    sessionResponse.cookies
+      .getAll()
+      .forEach((cookie) => response.cookies.set(cookie));
+    return response;
+  }
+
   if (segments.length === 2 && segments[0] === "u") {
     const username = segments[1];
     if (USERNAME_PATTERN.test(username)) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = `/${username}`;
-      return NextResponse.redirect(redirectUrl, 308);
+      // Canonical lowercase, so /u/MKTV does not become its own URL.
+      redirectUrl.pathname = `/${username.toLowerCase()}`;
+      return withSession(NextResponse.redirect(redirectUrl, 308));
     }
   }
 
@@ -68,17 +82,17 @@ export async function proxy(request: NextRequest) {
   if (segment.includes(".")) return sessionResponse;
   if (!USERNAME_PATTERN.test(segment)) return sessionResponse;
 
+  // One canonical spelling per profile. /MKTV renders the same page as /mktv,
+  // and a second live URL the dashboard never shows is duplicate content.
+  if (segment !== segment.toLowerCase()) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = `/${segment.toLowerCase()}`;
+    return withSession(NextResponse.redirect(redirectUrl, 308));
+  }
+
   const url = request.nextUrl.clone();
   url.pathname = `/u/${segment}`;
-  const rewritten = NextResponse.rewrite(url);
-
-  // updateSession refreshes Supabase auth cookies onto its own response.
-  // Returning a bare rewrite would drop them and sign the user out on every
-  // profile visit, so carry them across.
-  sessionResponse.cookies.getAll().forEach((cookie) => {
-    rewritten.cookies.set(cookie);
-  });
-  return rewritten;
+  return withSession(NextResponse.rewrite(url));
 }
 
 export const config = {
