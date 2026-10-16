@@ -9,6 +9,8 @@ export type LinkItem = {
   color: string;
   featured?: boolean;
   thumbnailUrl?: string;
+  /** Optional section heading; empty/absent keeps the flat list. */
+  group?: string;
 };
 
 export type Referral = {
@@ -32,7 +34,6 @@ export type CreatorProfile = {
   /** Public URL of the uploaded avatar. Falls back to initials when absent. */
   avatarUrl?: string | null;
   displayName: string;
-  greeting: string;
   headline: string;
   headlineAccent: string;
   eyebrow: string;

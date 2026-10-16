@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
@@ -93,6 +94,7 @@ import {
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
 import { LinksEditor, type LinkDraft } from "@/components/links-editor";
+import { sortLinksBySection } from "@/lib/link-groups";
 import {
   ReferralsEditor,
   type ReferralDraft,
@@ -108,12 +110,16 @@ import { creatorInviteUrl } from "@/lib/referrals";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
+  DOCUMENTS_BUCKET,
   faviconExtension,
   imageExtension,
   publicAssetUrl,
   PUBLIC_ASSET_BUCKET,
+  resumeContentType,
+  resumeExtension,
   validateFavicon,
   validateImage,
+  validateResume,
 } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -122,6 +128,9 @@ import {
   profileThemeStyle,
   resolveProfileTheme,
   themeBackgroundOptions,
+  themeFontScaleOptions,
+  themeFontStyleOptions,
+  themeFontWeightOptions,
   themePalettes,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
@@ -130,7 +139,6 @@ export type DashboardProfile = {
   id: string;
   username: string;
   display_name: string;
-  greeting: string;
   headline: string;
   headline_accent: string;
   bio: string;
@@ -143,6 +151,8 @@ export type DashboardProfile = {
   tags: string[];
   template: string;
   avatar_path: string | null;
+  resume_path: string | null;
+  resume_label: string | null;
   seo_title: string | null;
   seo_description: string | null;
   seo_image_path: string | null;
@@ -177,6 +187,7 @@ export type DashboardLink = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  group_name: string;
 };
 
 export type DashboardReferral = {
@@ -457,14 +468,18 @@ export function Dashboard({
   // Links are edited here now rather than by bouncing into the setup wizard,
   // so the dashboard keeps its own draft of them alongside the profile draft.
   const [linkDraft, setLinkDraft] = useState<LinkDraft[]>(() =>
-    links.map((item) => ({
-      id: item.id,
-      title: item.title,
-      url: item.url,
-      is_active: item.is_active,
-      is_featured: item.is_featured,
-      thumbnail_path: item.thumbnail_path,
-    })),
+    sortLinksBySection(
+      links.map((item) => ({
+        id: item.id,
+        title: item.title,
+        url: item.url,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name,
+      })),
+      (item) => item.group_name ?? "",
+    ),
   );
   const [savingLinks, setSavingLinks] = useState(false);
   const [referralDraft, setReferralDraft] = useState<ReferralDraft[]>(() =>
@@ -515,6 +530,7 @@ export function Dashboard({
   const [analyticsNow] = useState(() => Date.now());
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [resumeUploading, setResumeUploading] = useState(false);
   const [seoImageUploading, setSeoImageUploading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
   const [brandingUploading, setBrandingUploading] = useState<
@@ -990,6 +1006,7 @@ export function Dashboard({
         is_active: item.is_active,
         is_featured: item.is_featured,
         thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name ?? "",
       };
       const { error } = existing.has(item.id)
         ? await supabase.from("links").update(row).eq("id", item.id)
@@ -1095,7 +1112,6 @@ export function Dashboard({
       .update({
         username: draft.username.trim().toLowerCase(),
         display_name: draft.display_name.trim(),
-        greeting: draft.greeting.trim(),
         headline: draft.headline.trim(),
         headline_accent: draft.headline_accent.trim(),
         bio: draft.bio.trim(),
@@ -1214,6 +1230,89 @@ export function Dashboard({
     update("avatar_path", null);
     setAvatarUploading(false);
     setNotice({ severity: "success", message: "Profile photo removed." });
+    router.refresh();
+  }
+
+  async function uploadResume(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateResume(file);
+    if (validationError) {
+      setNotice({ severity: "error", message: validationError });
+      return;
+    }
+
+    setResumeUploading(true);
+    const supabase = createClient();
+    const path = `${profile.id}/resume/cv-${crypto.randomUUID()}.${resumeExtension(file)}`;
+    const { error: uploadError } = await supabase.storage
+      .from(DOCUMENTS_BUCKET)
+      .upload(path, file, {
+        // Signed URLs are short-lived, so nothing downstream should hold this.
+        cacheControl: "0",
+        contentType: resumeContentType(file),
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: uploadError.message });
+      return;
+    }
+
+    const previousPath = draft.resume_path;
+    const label = file.name.slice(0, 80);
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ resume_path: path, resume_label: label })
+      .eq("id", profile.id);
+
+    if (profileError) {
+      // The row is what the page reads, so an object it does not reference is
+      // worse than no upload: it lingers in the bucket unreachable and unowned.
+      await supabase.storage.from(DOCUMENTS_BUCKET).remove([path]);
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: profileError.message });
+      return;
+    }
+
+    if (previousPath) {
+      await supabase.storage.from(DOCUMENTS_BUCKET).remove([previousPath]);
+    }
+
+    update("resume_path", path);
+    update("resume_label", label);
+    setResumeUploading(false);
+    setNotice({ severity: "success", message: "Résumé uploaded." });
+    router.refresh();
+  }
+
+  async function removeResume() {
+    if (!draft.resume_path) return;
+
+    setResumeUploading(true);
+    const supabase = createClient();
+    const previousPath = draft.resume_path;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ resume_path: null, resume_label: null })
+      .eq("id", profile.id);
+
+    if (error) {
+      setResumeUploading(false);
+      setNotice({ severity: "error", message: error.message });
+      return;
+    }
+
+    // Deleted from the bucket too, not just unlinked -- a résumé someone has
+    // taken down should not still exist behind a signed URL.
+    await supabase.storage.from(DOCUMENTS_BUCKET).remove([previousPath]);
+    update("resume_path", null);
+    update("resume_label", null);
+    setResumeUploading(false);
+    setNotice({ severity: "success", message: "Résumé removed." });
     router.refresh();
   }
 
@@ -1835,28 +1934,27 @@ export function Dashboard({
                 helperText={`Public URL: ${publicProfileAddress(draft.username || "username")}`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+              {/* One headline, two lines. These were "Headline" + "Accent text",
+                  which asked people to cut a sentence in half and guess which
+                  half got coloured; a third field, Greeting, was a template
+                  prefix that read as part of the name. */}
               <div className="workspace-form-pair">
                 <TextField
-                  label="Greeting"
-                  value={draft.greeting}
-                  onChange={(event) => update("greeting", event.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Headline"
+                  label="Headline line 1"
                   value={draft.headline}
                   onChange={(event) => update("headline", event.target.value)}
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
+                <TextField
+                  label="Headline line 2"
+                  value={draft.headline_accent}
+                  onChange={(event) => update("headline_accent", event.target.value)}
+                  helperText="Shown in your accent colour"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
               </div>
               <TextField
-                label="Accent text"
-                value={draft.headline_accent}
-                onChange={(event) => update("headline_accent", event.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Supporting paragraph"
+                label="About"
                 value={draft.bio}
                 onChange={(event) => update("bio", event.target.value)}
                 multiline
@@ -2077,6 +2175,37 @@ export function Dashboard({
 
           {section === "content" && (
             <Stack className="workspace-panel" spacing={2}>
+              {/* Social profiles belong with the links, not in Settings: they
+                  are part of what the page is, not an account preference. */}
+              <Paper
+                id="content-socials"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
+                <div className="workspace-settings-card__heading">
+                  <HubOutlined />
+                  <Box>
+                    <Typography variant="h3">Social profiles</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The networks people can find you on. They show as icons on
+                      your public page.
+                    </Typography>
+                  </Box>
+                </div>
+                <SettingsConnectEditor
+                  profileId={profile.id}
+                  initialSocials={connectedSocials}
+                  onSaved={(next) => {
+                    setConnectedSocials(next);
+                    setNotice({
+                      severity: "success",
+                      message: "Social profiles updated.",
+                    });
+                    router.refresh();
+                  }}
+                />
+              </Paper>
+
               <div className="workspace-panel__heading">
                 <Box>
                   <Typography variant="h3">Links</Typography>
@@ -2342,6 +2471,77 @@ export function Dashboard({
                     >
                       <b>{font.sample}</b>
                       <small>{font.name}</small>
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Type size</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontScaleOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontScale === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontScale: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} type size`}
+                        title={option.note}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Boldness</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontWeightOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontWeight === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontWeight: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} text weight`}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <Typography variant="h3">Style</Typography>
+                <div className="workspace-segmented">
+                  {themeFontStyleOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        activeTheme.fontStyle === option.id ? "is-selected" : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          fontStyle: option.id,
+                        }))
+                      }
+                      aria-label={`Use ${option.name} text style`}
+                      key={option.id}
+                    >
+                      {option.name}
                     </ButtonBase>
                   ))}
                 </div>
@@ -3063,6 +3263,62 @@ export function Dashboard({
                     }
                     label="Let people send their details back to me"
                   />
+
+                  {/* A recruiter reads the page, then asks for the file. The
+                      bucket is private and the link on the public page is
+                      signed per click, so the document is not sitting at a
+                      permanent address for a crawler to find. */}
+                  <Box className="resume-upload">
+                    <Typography variant="subtitle2">Résumé</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A PDF or Word file, up to 10 MB. Shown as a download on
+                      your page. Remember it usually carries your phone number
+                      and address — anyone with your page can open it.
+                    </Typography>
+                    {draft.resume_path ? (
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                        <Chip
+                          icon={<DescriptionOutlined />}
+                          label={draft.resume_label ?? "Résumé"}
+                          variant="outlined"
+                        />
+                        <Button component="label" size="small" disabled={resumeUploading}>
+                          Replace
+                          <input
+                            type="file"
+                            hidden
+                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={uploadResume}
+                          />
+                        </Button>
+                        <Button
+                          size="small"
+                          color="inherit"
+                          onClick={removeResume}
+                          disabled={resumeUploading}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Button
+                        component="label"
+                        size="small"
+                        variant="outlined"
+                        disabled={resumeUploading}
+                        startIcon={<DescriptionOutlined />}
+                        sx={{ alignSelf: "flex-start" }}
+                      >
+                        {resumeUploading ? "Uploading…" : "Upload a résumé"}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          onChange={uploadResume}
+                        />
+                      </Button>
+                    )}
+                  </Box>
                 </div>
               </Paper>
 
@@ -3332,34 +3588,6 @@ export function Dashboard({
                 <InstallApp requested />
               </Paper>
 
-              <Paper
-                id="settings-connect"
-                className="workspace-settings-card"
-                variant="outlined"
-              >
-                <div className="workspace-settings-card__heading">
-                  <HubOutlined />
-                  <Box>
-                    <Typography variant="h3">Connect</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Social profiles shown as icons on your public page.
-                    </Typography>
-                  </Box>
-                </div>
-                <SettingsConnectEditor
-                  profileId={profile.id}
-                  initialSocials={connectedSocials}
-                  onSaved={(next) => {
-                    setConnectedSocials(next);
-                    setNotice({
-                      severity: "success",
-                      message: "Social profiles updated.",
-                    });
-                    router.refresh();
-                  }}
-                />
-              </Paper>
-
               <Paper className="workspace-settings-card" variant="outlined">
                 <div className="workspace-settings-card__heading">
                   <SettingsOutlined />
@@ -3622,7 +3850,7 @@ export function Dashboard({
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">{draft.greeting} {draft.display_name}.</Typography>
+            <Typography component="h2">{draft.display_name}.</Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>

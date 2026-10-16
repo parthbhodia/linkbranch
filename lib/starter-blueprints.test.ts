@@ -21,14 +21,6 @@ describe("coverage", () => {
 });
 
 describe("voice", () => {
-  it("greets a business as a business and a person as a person", () => {
-    const business = ["trades", "local-shop", "whatsapp-business", "business-links"];
-    for (const id of purposes) {
-      const expected = business.includes(id) ? "This is" : "Hey, I'm";
-      assert.equal(STARTER_BLUEPRINTS[id].greeting, expected, id);
-    }
-  });
-
   it("gives every purpose its own opening line, never the generic default", () => {
     const headlines = purposes.map((id) => STARTER_BLUEPRINTS[id].headline);
     assert.equal(new Set(headlines).size, headlines.length, "headlines must be distinct");

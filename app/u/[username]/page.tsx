@@ -216,7 +216,7 @@ export default async function PublicProfilePage({
       supabase
         .from("links")
         .select(
-          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at",
+          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name",
         )
         .eq("user_id", profile.id)
         .eq("is_active", true)
@@ -280,7 +280,6 @@ export default async function PublicProfilePage({
     username: profile.username,
     initials,
     displayName: profile.display_name,
-    greeting: profile.greeting,
     headline: profile.headline,
     headlineAccent: profile.headline_accent,
     eyebrow:
@@ -315,6 +314,7 @@ export default async function PublicProfilePage({
       color: linkColors[index % linkColors.length],
       featured: item.is_featured,
       thumbnailUrl: publicAssetUrl(item.thumbnail_path),
+      group: item.group_name || undefined,
     })),
     referrals: (referrals ?? []).map((item) => ({
       id: String(item.id),
@@ -357,6 +357,7 @@ export default async function PublicProfilePage({
         highlights={(highlights ?? []) as PublicHighlight[]}
         disclosureText={profile.disclosure_text}
         eventTag={profile.current_event_tag}
+        resumeLabel={profile.resume_path ? (profile.resume_label ?? "Résumé") : null}
         showSaveContact={Boolean(profile.show_save_contact)}
         showExchange={Boolean(profile.show_exchange)}
         mapLocation={publicMapLocation(profile)}

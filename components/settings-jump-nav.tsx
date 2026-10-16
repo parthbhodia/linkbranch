@@ -7,7 +7,6 @@ export const settingsJumpTargets = [
   { id: "settings-card", label: "Contact card" },
   { id: "settings-seo", label: "SEO" },
   { id: "settings-qr", label: "QR" },
-  { id: "settings-connect", label: "Connect" },
   { id: "settings-tools", label: "Tools" },
 ] as const;
 

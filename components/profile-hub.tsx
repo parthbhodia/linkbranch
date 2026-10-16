@@ -5,8 +5,8 @@ import Link from "next/link";
 import { FindUs } from "@/components/find-us";
 import type { PublicMapLocation } from "@/lib/map-location";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import EditRounded from "@mui/icons-material/EditRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
@@ -38,6 +38,7 @@ import {
 } from "@/lib/booking-providers";
 import { ContactExchange } from "@/components/contact-exchange";
 import { ProfileContactForm } from "@/components/profile-contact-form";
+import { detectLinkBrand } from "@/lib/link-brands";
 import {
   detectMusicProvider,
   isLikelyCompleteMusicUrl,
@@ -60,6 +61,7 @@ import {
   readableForeground,
   resolveProfileTheme,
 } from "@/lib/theme-config";
+import { groupLinksBySection } from "@/lib/link-groups";
 
 type TrackTarget = {
   eventType:
@@ -148,6 +150,8 @@ const LinkCard = memo(function LinkCard({
   const [showEmbed, setShowEmbed] = useState(false);
   const music = detectMusicProvider(link.url);
   const booking = music ? null : detectBookingProvider(link.url);
+  const brand =
+    music || booking ? null : detectLinkBrand(link.url);
   const musicEmbedSrc =
     music?.embeddable && isLikelyCompleteMusicUrl(link.url)
       ? musicPlayerUrl(link.url, music.id, {
@@ -164,19 +168,22 @@ const LinkCard = memo(function LinkCard({
     link.subtitle ||
     (music ? music.subtitle : null) ||
     (booking ? booking.subtitle : null) ||
+    (brand ? brand.subtitle : null) ||
     "";
 
   return (
     <div
       className={`link-card-wrap${music ? " link-card-wrap--music" : ""}${
         booking ? " link-card-wrap--booking" : ""
-      }`}
+      }${brand ? " link-card-wrap--brand" : ""}`}
     >
       <Box
         component="a"
         className={`link-card${link.featured ? " link-card--featured" : ""}${
           music ? " link-card--music" : ""
-        }${booking ? " link-card--booking" : ""}`}
+        }${booking ? " link-card--booking" : ""}${
+          brand ? " link-card--brand" : ""
+        }`}
         href={link.url}
         target="_blank"
         rel="noreferrer"
@@ -195,10 +202,13 @@ const LinkCard = memo(function LinkCard({
                 ? " link-index--music"
                 : booking
                   ? " link-index--booking"
-                  : " link-index--icon"
+                  : brand
+                    ? " link-index--brand"
+                    : " link-index--icon"
           }`}
           style={{
-            background: music || booking ? undefined : link.color,
+            background: music || booking ? undefined : brand?.color ?? link.color,
+            color: brand && !link.thumbnailUrl ? brand.ink : undefined,
           }}
         >
           {link.thumbnailUrl ? (
@@ -211,7 +221,9 @@ const LinkCard = memo(function LinkCard({
           ) : music ? (
             <MusicNoteRounded fontSize="small" />
           ) : booking ? (
-            <CalendarMonthRounded fontSize="small" />
+            booking.icon
+          ) : brand ? (
+            brand.icon
           ) : link.featured ? (
             <StarRounded fontSize="small" />
           ) : (
@@ -231,7 +243,10 @@ const LinkCard = memo(function LinkCard({
                 size="small"
               />
             )}
-            {link.featured && !music && !booking && (
+            {brand && (
+              <Chip className="brand-chip" label={brand.label} size="small" />
+            )}
+            {link.featured && !music && !booking && !brand && (
               <Chip
                 className="featured-chip"
                 icon={<StarRounded />}
@@ -388,8 +403,11 @@ export function ProfileHub({
   eventTag,
   showSaveContact = false,
   showExchange = false,
+  resumeLabel = null,
+  resumeHref = null,
   mapLocation = null,
   timeline = [],
+  preview = false,
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -405,10 +423,20 @@ export function ProfileHub({
   eventTag?: string | null;
   showSaveContact?: boolean;
   showExchange?: boolean;
+  /** Filename of the uploaded résumé, or null when there is none. */
+  resumeLabel?: string | null;
+  /**
+   * Where the résumé button points. Defaults to the signing route, which is
+   * what a real profile wants; the demo overrides it because it has no row to
+   * sign against.
+   */
+  resumeHref?: string | null;
   /** The Find-us block: a pin, an address and a directions button. */
   mapLocation?: PublicMapLocation | null;
   /** Education and experience, for a student or anyone with a background worth showing. */
   timeline?: TimelineEntry[];
+  /** Claim / outreach previews: phone-width, no search chrome. */
+  preview?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -582,12 +610,18 @@ export function ProfileHub({
     filtered.faqs.length;
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
+  const linkSections = groupLinksBySection(standardLinks, (link) => link.group ?? "");
   const customTheme = resolveProfileTheme(themeConfig, template);
-  const brandingLogoUrl = publicAssetUrl(customTheme.logoPath);
-  const wallpaperUrl = publicAssetUrl(customTheme.wallpaperPath);
+  const applyCustomTheme = Boolean(themeConfig) || !preview;
+  const brandingLogoUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.logoPath : null,
+  );
+  const wallpaperUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.wallpaperPath : null,
+  );
   const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
-  const showContactForm = customTheme.contactForm === true;
+  const showContactForm = applyCustomTheme && customTheme.contactForm === true;
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -621,12 +655,14 @@ export function ProfileHub({
   return (
     <main
       className={`app-shell public-template public-template--${template}${
-        customTheme
+        preview ? " public-template--preview" : ""
+      }${
+        applyCustomTheme
           ? ` ${profileThemeClassName(customTheme, { wallpaperUrl: pageWallpaperUrl })}`
           : ""
       }`}
       style={
-        customTheme
+        applyCustomTheme
           ? (profileThemeStyle(customTheme, {
               wallpaperUrl: pageWallpaperUrl,
             }) as React.CSSProperties)
@@ -732,7 +768,7 @@ export function ProfileHub({
             </Box>
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1">
-              {profile.greeting} {profile.displayName}.
+              {profile.displayName}.
             </Typography>
             <Typography component="h2" className="profile-headline">
               {profile.headline}{" "}
@@ -780,6 +816,25 @@ export function ProfileHub({
             allowSaveContact={showSaveContact}
             allowExchange={showExchange}
           />
+        )}
+
+        {/* Served through /api/resume, which signs a short-lived URL per
+            click. The file itself has no public address, so it cannot be
+            crawled or shared on past the moment it was handed over. */}
+        {resumeLabel && (
+          <div className="profile-resume">
+            <Button
+              component="a"
+              href={resumeHref ?? `/api/resume/${encodeURIComponent(profile.username)}`}
+              target="_blank"
+              rel="noreferrer"
+              variant="outlined"
+              startIcon={<DescriptionOutlined />}
+              onClick={() => track("Opened résumé")}
+            >
+              {resumeLabel}
+            </Button>
+          </div>
         )}
 
         <section className="hub-panel">
@@ -834,7 +889,7 @@ export function ProfileHub({
           )}
           {/* A search box over nothing is furniture, and it invites exactly the
               dead end this page used to show. */}
-          {totalContentCount > 0 && (
+          {totalContentCount > 0 && !preview && (
             <div className="profile-search">
               <TextField
                 className="search-field"
@@ -1063,27 +1118,41 @@ export function ProfileHub({
               )}
 
               {standardLinks.length > 0 && (
-                <section className="content-section" aria-labelledby="all-links">
-                  <div className="section-heading">
-                    <Typography
-                      id="all-links"
-                      component="h2"
-                      className="section-label"
-                    >
-                      My links
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {query
-                        ? `${totalResults} results`
-                        : `${standardLinks.length} destinations`}
-                    </Typography>
-                  </div>
-                  <div className="link-list">
-                    {standardLinks.map((link) => (
-                      <LinkCard key={link.id} link={link} onOpen={track} />
-                    ))}
-                  </div>
-                </section>
+                <>
+                  {linkSections.map((section, index) => {
+                    // The unsectioned run keeps the original "My links" anchor;
+                    // named sections get their own, unique, heading id.
+                    const headingId =
+                      section.name === "" ? "all-links" : `links-section-${index}`;
+                    return (
+                      <section
+                        className="content-section"
+                        aria-labelledby={headingId}
+                        key={section.name || "all-links"}
+                      >
+                        <div className="section-heading">
+                          <Typography
+                            id={headingId}
+                            component="h2"
+                            className="section-label"
+                          >
+                            {section.name || "My links"}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {query && index === 0
+                              ? `${totalResults} results`
+                              : `${section.links.length} destinations`}
+                          </Typography>
+                        </div>
+                        <div className="link-list">
+                          {section.links.map((link) => (
+                            <LinkCard key={link.id} link={link} onOpen={track} />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </>
               )}
 
               {showContactForm && (

@@ -1,0 +1,62 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1844 >>
+stream
+BT
+/F2 18 Tf 1 0 0 1 56 736 Tm (JORDAN AVERY) Tj
+/F1 10 Tf 1 0 0 1 56 712 Tm (Leeds  |  jordan@example.com  |  cueful.bio/jordan-builds) Tj
+/F1 9 Tf 1 0 0 1 56 696 Tm (No street address on purpose - see the note at the end.) Tj
+/F2 13 Tf 1 0 0 1 56 671 Tm (EDUCATION) Tj
+/F2 11 Tf 1 0 0 1 56 652 Tm (BSc Computer Science - Meridian University) Tj
+/F1 10 Tf 1 0 0 1 56 635 Tm (Sep 2023 - present) Tj
+/F1 10 Tf 1 0 0 1 56 619 Tm (Distributed systems, compilers, HCI. On track for a first.) Tj
+/F2 13 Tf 1 0 0 1 56 593 Tm (EXPERIENCE) Tj
+/F2 11 Tf 1 0 0 1 56 574 Tm (Software Engineering Intern - Northgate Labs) Tj
+/F1 10 Tf 1 0 0 1 56 557 Tm (Jun 2025 - Sep 2025) Tj
+/F1 10 Tf 1 0 0 1 56 541 Tm (Rebuilt the booking form and cut drop-off by a third.) Tj
+/F1 10 Tf 1 0 0 1 56 525 Tm (In production by week six.) Tj
+/F2 11 Tf 1 0 0 1 56 499 Tm (Peer tutor, second-year algorithms - Meridian University) Tj
+/F1 10 Tf 1 0 0 1 56 482 Tm (Oct 2024 - present) Tj
+/F1 10 Tf 1 0 0 1 56 466 Tm (Weekly sessions for around twenty students.) Tj
+/F2 13 Tf 1 0 0 1 56 440 Tm (PROJECTS) Tj
+/F2 11 Tf 1 0 0 1 56 421 Tm (Timetable clash finder) Tj
+/F1 10 Tf 1 0 0 1 56 404 Tm (Enrolment let you pick clashing modules and told you in October.) Tj
+/F1 10 Tf 1 0 0 1 56 388 Tm (Built the checker; about 300 students used it this year.) Tj
+/F2 13 Tf 1 0 0 1 56 362 Tm (SKILLS) Tj
+/F1 10 Tf 1 0 0 1 56 343 Tm (TypeScript, Python, React, PostgreSQL, distributed systems) Tj
+/F1 9 Tf 1 0 0 1 56 307 Tm (This is a sample CV for the Cueful student demo. Nobody here is real.) Tj
+/F1 9 Tf 1 0 0 1 56 292 Tm (The street address is left off deliberately: a CV behind a public link) Tj
+/F1 9 Tf 1 0 0 1 56 277 Tm (is readable by anyone who can open the page, and a black box drawn over) Tj
+/F1 9 Tf 1 0 0 1 56 262 Tm (an address does not remove the text underneath it.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000002147 00000 n 
+0000002217 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2292
+%%EOF

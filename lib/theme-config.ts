@@ -17,6 +17,9 @@ export type ThemeBackground =
   | "lagoon"
   | "lilac";
 export type ThemeDensity = "relaxed" | "compact";
+export type ThemeFontScale = "sm" | "md" | "lg" | "xl";
+export type ThemeFontWeight = "regular" | "medium" | "bold";
+export type ThemeFontStyle = "normal" | "italic";
 
 export type ProfileThemeConfig = {
   version: 1;
@@ -30,6 +33,12 @@ export type ProfileThemeConfig = {
     buttonText: string;
   };
   font: ThemeFont;
+  /** Size step for the profile's own text; a multiplier over the base sizes. */
+  fontScale?: ThemeFontScale;
+  /** Weight applied to the display text (name and headline). */
+  fontWeight?: ThemeFontWeight;
+  /** Slant applied to the display text. */
+  fontStyle?: ThemeFontStyle;
   buttonShape: ThemeButtonShape;
   background: ThemeBackground;
   density: ThemeDensity;
@@ -83,6 +92,37 @@ const backgrounds = new Set<ThemeBackground>(
   themeBackgroundOptions.map((item) => item.id),
 );
 const densities = new Set<ThemeDensity>(["relaxed", "compact"]);
+const fontScales = new Set<ThemeFontScale>(["sm", "md", "lg", "xl"]);
+const fontWeights = new Set<ThemeFontWeight>(["regular", "medium", "bold"]);
+const fontStyles = new Set<ThemeFontStyle>(["normal", "italic"]);
+
+export const themeFontScaleOptions: Array<{
+  id: ThemeFontScale;
+  name: string;
+  note: string;
+}> = [
+  { id: "sm", name: "Small", note: "Tighter type" },
+  { id: "md", name: "Default", note: "Balanced" },
+  { id: "lg", name: "Large", note: "Easier to read" },
+  { id: "xl", name: "Extra large", note: "Loud and clear" },
+];
+
+export const themeFontWeightOptions: Array<{
+  id: ThemeFontWeight;
+  name: string;
+}> = [
+  { id: "regular", name: "Regular" },
+  { id: "medium", name: "Medium" },
+  { id: "bold", name: "Bold" },
+];
+
+export const themeFontStyleOptions: Array<{
+  id: ThemeFontStyle;
+  name: string;
+}> = [
+  { id: "normal", name: "Upright" },
+  { id: "italic", name: "Italic" },
+];
 
 export const themePalettes: ThemePalette[] = [
   {
@@ -356,6 +396,9 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
   return {
     ...theme,
     colors: { ...theme.colors },
+    fontScale: theme.fontScale ?? "md",
+    fontWeight: theme.fontWeight ?? "regular",
+    fontStyle: theme.fontStyle ?? "normal",
     contactForm: theme.contactForm ?? false,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
@@ -410,6 +453,17 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
     buttonShape: candidate.buttonShape as ThemeButtonShape,
     background: candidate.background as ThemeBackground,
     density: candidate.density as ThemeDensity,
+    // Added after the first themes shipped, so a stored theme without them is
+    // valid and simply takes the default rather than falling back wholesale.
+    fontScale: fontScales.has(candidate.fontScale as ThemeFontScale)
+      ? (candidate.fontScale as ThemeFontScale)
+      : "md",
+    fontWeight: fontWeights.has(candidate.fontWeight as ThemeFontWeight)
+      ? (candidate.fontWeight as ThemeFontWeight)
+      : "regular",
+    fontStyle: fontStyles.has(candidate.fontStyle as ThemeFontStyle)
+      ? (candidate.fontStyle as ThemeFontStyle)
+      : "normal",
     contactForm: candidate.contactForm === true,
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
@@ -527,6 +581,10 @@ export function profileThemeStyle(
   options?: { wallpaperUrl?: string | null },
 ) {
   const font = fontStacks[theme.font];
+  const scale = { sm: 0.92, md: 1, lg: 1.08, xl: 1.18 }[theme.fontScale ?? "md"];
+  const weight = { regular: 400, medium: 500, bold: 700 }[
+    theme.fontWeight ?? "regular"
+  ];
   return {
     "--profile-bg": theme.colors.background,
     "--profile-surface": theme.colors.surface,
@@ -540,6 +598,10 @@ export function profileThemeStyle(
     "--profile-button-text": theme.colors.buttonText,
     "--profile-display-font": font.display,
     "--profile-body-font": font.body,
+    // Creator typography controls; the CSS multiplies its base sizes by these.
+    "--profile-font-scale": String(scale),
+    "--profile-font-weight": String(weight),
+    "--profile-font-style": theme.fontStyle ?? "normal",
     ...(options?.wallpaperUrl
       ? { "--profile-wallpaper": `url("${options.wallpaperUrl}")` }
       : {}),

@@ -81,8 +81,17 @@ describe("installGuidance", () => {
     assert.equal(guide(UA.iphoneSafari), "ios-safari");
   });
 
-  it("sends the iOS wrappers to Safari", () => {
+  it("gives the iOS wrappers their own branch", () => {
     assert.equal(guide(UA.iphoneChrome), "ios-other");
+  });
+
+  // iOS 16.4 gave third-party browsers an API for registering real Home Screen
+  // web apps, so the old copy -- "only Safari can" -- became false while still
+  // reading as authoritative. Pinned so it cannot quietly come back.
+  it("does not claim Safari is the only iOS browser that can install", () => {
+    const copy = GUIDANCE_COPY["ios-other"];
+    assert.ok(!/only safari/i.test(copy), copy);
+    assert.match(copy, /Add to Home Screen/);
   });
 
   it("recognises iPadOS, which reports itself as a Mac", () => {

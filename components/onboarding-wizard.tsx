@@ -125,6 +125,8 @@ type LinkDraft = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  /** Carried through untouched so saving the wizard does not flatten sections. */
+  group_name?: string;
 };
 
 type ReferralDraft = {
@@ -273,7 +275,6 @@ export type OnboardingInitialData = {
     id: string;
     display_name: string;
     username: string;
-    greeting: string;
     headline: string;
     headline_accent: string;
     bio: string;
@@ -333,25 +334,103 @@ function defaultCurrency() {
   return guessCurrency(typeof navigator === "undefined" ? undefined : navigator.language);
 }
 
+/**
+ * The rows a purpose starts you with, as pure functions of the purpose.
+ *
+ * These are shared by applyStarterPurpose and by the initial state below, so a
+ * visitor arriving with ?purpose= already set gets the filled-in form on the
+ * first render rather than an empty one that populates a beat later.
+ */
+function starterLinkDrafts(purpose: StarterPurpose): LinkDraft[] {
+  const preset = starterPurposes.find((item) => item.id === purpose);
+  if (!preset) return [];
+  return preset.links.map((title, index) => {
+    const lower = title.toLowerCase();
+    const isBooking =
+      lower.includes("book") ||
+      lower.includes("consultation") ||
+      lower.includes("availability") ||
+      lower.includes("collaboration call");
+    const isMusic =
+      lower.includes("listen") ||
+      lower.includes("release") ||
+      lower.includes("stream");
+    const isWhatsApp = lower.includes("whatsapp");
+    return {
+      id: index + 1,
+      title,
+      url: isWhatsApp
+        ? "https://wa.me/"
+        : isBooking
+          ? "https://calendly.com/"
+          : isMusic
+            ? "https://open.spotify.com/"
+            : "",
+      is_active: true,
+      is_featured: index === 0,
+      thumbnail_path: null,
+    };
+  });
+}
+
+function starterShopDrafts(purpose: StarterPurpose): ShopItemDraft[] {
+  if (starterDetailKind(purpose) !== "shop") return [];
+  return shopItemExamples(purpose).map((example, index) => ({
+    id: index + 1,
+    title: example.title,
+    description: example.description,
+    price: "",
+    currency: defaultCurrency(),
+    destination_url: "",
+    category: example.category,
+    cta_label: example.ctaLabel,
+  }));
+}
+
+function starterTimelineDrafts(purpose: StarterPurpose): TimelineDraft[] {
+  if (starterDetailKind(purpose) !== "timeline") return [];
+  return STUDENT_TIMELINE_EXAMPLES.map((example, index) => ({
+    ...emptyTimelineDraft(index + 1, example.kind),
+    title: example.title,
+    organisation: example.organisation,
+    description: example.description,
+  }));
+}
+
 export function OnboardingWizard({
   initialTemplate,
   initialData,
   shouldImport = false,
+  initialPurpose = null,
 }: {
   initialTemplate: string;
   initialData: OnboardingInitialData;
   shouldImport?: boolean;
+  /**
+   * Preselected from ?purpose=, so a visitor who arrived from a page selling
+   * one kind of profile lands on that kind already filled in rather than on
+   * the generic picker. Ignored once the profile has links of its own.
+   */
+  initialPurpose?: StarterPurpose | null;
 }) {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
+  // A purpose from the URL only seeds a profile that has nothing in it yet;
+  // someone coming back to finish setup keeps what they already wrote.
+  const seededPurpose = initialData.links.length ? null : initialPurpose;
+  const seedPlan = seededPurpose ? starterBlueprint(seededPurpose) : null;
   const [starterPurpose, setStarterPurpose] = useState<StarterPurpose | null>(
-    initialData.links.length ? null : "creator",
+    initialData.links.length ? null : (initialPurpose ?? "creator"),
   );
   // Shop items and a music player, for the purposes where those are the point
   // of the page. Blank URLs, like the starter links: an incomplete row is
   // dropped at save rather than published half-finished.
-  const [shopItems, setShopItems] = useState<ShopItemDraft[]>([]);
-  const [timeline, setTimeline] = useState<TimelineDraft[]>([]);
+  const [shopItems, setShopItems] = useState<ShopItemDraft[]>(() =>
+    seededPurpose ? starterShopDrafts(seededPurpose) : [],
+  );
+  const [timeline, setTimeline] = useState<TimelineDraft[]>(() =>
+    seededPurpose ? starterTimelineDrafts(seededPurpose) : [],
+  );
   // The wallpaper is saved as soon as the creator confirms it, like the avatar:
   // it lives in theme_config, which save_profile_bundle never writes.
   const [wallpaperPath, setWallpaperPath] = useState<string | null>(
@@ -375,10 +454,11 @@ export function OnboardingWizard({
     url: "",
   });
   const [displayName, setDisplayName] = useState(initialData.profile.display_name);
-  const [greeting, setGreeting] = useState(initialData.profile.greeting);
-  const [headline, setHeadline] = useState(initialData.profile.headline);
+  const [headline, setHeadline] = useState(
+    seedPlan?.headline ?? initialData.profile.headline,
+  );
   const [headlineAccent, setHeadlineAccent] = useState(
-    initialData.profile.headline_accent,
+    seedPlan?.headlineAccent ?? initialData.profile.headline_accent,
   );
   const [username, setUsername] = useState(initialData.profile.username);
   const [bio, setBio] = useState(initialData.profile.bio);
@@ -395,18 +475,20 @@ export function OnboardingWizard({
       url: item.url,
     })),
   );
-  const [links, setLinks] = useState<LinkDraft[]>(
-    initialData.links.length
-      ? initialData.links
-      : [{
-          id: 1,
+  const [links, setLinks] = useState<LinkDraft[]>(() => {
+    if (initialData.links.length) return initialData.links;
+    if (seededPurpose) return starterLinkDrafts(seededPurpose);
+    return [
+      {
+        id: 1,
         title: "",
         url: "",
         is_active: true,
         is_featured: false,
         thumbnail_path: null,
-      }],
-  );
+      },
+    ];
+  });
   const [referrals, setReferrals] = useState<ReferralDraft[]>(
     initialData.referrals.map((item, index) => ({
       ...item,
@@ -614,9 +696,6 @@ export function OnboardingWizard({
     // someone who comes back and re-picks must not lose wording they wrote.
     const plan = starterBlueprint(purpose);
     if (plan) {
-      setGreeting((current) =>
-        current === initialData.profile.greeting ? plan.greeting : current,
-      );
       setHeadline((current) =>
         current === initialData.profile.headline ? plan.headline : current,
       );
@@ -626,67 +705,13 @@ export function OnboardingWizard({
           : current,
       );
     }
-    setLinks(
-      preset.links.map((title, index) => {
-        const lower = title.toLowerCase();
-        const isBooking =
-          lower.includes("book") ||
-          lower.includes("consultation") ||
-          lower.includes("availability") ||
-          lower.includes("collaboration call");
-        const isMusic =
-          lower.includes("listen") ||
-          lower.includes("release") ||
-          lower.includes("stream");
-        const isWhatsApp = lower.includes("whatsapp");
-        return {
-          id: index + 1,
-          title,
-          url: isWhatsApp
-            ? "https://wa.me/"
-            : isBooking
-              ? "https://calendly.com/"
-              : isMusic
-                ? "https://open.spotify.com/"
-                : "",
-          is_active: true,
-          is_featured: index === 0,
-          thumbnail_path: null,
-        };
-      }),
-    );
-    // Seed the category-specific section too, so the shop or music block opens
-    // already showing the shape of what goes in it.
-    const kind = starterDetailKind(purpose);
-    if (kind === "shop") {
-      setShopItems(
-        shopItemExamples(purpose).map((example, index) => ({
-          id: index + 1,
-          title: example.title,
-          description: example.description,
-          price: "",
-          currency: defaultCurrency(),
-          destination_url: "",
-          category: example.category,
-          cta_label: example.ctaLabel,
-        })),
-      );
-    } else {
-      setShopItems([]);
-    }
-
-    if (kind === "timeline") {
-      setTimeline(
-        STUDENT_TIMELINE_EXAMPLES.map((example, index) => ({
-          ...emptyTimelineDraft(index + 1, example.kind),
-          title: example.title,
-          organisation: example.organisation,
-          description: example.description,
-        })),
-      );
-    } else {
-      setTimeline([]);
-    }
+    setLinks(starterLinkDrafts(purpose));
+    // Seed the category-specific section too, so the shop or timeline block
+    // opens already showing the shape of what goes in it. Both builders return
+    // an empty list for a purpose that has no such section, which is also how
+    // the previous selection's rows get cleared.
+    setShopItems(starterShopDrafts(purpose));
+    setTimeline(starterTimelineDrafts(purpose));
 
     setNotice({
       message: `${preset.name} starter links added. Replace the blank URLs with yours.`,
@@ -943,6 +968,18 @@ export function OnboardingWizard({
 
   async function next() {
     if (activeStep === 1) {
+      // Nudge, not a gate: a page with no social icons is still worth
+      // publishing, so continue but say what was skipped.
+      const hasSocial = socials.some(
+        (item) => item.platform.trim() && item.url.trim(),
+      );
+      if (!hasSocial) {
+        setNotice({
+          message:
+            "Add at least one social profile so people can reach you off-platform.",
+          severity: "warning",
+        });
+      }
       setActiveStep(2);
       return;
     }
@@ -1060,7 +1097,10 @@ export function OnboardingWizard({
       profile_data: {
         username,
         display_name: displayName,
-        greeting,
+        // save_profile_bundle assigns greeting straight from the payload, and
+        // the column is NOT NULL, so the key has to be present even though the
+        // header no longer has a greeting. Always cleared.
+        greeting: "",
         headline,
         headline_accent: headlineAccent,
         bio,
@@ -1690,22 +1730,14 @@ export function OnboardingWizard({
                     helperText="Letters, numbers, hyphens, and underscores."
                   />
                   <TextField
-                    label="Greeting"
-                    value={greeting}
-                    onChange={(event) => setGreeting(event.target.value)}
-                    fullWidth
-                    inputProps={{ maxLength: 32 }}
-                    helperText="Appears before your display name."
-                  />
-                  <TextField
-                    label="Headline"
+                    label="Headline line 1"
                     value={headline}
                     onChange={(event) => setHeadline(event.target.value)}
                     fullWidth
                     inputProps={{ maxLength: 48 }}
                   />
                   <TextField
-                    label="Accent text"
+                    label="Headline line 2"
                     value={headlineAccent}
                     onChange={(event) => setHeadlineAccent(event.target.value)}
                     fullWidth
@@ -1713,7 +1745,7 @@ export function OnboardingWizard({
                     helperText="Shown in the template’s accent style."
                   />
                   <TextField
-                    label="Supporting paragraph"
+                    label="About"
                     value={bio}
                     onChange={(event) => setBio(event.target.value)}
                     multiline
@@ -1766,6 +1798,9 @@ export function OnboardingWizard({
                   spacing={2}
                 >
                   <Box>
+                    <Typography className="section-label" sx={{ mb: 0.5 }}>
+                      ESSENTIAL
+                    </Typography>
                     <Typography component="h2" variant="h3">
                       Social profiles
                     </Typography>
@@ -1774,7 +1809,9 @@ export function OnboardingWizard({
                       color="text.secondary"
                       sx={{ mt: 0.75 }}
                     >
-                      Optional. Add the full URL for every profile you want to show.
+                      Add the profiles your audience already follows you on. They
+                      show as icons on your page, and they are one of the first
+                      things a visitor taps.
                     </Typography>
                   </Box>
                   <Button
@@ -1983,7 +2020,7 @@ export function OnboardingWizard({
               {initials}
             </Avatar>
             <Typography fontWeight={800} textAlign="center" sx={{ mt: 1.5 }}>
-              {greeting || "Hello, I’m"} {displayName || "Your name"}.
+              {displayName || "Your name"}.
             </Typography>
             <Typography variant="caption" color="inherit" sx={{ opacity: 0.72 }}>
               @{username || "username"}

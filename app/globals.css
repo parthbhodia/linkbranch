@@ -1829,6 +1829,34 @@ a {
   border-radius: 13px;
 }
 
+/* Pastel index tiles sit on light fills; inherit light card text and the
+   glyph disappears. Force a dark ink on colored / image indexes.
+   Brand tiles set their own ink (usually white on saturated fills). */
+.public-template .link-index--icon,
+.public-template .link-index--image,
+.public-template .link-index--booking,
+.public-template .link-index--music {
+  color: #12140f;
+}
+
+.public-template .link-index .MuiSvgIcon-root,
+.public-template .link-index svg {
+  color: inherit;
+  fill: currentColor;
+  opacity: 1;
+}
+
+.public-template .link-index--brand {
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.public-template .link-index--brand svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .public-template .link-card__arrow {
   width: 36px;
   height: 36px;
@@ -1861,11 +1889,35 @@ a {
 
 .public-template--after-dark .social-rail .MuiIconButton-root,
 .public-template--after-dark .search-field .MuiOutlinedInput-root,
-.public-template--after-dark .link-card,
-.public-template--after-dark .link-card__arrow {
+.public-template--after-dark .link-card {
   color: #eff8e6;
   border-color: #3d4437;
   background: #22251d;
+}
+
+.public-template--after-dark .link-card__arrow {
+  color: #10120e;
+  border-color: transparent;
+  background: #b9ff66;
+}
+
+.public-template--after-dark .link-card__arrow .MuiSvgIcon-root {
+  color: inherit;
+}
+
+.public-template--after-dark .profile-brand-row .MuiIconButton-root {
+  color: #dce8d0;
+}
+
+.public-template--after-dark .social-rail .MuiIconButton-root {
+  color: #eff8e6;
+  border-color: #5a6350;
+  background: #2c3226;
+}
+
+.public-template--after-dark .social-rail .MuiIconButton-root svg {
+  color: inherit;
+  opacity: 1;
 }
 
 .public-template--after-dark .social-rail {
@@ -2637,6 +2689,84 @@ a {
   gap: 8px;
 }
 
+/* Editable sections inside the links editor. The heading is a live text field
+   so a section is renamed in place; the underline doubles as the divider. */
+.link-sections {
+  display: grid;
+  gap: 22px;
+}
+
+.link-section {
+  display: grid;
+  gap: 12px;
+}
+
+.link-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.link-section__heading .MuiFormControl-root {
+  flex: 1;
+}
+
+.link-section__heading input {
+  font: 700 0.72rem var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.link-section__add {
+  justify-self: start;
+}
+
+/* Emoji picker: a phone-style grid, for keyboards that have no emoji key. */
+.emoji-picker {
+  width: min(336px, calc(100vw - 32px));
+}
+
+.emoji-picker__tabs {
+  min-height: 40px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.emoji-picker__tabs .MuiTab-root {
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.emoji-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.emoji-picker__cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emoji-picker__cell:hover,
+.emoji-picker__cell:focus-visible {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 .link-editor--booking {
   border-color: color-mix(in srgb, #2f6fed 28%, transparent);
   background: color-mix(in srgb, #2f6fed 6%, transparent);
@@ -2665,12 +2795,33 @@ a {
   color: inherit;
 }
 
+.link-index--brand {
+  display: grid;
+  place-items: center;
+}
+
 .booking-chip,
-.music-chip {
+.music-chip,
+.brand-chip {
   height: 22px !important;
   font: 700 0.62rem var(--font-mono) !important;
   letter-spacing: 0.06em !important;
   text-transform: uppercase;
+}
+
+.link-editor--brand-partiful {
+  border-color: color-mix(in srgb, #ff4d8d 28%, transparent);
+  background: color-mix(in srgb, #ff4d8d 6%, transparent);
+}
+
+.link-editor--brand-beli {
+  border-color: color-mix(in srgb, #ff5a3d 28%, transparent);
+  background: color-mix(in srgb, #ff5a3d 6%, transparent);
+}
+
+.link-editor--brand-beacons {
+  border-color: color-mix(in srgb, #6c4dff 28%, transparent);
+  background: color-mix(in srgb, #6c4dff 6%, transparent);
 }
 
 .booking-embed,
@@ -4038,6 +4189,36 @@ a {
 .public-template.profile-theme-custom .link-card h3 {
   color: var(--profile-text);
   font-family: var(--profile-display-font);
+}
+
+/* Creator typography controls. Each rule restates the base size it is scaling
+   so the multiplier applies to a known value, and the weight/slant land on the
+   same run of text. The custom-theme selector outranks the per-template rules,
+   so a creator's choice holds on every layout. */
+.public-template.profile-theme-custom .profile-copy h1 {
+  font-size: calc(clamp(1.9rem, 8vw, 5rem) * var(--profile-font-scale, 1));
+  font-weight: var(--profile-font-weight, 800);
+  font-style: var(--profile-font-style, normal);
+}
+
+.public-template.profile-theme-custom .profile-headline {
+  font-size: calc(
+    clamp(1.55rem, 6vw, 4rem) * var(--profile-font-scale, 1)
+  ) !important;
+  font-weight: var(--profile-font-weight, 800) !important;
+  font-style: var(--profile-font-style, normal);
+}
+
+.public-template.profile-theme-custom .profile-bio {
+  font-size: calc(0.95rem * var(--profile-font-scale, 1)) !important;
+}
+
+.public-template.profile-theme-custom .link-card h3 {
+  font-size: calc(1rem * var(--profile-font-scale, 1));
+}
+
+.public-template.profile-theme-custom .section-label {
+  font-size: calc(0.6875rem * var(--profile-font-scale, 1));
 }
 
 .public-template.profile-theme-custom .profile-handle,
@@ -6965,6 +7146,10 @@ a {
   color: #11130f;
 }
 
+.public-template--after-dark .link-index--brand {
+  color: #fff;
+}
+
 .public-template--after-dark .link-card:hover,
 .public-template--after-dark .link-card:focus-visible {
   border-color: #b9ff66;
@@ -7009,6 +7194,31 @@ a {
 .public-template--after-dark .MuiInputAdornment-root,
 .public-template--after-dark .MuiSvgIcon-root {
   color: #dce8cf;
+}
+
+/* Colored index tiles + lime arrows need dark glyphs — the global SvgIcon
+   rule above would paint them light-on-light. Brand tiles keep white marks. */
+.public-template--after-dark .link-index:not(.link-index--brand) .MuiSvgIcon-root,
+.public-template--after-dark .link-card__arrow .MuiSvgIcon-root {
+  color: #11130f;
+}
+
+.public-template--after-dark .profile-copy h1,
+.public-template--after-dark .profile-headline,
+.public-template--after-dark .eyebrow,
+.public-template--after-dark .profile-tags li,
+.public-template--after-dark .section-heading .section-label,
+.public-template--after-dark .link-card .MuiTypography-h3,
+.public-template--after-dark .profile-handle {
+  color: #f4ffe4 !important;
+}
+
+.public-template--after-dark .headline-accent {
+  color: #b9ff66 !important;
+}
+
+.public-template--after-dark .profile-bio {
+  color: #bdc8b3 !important;
 }
 
 .public-template--after-dark .MuiButton-outlined,
@@ -10342,6 +10552,157 @@ a {
 
 /* ---- Testimonial ------------------------------------------------------ */
 
+/*
+ * The student section. Two columns like .marketing-integrations, but the right
+ * half is a real link rather than decoration -- the card is the shortest route
+ * from the homepage to a page that shows what the product does for a student.
+ */
+.marketing-students {
+  width: 100%;
+  padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(340px, 0.9fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+}
+
+.marketing-students__copy h2 {
+  margin-top: 12px;
+  font-size: clamp(2.6rem, 4.4vw, 4.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.marketing-students__copy h2 span {
+  color: var(--orange);
+  font-style: italic;
+}
+
+.marketing-students__copy > .MuiTypography-body1 {
+  max-width: 470px;
+  margin: 22px 0 30px;
+  color: var(--muted);
+}
+
+.marketing-students__card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(20px, 2.4vw, 28px);
+  border: 1px solid #dedfd8;
+  border-radius: 24px;
+  background: #fbfbf8;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 18px 44px -32px rgba(32, 34, 31, 0.55);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+@media (hover: hover) {
+  .marketing-students__card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 26px 56px -30px rgba(32, 34, 31, 0.6);
+  }
+}
+
+.marketing-students__card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.marketing-students__card-head i {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #c9ef69;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.marketing-students__card-head b {
+  display: block;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.marketing-students__card-head small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.marketing-students__timeline {
+  display: grid;
+  gap: 16px;
+  padding-left: 20px;
+  /* The same single rule down the left the real profile timeline uses. */
+  border-left: 2px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.marketing-students__entry {
+  display: block;
+  position: relative;
+}
+
+.marketing-students__entry::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: -25px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.38;
+}
+
+.marketing-students__entry small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.marketing-students__entry b {
+  display: block;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.marketing-students__entry > span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.marketing-students__cv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  padding: 9px 16px;
+  border: 1px solid #d3d5cb;
+  border-radius: 999px;
+  background: #fff;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.76rem;
+}
+
+.marketing-students__cv .MuiSvgIcon-root {
+  font-size: 1.05rem;
+}
+
 .marketing-evidence {
   width: 100%;
   padding: clamp(80px, 9vw, 130px) max(24px, calc((100vw - 1380px) / 2));
@@ -10419,6 +10780,7 @@ a {
 @media (max-width: 1120px) {
   .marketing-evidence,
   .marketing-control,
+  .marketing-students,
   .marketing-integrations {
     grid-template-columns: 1fr;
   }
@@ -14661,6 +15023,7 @@ a {
 
 .published-card-offer .MuiButton-root:first-of-type {
   margin-top: 8px;
+}
 
 /* Sub-headings inside a card that already has an h2. */
 .admin-subhead {
@@ -14799,5 +15162,235 @@ a {
 @media (max-width: 640px) {
   .timeline-editor__where {
     flex-direction: column;
+  }
+}
+
+/*
+ * The résumé download. Deliberately quiet and below the exchange block: a
+ * visitor reads the page first and asks for the file second, so it should not
+ * compete with the links above it.
+ */
+.profile-resume {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 4px;
+}
+
+.profile-resume .MuiButton-root {
+  text-transform: none;
+  letter-spacing: 0;
+  max-width: 100%;
+}
+
+.profile-resume .MuiButton-root .MuiButton-startIcon + span,
+.profile-resume .MuiButton-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Claim preview: phone-width card that fits one viewport             */
+/* ------------------------------------------------------------------ */
+
+.claim-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0b0c0a;
+}
+
+.claim-page .claim-panel {
+  width: min(390px, 100%);
+  margin: 0 auto;
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid #2a2e26;
+  background: #12140f;
+  color: #eff8e6;
+}
+
+.claim-page .claim-panel .MuiTypography-root,
+.claim-page .claim-panel .MuiChip-label {
+  color: inherit;
+}
+
+.claim-page .claim-panel .MuiTypography-colorTextSecondary {
+  color: #aeb8a2 !important;
+}
+
+.claim-page .claim-panel .MuiStack-root {
+  gap: 6px !important;
+}
+
+.claim-page .claim-panel .MuiTypography-h6 {
+  font-size: 0.92rem !important;
+  line-height: 1.25 !important;
+}
+
+.claim-page .claim-panel .MuiButton-contained {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+.claim-page .public-template.app-shell {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  padding: 8px 10px 12px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.claim-page .public-template--after-dark.app-shell {
+  background:
+    radial-gradient(circle at 50% 0, rgba(185, 255, 102, 0.14), transparent 22rem),
+    #0b0c0a;
+}
+
+.claim-page .creator-card {
+  width: min(390px, 100%);
+  border-radius: 24px;
+}
+
+.claim-page .public-template--preview .profile-panel {
+  padding: 10px 14px 0;
+}
+
+.claim-page .public-template--preview .profile-copy {
+  max-width: none;
+  margin: 4px auto 0;
+}
+
+.claim-page .public-template--preview .avatar {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 6px;
+}
+
+.claim-page .public-template--preview .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.62rem;
+  color: #b7c2aa;
+}
+
+.claim-page .public-template--preview .profile-copy h1 {
+  font-size: clamp(1.2rem, 5vw, 1.45rem) !important;
+  line-height: 1.1 !important;
+  color: #f4ffe4 !important;
+}
+
+.claim-page .public-template--preview .profile-headline {
+  margin-top: 2px !important;
+  font-size: clamp(0.95rem, 3.8vw, 1.15rem) !important;
+  line-height: 1.15 !important;
+  color: #e8f2dc !important;
+}
+
+.claim-page .public-template--preview .profile-tags {
+  margin: 6px 0 4px;
+  gap: 4px;
+}
+
+.claim-page .public-template--preview .profile-tags li {
+  padding: 2px 7px;
+  font-size: 0.62rem;
+}
+
+.claim-page .public-template--preview .profile-bio {
+  margin: 0 auto;
+  max-width: 34ch;
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.claim-page .public-template--preview .social-rail {
+  margin: 8px 0 0;
+  padding: 8px 0;
+  justify-content: center;
+}
+
+.claim-page .public-template--preview .social-rail .MuiIconButton-root {
+  width: 36px;
+  height: 36px;
+}
+
+.claim-page .public-template--preview .hub-panel {
+  padding: 8px 12px 12px;
+}
+
+.claim-page .public-template--preview .section-heading {
+  margin-bottom: 6px;
+}
+
+.claim-page .public-template--preview .link-card {
+  min-height: 52px;
+  grid-template-columns: 36px 1fr 30px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.claim-page .public-template--preview .link-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.claim-page .public-template--preview .link-card__arrow {
+  width: 28px;
+  height: 28px;
+}
+
+.claim-page .public-template--preview .link-card .MuiTypography-h3 {
+  font-size: 0.88rem !important;
+  color: #f4ffe4 !important;
+}
+
+.claim-page .public-template--preview .link-card .MuiTypography-body2 {
+  font-size: 0.7rem;
+}
+
+.claim-page .public-template--preview .link-index .MuiSvgIcon-root,
+.claim-page .public-template--preview .link-card__arrow .MuiSvgIcon-root {
+  color: #11130f !important;
+  font-size: 1.05rem !important;
+}
+
+.claim-page .public-template--preview .link-index--brand {
+  color: #fff !important;
+}
+
+.claim-page .public-template--preview .link-index--brand svg {
+  color: inherit !important;
+  fill: currentColor;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.claim-page .public-template--preview .brand-chip {
+  display: none;
+}
+
+.claim-page .public-template--preview .hub-footer {
+  display: none;
+}
+
+.claim-page .public-template--preview .link-card-wrap + .link-card-wrap {
+  margin-top: 6px;
+}
+
+@media (max-height: 820px) {
+  .claim-page .public-template--preview .profile-tags {
+    display: none;
+  }
+
+  .claim-page .public-template--preview .profile-bio {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }

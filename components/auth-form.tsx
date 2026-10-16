@@ -21,6 +21,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
+import { parseStarterPurpose } from "@/lib/starter-purposes";
+import {
+  TEMPLATE_PICKER,
+  postAuthDestination,
+} from "@/lib/post-auth-destination";
 import { publicProfileAddress } from "@/lib/brand";
 import { stashPendingEmail } from "@/lib/pending-email";
 
@@ -39,11 +44,17 @@ export function AuthForm() {
   // It has to survive every branch below: whichever way they authenticate,
   // the draft is only applied once they land back with a session.
   const claimToken = searchParams.get("claim")?.trim() ?? "";
+  // Someone who arrived from a page selling one kind of profile has already
+  // answered the question /templates asks, so send them straight to setup with
+  // it prefilled. Validated in the onboarding route, not here.
+  const starterPurpose = parseStarterPurpose(searchParams.get("purpose"));
   const nextPath = claimToken
     ? `/claim/apply?token=${encodeURIComponent(claimToken)}`
     : isImportFlow
       ? `/onboarding?template=${encodeURIComponent(selectedTemplate)}&import=1`
-      : "/templates";
+      : starterPurpose
+        ? `/onboarding?purpose=${encodeURIComponent(starterPurpose)}`
+        : "/templates";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [displayName, setDisplayName] = useState(
     searchParams.get("display_name")?.trim() ?? "",
@@ -137,14 +148,20 @@ export function AuthForm() {
           text: "Email or password is incorrect.",
         });
       } else {
-        if (claimToken || isImportFlow) {
+        if (nextPath !== TEMPLATE_PICKER) {
+          // Claim, import and starter-purpose all named somewhere specific.
           router.push(nextPath);
         } else {
           const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed")
             .single();
-          router.push(profile?.onboarding_completed ? "/dashboard" : "/templates");
+          router.push(
+            postAuthDestination({
+              requested: nextPath,
+              onboardingCompleted: Boolean(profile?.onboarding_completed),
+            }),
+          );
         }
         router.refresh();
       }

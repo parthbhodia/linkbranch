@@ -62,7 +62,6 @@ export const exampleProfiles: ExampleProfile[] = [
       // arbitrary. Initials stay as the fallback for the other three.
       avatarUrl: "/marketing/hero-collage-portrait-round.jpg",
       displayName: "Nova",
-      greeting: "Hey, I’m",
       headline: "New songs, live dates, and",
       headlineAccent: "the next drop.",
       eyebrow: "Indie · Electronic · Touring",
@@ -126,7 +125,6 @@ export const exampleProfiles: ExampleProfile[] = [
       username: "dani-deals",
       initials: "DD",
       displayName: "Dani",
-      greeting: "I’m",
       headline: "I test the deal before I",
       headlineAccent: "share it.",
       eyebrow: "Travel · Tech · Worthwhile perks",
@@ -230,7 +228,6 @@ export const exampleProfiles: ExampleProfile[] = [
       username: "lea-shop",
       initials: "LS",
       displayName: "Lea Studio",
-      greeting: "Hi, I’m",
       headline: "Handmade goods with a",
       headlineAccent: "soft finish.",
       eyebrow: "Ceramics · Home · Slow drops",
@@ -295,7 +292,6 @@ export const exampleProfiles: ExampleProfile[] = [
       initials: "RC",
       avatarUrl: "/marketing/hero-collage-portrait-tall.jpg",
       displayName: "Rio",
-      greeting: "I’m",
       headline: "I help founders ship with",
       headlineAccent: "clearer focus.",
       eyebrow: "Operator coach · Async first",
@@ -362,7 +358,6 @@ export const exampleProfiles: ExampleProfile[] = [
       // one page under different names, so leaving it here would put one face
       // on two people.
       displayName: "Maya",
-      greeting: "Hi, I’m",
       headline: "I turn tiny ideas into",
       headlineAccent: "bright things.",
       eyebrow: "Illustrator · Video maker",
@@ -426,7 +421,6 @@ export const exampleProfiles: ExampleProfile[] = [
       username: "sam-builds",
       initials: "SB",
       displayName: "Sam",
-      greeting: "Hey, I’m",
       headline: "I design calmer",
       headlineAccent: "products.",
       eyebrow: "Independent product designer",

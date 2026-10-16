@@ -18,7 +18,6 @@ export const metadata = {
 type DraftPayload = {
   display_name?: string;
   bio?: string;
-  greeting?: string;
   headline?: string;
   headline_accent?: string;
   eyebrow?: string;
@@ -75,7 +74,6 @@ export default async function ClaimPage({
     // A draft is pitched to one business, so its own intro copy comes first.
     // The fallbacks are the same defaults public.profiles uses for a fresh
     // account, for drafts written before the payload carried intro copy.
-    greeting: payload.greeting || "Hey, I’m",
     headline: payload.headline || "I make useful",
     headlineAccent: payload.headline_accent || "things.",
     eyebrow:
@@ -101,7 +99,7 @@ export default async function ClaimPage({
   };
 
   return (
-    <>
+    <div className="claim-page">
       <ClaimPanel
         token={draft.token}
         suggestedUsername={draft.suggested_username}
@@ -111,7 +109,11 @@ export default async function ClaimPage({
       />
       {/* No databaseProfileId: there is no profiles row yet, so ProfileHub
           must not try to write click_events against one. */}
-      <ProfileHub profile={previewProfile} template={payload.template} />
-    </>
+      <ProfileHub
+        profile={previewProfile}
+        template={payload.template}
+        preview
+      />
+    </div>
   );
 }

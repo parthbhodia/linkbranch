@@ -24,8 +24,7 @@ and nowhere else. Drafts expire after 30 days (`expires_in_days` to change it).
 | `source_url` | http(s) | Where the content came from. Shown on the claim page as "Built from …". |
 | `suggested_username` | 3–30, `a-z0-9_-` | Checked for availability when the page renders. |
 | `display_name` | 80 | |
-| `greeting` | 32 | Renders as `{greeting} {display_name}.` |
-| `headline` / `headline_accent` | 48 / 24 | Render as one line, accent coloured. |
+| `headline` / `headline_accent` | 48 / 24 | Headline lines 1 and 2; line 2 renders accent coloured. |
 | `eyebrow` | 60 | Small line above the name. Defaults to `@username`. |
 | `bio` | 160 | |
 | `tags` | 16 entries, 40 each | Chips under the intro. |

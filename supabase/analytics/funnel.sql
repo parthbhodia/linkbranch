@@ -188,3 +188,48 @@ from public.profiles p
 where not p.onboarding_completed
 order by p.created_at desc
 limit 50;
+
+
+-- ---------------------------------------------------------------------------
+-- 7. The creator referral loop: does the badge actually bring anyone in?
+-- ---------------------------------------------------------------------------
+-- profiles.referred_by is stamped by claim_profile_referral when someone signs
+-- up carrying a ?ref=<username> handle. It has been written since
+-- 20260728061422_creator_referral_loop.sql and read by nothing, so whether the
+-- loop converts has been a guess.
+--
+-- The two activation rates are the point. A count of referred signups says the
+-- loop turns; setting its activation against everyone else's says whether it is
+-- worth turning. Treat the comparison as noise below ~10 referred accounts.
+--
+-- Mirrors lib/referral-loop.ts, so the page and the SQL cannot drift.
+select
+  count(*)                                                   as signups,
+  count(*) filter (where referred_by is not null)            as referred,
+  round(100.0 * count(*) filter (where referred_by is not null)
+        / nullif(count(*), 0), 1)                            as pct_referred,
+  -- Distinct referrers who converted somebody. Every published page carries a
+  -- badge, so compare this against the published count to see participation
+  -- rather than reach.
+  count(distinct referred_by)                                as active_referrers,
+  round(100.0 * count(*) filter (where referred_by is not null
+                                   and onboarding_completed)
+        / nullif(count(*) filter (where referred_by is not null), 0), 1)
+                                                             as pct_referred_finished_setup,
+  round(100.0 * count(*) filter (where referred_by is null
+                                   and onboarding_completed)
+        / nullif(count(*) filter (where referred_by is null), 0), 1)
+                                                             as pct_organic_finished_setup
+from public.profiles;
+
+
+-- Who is doing the referring, so you know whether it is a loop or one person.
+select
+  r.username                                                 as referrer,
+  count(*)                                                   as signups_referred,
+  count(*) filter (where p.onboarding_completed)             as of_those_finished_setup
+from public.profiles p
+join public.profiles r on r.id = p.referred_by
+group by r.username
+order by signups_referred desc
+limit 20;

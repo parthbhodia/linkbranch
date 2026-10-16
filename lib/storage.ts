@@ -89,3 +89,48 @@ export function faviconExtension(file: File) {
   }
   return "jpg";
 }
+
+/**
+ * Résumés live apart from the image assets. The bucket is private, so nothing
+ * here builds a public URL -- /api/resume/<username> mints a signed one that
+ * expires. A CV usually carries a phone number and often a home address, which
+ * is more than belongs at a permanent, crawlable address.
+ */
+export const DOCUMENTS_BUCKET = "documents";
+export const MAX_RESUME_BYTES = 10 * 1024 * 1024;
+export const SUPPORTED_RESUME_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+] as const;
+
+export function validateResume(file: File) {
+  if (
+    !SUPPORTED_RESUME_TYPES.includes(
+      file.type as (typeof SUPPORTED_RESUME_TYPES)[number],
+    )
+  ) {
+    // Some browsers hand back application/octet-stream for a .docx, so the
+    // extension is worth a second look before refusing an honest upload.
+    const looksRight = /\.(pdf|docx)$/i.test(file.name);
+    if (!looksRight) return "Use a PDF or Word (.docx) file.";
+  }
+
+  if (file.size > MAX_RESUME_BYTES) {
+    return "Keep your résumé under 10 MB.";
+  }
+
+  return null;
+}
+
+export function resumeExtension(file: File) {
+  if (file.type === "application/pdf") return "pdf";
+  if (/\.pdf$/i.test(file.name)) return "pdf";
+  return "docx";
+}
+
+/** The type the bucket will accept, even when the browser guessed wrong. */
+export function resumeContentType(file: File) {
+  return resumeExtension(file) === "pdf"
+    ? "application/pdf"
+    : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+}
