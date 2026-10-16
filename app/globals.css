@@ -1656,6 +1656,9 @@ a {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* The scroll drift is written to this element's transform. Named here so the
+     blurred layer is promoted once rather than at the first scroll frame. */
+  will-change: transform;
   /* Strongest at the top, gone well before the links. */
   -webkit-mask-image: linear-gradient(#000 0 22%, transparent 82%);
   mask-image: linear-gradient(#000 0 22%, transparent 82%);

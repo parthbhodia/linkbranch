@@ -646,6 +646,40 @@ export function ProfileHub({
   const avatarRing = customTheme.avatarRing === true;
   const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
   const socialSize = customTheme.socialSize;
+
+  // The wash drifts down as the page scrolls, which in the viewport reads as it
+  // rising slower than everything else -- the photo sits behind the card rather
+  // than being printed on it. Driven off the scroll position rather than left to
+  // a fixed background: a fixed layer would be pinned to the viewport, so it
+  // would also refuse to move as you scroll back up, and it would hang there in
+  // the gutters with the card's fade no longer over it.
+  const washRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!avatarBackdrop) return;
+    const node = washRef.current;
+    if (!node) return;
+    // Someone who asked their machine not to animate things gets the wash
+    // exactly where it always was, not a slower version of the drift.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    const place = () => {
+      frame = 0;
+      node.style.transform = `translate3d(0, ${window.scrollY * 0.4}px, 0)`;
+    };
+    const onScroll = () => {
+      // One write per frame at most; scroll fires far more often than that.
+      if (frame) return;
+      frame = window.requestAnimationFrame(place);
+    };
+
+    place();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [avatarBackdrop]);
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -705,7 +739,7 @@ export function ProfileHub({
           has. On the page rather than inside the card, so it covers what the
           wallpaper covers. */}
       {avatarBackdrop ? (
-        <Box className="avatar-backdrop" aria-hidden="true" />
+        <Box ref={washRef} className="avatar-backdrop" aria-hidden="true" />
       ) : null}
       {template === "signal-deck" ? (
         <Box
