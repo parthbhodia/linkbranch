@@ -44,6 +44,11 @@ export type ProfileThemeConfig = {
   density: ThemeDensity;
   /** Show the public contact/subscribe form on the profile. */
   contactForm?: boolean;
+  /**
+   * Show the search box above the links. Absent means shown, so every page
+   * that predates this setting keeps the box it already had.
+   */
+  search?: boolean;
   /** Optional custom brand mark shown above the profile intro. */
   logoPath?: string | null;
   /** Optional full-bleed wallpaper image layered under the page. */
@@ -400,6 +405,7 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
     fontWeight: theme.fontWeight ?? "regular",
     fontStyle: theme.fontStyle ?? "normal",
     contactForm: theme.contactForm ?? false,
+    search: theme.search ?? true,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
   };
@@ -465,6 +471,9 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
       ? (candidate.fontStyle as ThemeFontStyle)
       : "normal",
     contactForm: candidate.contactForm === true,
+    // Not `=== true`: the box shipped before the setting did, so a theme that
+    // predates it means "shown" rather than "hidden".
+    search: candidate.search !== false,
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
         ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)

@@ -3786,6 +3786,26 @@ export function Dashboard({
                 </div>
                 <div className="workspace-settings-switch">
                   <Box>
+                    <Typography fontWeight={850}>Search your page</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Show a search box so a visitor can find one link on a busy page.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={activeTheme.search !== false}
+                    onChange={(event) =>
+                      updateTheme((current) => ({
+                        ...current,
+                        search: event.target.checked,
+                      }))
+                    }
+                    inputProps={{
+                      "aria-label": "Show the search box on the public page",
+                    }}
+                  />
+                </div>
+                <div className="workspace-settings-switch">
+                  <Box>
                     <Typography fontWeight={850}>Cueful Discover</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Let people find this published profile in Discover.

@@ -641,6 +641,7 @@ export function ProfileHub({
   const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
   const showContactForm = applyCustomTheme && customTheme.contactForm === true;
+  const showSearch = customTheme.search !== false;
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -907,8 +908,9 @@ export function ProfileHub({
             </section>
           )}
           {/* A search box over nothing is furniture, and it invites exactly the
-              dead end this page used to show. */}
-          {totalContentCount > 0 && !preview && (
+              dead end this page used to show. Owners can also switch it off
+              entirely when their page is short enough to read. */}
+          {totalContentCount > 0 && !preview && showSearch && (
             <div className="profile-search">
               <TextField
                 className="search-field"
