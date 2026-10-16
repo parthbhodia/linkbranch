@@ -15476,33 +15476,60 @@ a {
   padding: 12px 20px 22px !important;
 }
 
+/* The card wears the link's own colour, set inline on the element, so the sheet
+   reads as a larger version of the tile the visitor just tapped. The ink comes
+   with it, which is why nothing below hardcodes a text colour. */
 .share-sheet__preview {
   display: grid;
   justify-items: center;
   gap: 10px;
-  padding: 20px 18px;
-  border-radius: 18px;
-  background: #f2f1ec;
+  padding: 22px 18px;
+  border-radius: 20px;
   text-align: center;
 }
 
+.share-sheet__image,
+.share-sheet__mark {
+  width: 116px;
+  height: 116px;
+  border-radius: 16px;
+}
+
 .share-sheet__image {
-  width: 132px;
-  height: 132px;
   object-fit: cover;
-  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* With no photo there is still something to show: the same mark the row draws,
+   enlarged, so the card never has a hole where an image would be. */
+.share-sheet__mark {
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: inherit;
+}
+
+.share-sheet__mark .MuiSvgIcon-root {
+  font-size: inherit;
+}
+
+.share-sheet__mark svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
 }
 
 .share-sheet__title {
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.3;
-  color: #1b1c18;
+  color: inherit;
 }
 
 .share-sheet__url {
   font: 500 0.78rem var(--font-mono), monospace;
-  color: #5e6256;
+  color: inherit;
+  opacity: 0.75;
   word-break: break-all;
 }
 
@@ -15515,7 +15542,8 @@ a {
   -webkit-line-clamp: 3;
   font-size: 0.85rem;
   line-height: 1.45;
-  color: #5e6256;
+  color: inherit;
+  opacity: 0.85;
 }
 
 .share-sheet__description.is-expanded {
@@ -15526,6 +15554,8 @@ a {
 .share-sheet__more {
   border-radius: 999px !important;
   text-transform: none !important;
+  color: inherit !important;
+  border-color: currentColor !important;
 }
 
 .share-sheet__targets {

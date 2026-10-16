@@ -7,7 +7,10 @@ import EmailRounded from "@mui/icons-material/EmailRounded";
 import FacebookRounded from "@mui/icons-material/FacebookRounded";
 import IosShareRounded from "@mui/icons-material/IosShareRounded";
 import LinkedIn from "@mui/icons-material/LinkedIn";
+import LinkRounded from "@mui/icons-material/LinkRounded";
 import MoreVertRounded from "@mui/icons-material/MoreVertRounded";
+import MusicNoteRounded from "@mui/icons-material/MusicNoteRounded";
+import StarRounded from "@mui/icons-material/StarRounded";
 import WhatsApp from "@mui/icons-material/WhatsApp";
 import X from "@mui/icons-material/X";
 import {
@@ -20,11 +23,15 @@ import {
   Typography,
 } from "@mui/material";
 
+import { detectBookingProvider } from "@/lib/booking-providers";
+import { detectLinkBrand } from "@/lib/link-brands";
 import {
   linkShareTargets,
   shortenShareUrl,
   type ShareTargetId,
 } from "@/lib/link-sharing";
+import { detectMusicProvider } from "@/lib/music-providers";
+import { readableForeground } from "@/lib/theme-config";
 
 export type ShareableLink = {
   id: number | string;
@@ -32,6 +39,9 @@ export type ShareableLink = {
   url: string;
   subtitle?: string | null;
   thumbnailUrl?: string | null;
+  /** The link's own fill, which the preview card wears. */
+  color?: string | null;
+  featured?: boolean;
 };
 
 export type SheetNotice = {
@@ -49,6 +59,9 @@ const targetIcons: Record<ShareTargetId, React.ReactNode> = {
 
 /** Past this the description is clamped, with a More button to open it. */
 const DESCRIPTION_LIMIT = 140;
+
+/** The card's fill when a link carries neither a brand nor its own colour. */
+const PREVIEW_FALLBACK = "#eceae2";
 
 /**
  * The share sheet behind the dots on a link.
@@ -77,6 +90,31 @@ export function LinkShareSheet({
   const targets = linkShareTargets({ url: link.url, title: link.title });
   const description = (link.subtitle ?? "").trim();
   const truncatable = description.length > DESCRIPTION_LIMIT;
+
+  const music = detectMusicProvider(link.url);
+  const booking = music ? null : detectBookingProvider(link.url);
+  const brand = music || booking ? null : detectLinkBrand(link.url);
+
+  // The card wears the link's own colour instead of a grey box, so the sheet
+  // reads as a larger version of the tile the visitor just tapped. The ink is
+  // picked against that fill, because a pastel like #ffd166 would swallow a
+  // white title.
+  const background = brand?.color ?? link.color ?? PREVIEW_FALLBACK;
+  const ink = readableForeground(background);
+
+  // With no photo there is still something to show: the same mark the row
+  // draws, at tile size, so the card never has a hole where an image would be.
+  const mark = music ? (
+    <MusicNoteRounded fontSize="inherit" />
+  ) : booking ? (
+    booking.icon
+  ) : brand ? (
+    brand.icon
+  ) : link.featured ? (
+    <StarRounded fontSize="inherit" />
+  ) : (
+    <LinkRounded fontSize="inherit" />
+  );
 
   async function copyLink() {
     try {
@@ -120,7 +158,7 @@ export function LinkShareSheet({
       </div>
 
       <DialogContent className="share-sheet__body">
-        <div className="share-sheet__preview">
+        <div className="share-sheet__preview" style={{ background, color: ink }}>
           {link.thumbnailUrl ? (
             <Box
               component="img"
@@ -128,7 +166,11 @@ export function LinkShareSheet({
               src={link.thumbnailUrl}
               alt=""
             />
-          ) : null}
+          ) : (
+            <span className="share-sheet__mark" aria-hidden="true">
+              {mark}
+            </span>
+          )}
           <Typography component="p" className="share-sheet__title">
             {link.title}
           </Typography>
