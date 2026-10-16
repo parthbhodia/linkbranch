@@ -34,6 +34,7 @@ import LanguageRounded from "@mui/icons-material/LanguageRounded";
 import HubOutlined from "@mui/icons-material/HubOutlined";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
 import {
@@ -79,7 +80,7 @@ import {
 } from "@/components/highlights-editor";
 import { InstallApp } from "@/components/install-app";
 import { TimelinePanel } from "@/components/timeline-panel";
-import type { TimelineEntry } from "@/lib/timeline";
+import { formatRange, type TimelineEntry } from "@/lib/timeline";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
 import {
   resolveSeoDescription,
@@ -316,6 +317,23 @@ const sectionCopy: Record<
     body: "Scan the live links on your page and fix destinations that stop responding.",
   },
 };
+
+// profile-hub splits embeds on this same set. Kept here rather than imported
+// so the preview does not reach into the public page's internals for one list.
+const PREVIEW_VIDEO_PROVIDERS = ["youtube", "vimeo", "twitch"];
+
+function formatPreviewPrice(amount: number | null, currency: string) {
+  if (amount === null || !Number.isFinite(amount)) return null;
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount}`;
+  }
+}
 
 const templateOptions = [
   {
@@ -572,6 +590,31 @@ export function Dashboard({
   const activeReferrals = useMemo(
     () => referrals.filter((item) => item.is_active),
     [referrals],
+  );
+
+  // The preview has to answer "did that save?", so everything it draws is
+  // filtered the way the public page filters it.
+  const activeFaqs = useMemo(
+    () => faqs.filter((item) => item.is_active),
+    [faqs],
+  );
+  const activeProducts = useMemo(
+    () => products.filter((item) => item.is_active),
+    [products],
+  );
+  const previewVideos = useMemo(
+    () =>
+      mediaEmbeds.filter(
+        (item) => item.is_active && PREVIEW_VIDEO_PROVIDERS.includes(item.provider),
+      ),
+    [mediaEmbeds],
+  );
+  const previewAudio = useMemo(
+    () =>
+      mediaEmbeds.filter(
+        (item) => item.is_active && !PREVIEW_VIDEO_PROVIDERS.includes(item.provider),
+      ),
+    [mediaEmbeds],
   );
   const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
   const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
@@ -3851,6 +3894,66 @@ export function Dashboard({
               <span>Search links and offers…</span>
             </div>
 
+            {highlights.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">RIGHT NOW</Typography>
+                  <small>{highlights.length}</small>
+                </div>
+                <div className="workspace-phone__highlight-rail">
+                  {highlights.slice(0, 4).map((item) => (
+                    <Box
+                      component="img"
+                      className="workspace-phone__highlight"
+                      src={publicAssetUrl(item.image_path)}
+                      alt=""
+                      key={item.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {previewVideos.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">WATCH</Typography>
+                  <small>{previewVideos.length}</small>
+                </div>
+                <div className="workspace-phone__links">
+                  {previewVideos.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>{item.provider}</small>
+                      </span>
+                      <PlayArrowRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {previewAudio.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">LISTEN</Typography>
+                  <small>{previewAudio.length}</small>
+                </div>
+                <div className="workspace-phone__links">
+                  {previewAudio.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>{item.provider}</small>
+                      </span>
+                      <PlayArrowRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeReferrals.length > 0 && (
               <div className="workspace-phone__offers">
                 <div className="workspace-phone__section-heading">
@@ -3875,7 +3978,10 @@ export function Dashboard({
 
             <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
               <Typography className="section-label">MY LINKS</Typography>
-              <small>{activeLinks.length || 2} DESTINATIONS</small>
+              <small>
+                {activeLinks.length}{" "}
+                {activeLinks.length === 1 ? "DESTINATION" : "DESTINATIONS"}
+              </small>
             </div>
             <div className="workspace-phone__links">
               {activeLinks.slice(0, 4).map((item) => (
@@ -3896,18 +4002,113 @@ export function Dashboard({
                 </div>
               ))}
               {activeLinks.length === 0 && (
-                <>
-                  <div className="workspace-phone__link">
-                    <span><b>Your first project</b><small>Share something worth opening</small></span>
-                    <ArrowOutwardRounded />
-                  </div>
-                  <div className="workspace-phone__link">
-                    <span><b>A useful resource</b><small>Give it a little context</small></span>
-                    <ArrowOutwardRounded />
-                  </div>
-                </>
+                <p className="workspace-phone__empty">
+                  No links yet — add one and it appears here.
+                </p>
               )}
             </div>
+            {activeFaqs.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">GOOD TO KNOW</Typography>
+                  <small>
+                    {activeFaqs.length}{" "}
+                    {activeFaqs.length === 1 ? "ANSWER" : "ANSWERS"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {activeFaqs.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.question}</b>
+                        <small>{item.answer}</small>
+                      </span>
+                      <ChevronRightRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeProducts.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">SHOP</Typography>
+                  <small>
+                    {activeProducts.length}{" "}
+                    {activeProducts.length === 1 ? "ITEM" : "ITEMS"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {activeProducts.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      {item.image_path && (
+                        <Box
+                          component="img"
+                          className="workspace-phone__link-image"
+                          src={publicAssetUrl(item.image_path)}
+                          alt=""
+                        />
+                      )}
+                      <span>
+                        <b>{item.title}</b>
+                        {item.price_amount !== null && (
+                          <small>
+                            {formatPreviewPrice(item.price_amount, item.currency)}
+                          </small>
+                        )}
+                      </span>
+                      <ArrowOutwardRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {timeline.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">BACKGROUND</Typography>
+                  <small>
+                    {timeline.length}{" "}
+                    {timeline.length === 1 ? "ENTRY" : "ENTRIES"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {timeline.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>
+                          {[item.organisation, formatRange(item)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </small>
+                      </span>
+                      <ChevronRightRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {draft.show_map && (draft.map_address ?? "").trim() !== "" && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">FIND US</Typography>
+                </div>
+                <div className="workspace-phone__links">
+                  <div className="workspace-phone__link">
+                    <span>
+                      <b>Get directions</b>
+                      <small>{draft.map_address}</small>
+                    </span>
+                    <MapRounded />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {draft.show_cueful_badge && (
               <div className="workspace-phone__supporter-badge">
                 Create your Cueful
