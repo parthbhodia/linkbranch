@@ -93,6 +93,7 @@ import {
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
 import { LinksEditor, type LinkDraft } from "@/components/links-editor";
+import { sortLinksBySection } from "@/lib/link-groups";
 import {
   ReferralsEditor,
   type ReferralDraft,
@@ -126,6 +127,9 @@ import {
   profileThemeStyle,
   resolveProfileTheme,
   themeBackgroundOptions,
+  themeFontScaleOptions,
+  themeFontStyleOptions,
+  themeFontWeightOptions,
   themePalettes,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
@@ -183,6 +187,7 @@ export type DashboardLink = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  group_name: string;
 };
 
 export type DashboardReferral = {
@@ -463,14 +468,18 @@ export function Dashboard({
   // Links are edited here now rather than by bouncing into the setup wizard,
   // so the dashboard keeps its own draft of them alongside the profile draft.
   const [linkDraft, setLinkDraft] = useState<LinkDraft[]>(() =>
-    links.map((item) => ({
-      id: item.id,
-      title: item.title,
-      url: item.url,
-      is_active: item.is_active,
-      is_featured: item.is_featured,
-      thumbnail_path: item.thumbnail_path,
-    })),
+    sortLinksBySection(
+      links.map((item) => ({
+        id: item.id,
+        title: item.title,
+        url: item.url,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name,
+      })),
+      (item) => item.group_name ?? "",
+    ),
   );
   const [savingLinks, setSavingLinks] = useState(false);
   const [referralDraft, setReferralDraft] = useState<ReferralDraft[]>(() =>
@@ -997,6 +1006,7 @@ export function Dashboard({
         is_active: item.is_active,
         is_featured: item.is_featured,
         thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name ?? "",
       };
       const { error } = existing.has(item.id)
         ? await supabase.from("links").update(row).eq("id", item.id)
@@ -2451,6 +2461,77 @@ export function Dashboard({
                     >
                       <b>{font.sample}</b>
                       <small>{font.name}</small>
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Type size</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontScaleOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontScale === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontScale: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} type size`}
+                        title={option.note}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Boldness</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontWeightOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontWeight === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontWeight: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} text weight`}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <Typography variant="h3">Style</Typography>
+                <div className="workspace-segmented">
+                  {themeFontStyleOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        activeTheme.fontStyle === option.id ? "is-selected" : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          fontStyle: option.id,
+                        }))
+                      }
+                      aria-label={`Use ${option.name} text style`}
+                      key={option.id}
+                    >
+                      {option.name}
                     </ButtonBase>
                   ))}
                 </div>

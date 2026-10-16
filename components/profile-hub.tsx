@@ -62,6 +62,7 @@ import {
   readableForeground,
   resolveProfileTheme,
 } from "@/lib/theme-config";
+import { groupLinksBySection } from "@/lib/link-groups";
 
 type TrackTarget = {
   eventType:
@@ -610,6 +611,7 @@ export function ProfileHub({
     filtered.faqs.length;
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
+  const linkSections = groupLinksBySection(standardLinks, (link) => link.group ?? "");
   const customTheme = resolveProfileTheme(themeConfig, template);
   const applyCustomTheme = Boolean(themeConfig) || !preview;
   const brandingLogoUrl = publicAssetUrl(
@@ -1118,27 +1120,41 @@ export function ProfileHub({
               )}
 
               {standardLinks.length > 0 && (
-                <section className="content-section" aria-labelledby="all-links">
-                  <div className="section-heading">
-                    <Typography
-                      id="all-links"
-                      component="h2"
-                      className="section-label"
-                    >
-                      My links
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {query
-                        ? `${totalResults} results`
-                        : `${standardLinks.length} destinations`}
-                    </Typography>
-                  </div>
-                  <div className="link-list">
-                    {standardLinks.map((link) => (
-                      <LinkCard key={link.id} link={link} onOpen={track} />
-                    ))}
-                  </div>
-                </section>
+                <>
+                  {linkSections.map((section, index) => {
+                    // The unsectioned run keeps the original "My links" anchor;
+                    // named sections get their own, unique, heading id.
+                    const headingId =
+                      section.name === "" ? "all-links" : `links-section-${index}`;
+                    return (
+                      <section
+                        className="content-section"
+                        aria-labelledby={headingId}
+                        key={section.name || "all-links"}
+                      >
+                        <div className="section-heading">
+                          <Typography
+                            id={headingId}
+                            component="h2"
+                            className="section-label"
+                          >
+                            {section.name || "My links"}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {query && index === 0
+                              ? `${totalResults} results`
+                              : `${section.links.length} destinations`}
+                          </Typography>
+                        </div>
+                        <div className="link-list">
+                          {section.links.map((link) => (
+                            <LinkCard key={link.id} link={link} onOpen={track} />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </>
               )}
 
               {showContactForm && (

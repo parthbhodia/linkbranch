@@ -125,6 +125,8 @@ type LinkDraft = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  /** Carried through untouched so saving the wizard does not flatten sections. */
+  group_name?: string;
 };
 
 type ReferralDraft = {

@@ -6,6 +6,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
+import PlaylistAddRounded from "@mui/icons-material/PlaylistAddRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
 import StarRounded from "@mui/icons-material/StarRounded";
@@ -46,6 +47,7 @@ import {
 } from "@/lib/booking-providers";
 import { detectLinkBrand } from "@/lib/link-brands";
 import { detectMusicProvider } from "@/lib/music-providers";
+import { groupLinksBySection, sortLinksBySection } from "@/lib/link-groups";
 import { normalizeHttpUrl } from "@/lib/urls";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -62,6 +64,8 @@ export type LinkDraft = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  /** Free-form section heading; empty/absent keeps the link in the flat list. */
+  group_name?: string;
 };
 
 export type EditorNotice = {
@@ -259,6 +263,63 @@ export function SortableLinkEditor({
 }
 
 /**
+ * Editable section title. Renaming is committed on blur or Enter rather than
+ * on every keystroke: an in-progress empty value would otherwise dissolve the
+ * section out from under the field.
+ */
+function SectionHeading({
+  name,
+  onRename,
+  onRemove,
+}: {
+  name: string;
+  onRename: (from: string, to: string) => void;
+  onRemove: () => void;
+}) {
+  const [text, setText] = useState(name);
+
+  function commit() {
+    const next = text.trim();
+    if (!next || next === name) {
+      setText(name);
+      return;
+    }
+    onRename(name, next);
+  }
+
+  return (
+    <div className="link-section__heading">
+      <TextField
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            commit();
+            (event.target as HTMLInputElement).blur();
+          }
+        }}
+        size="small"
+        variant="standard"
+        placeholder="Section name"
+        slotProps={{ input: { disableUnderline: true } }}
+        inputProps={{ maxLength: 60, "aria-label": "Section name" }}
+      />
+      <Tooltip title="Remove section" arrow>
+        <IconButton
+          size="small"
+          onClick={onRemove}
+          aria-label={`Remove ${name} section`}
+        >
+          <DeleteOutlineRounded fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </div>
+  );
+}
+
+/**
  * The link list, its drag-reorder and its thumbnail uploads, owned in one place
  * so the dashboard and the setup wizard edit links the same way. It lived
  * inside the wizard, which is why the dashboard's "Edit links" button had to
@@ -287,6 +348,9 @@ export function LinksEditor({
   const [uploadingThumbnailId, setUploadingThumbnailId] = useState<number | null>(
     null,
   );
+  // Named-but-empty sections live only here until a link is dropped into them;
+  // an empty section has no link to carry its name, so it cannot persist.
+  const [pendingSections, setPendingSections] = useState<string[]>([]);
 
   const dragSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -316,6 +380,7 @@ export function LinksEditor({
         is_active: true,
         is_featured: false,
         thumbnail_path: null,
+        group_name: "",
       },
     ]);
   }
@@ -339,12 +404,80 @@ export function LinksEditor({
         is_active: true,
         is_featured: false,
         thumbnail_path: null,
+        group_name: "",
       },
     ]);
     notify({
       message: `${provider.label} booking link added — paste your full scheduling URL.`,
       severity: "success",
     });
+  }
+
+  // Every change funnels through here so the list stays contiguous by section:
+  // a link can never sit between two sections that do not claim it.
+  function commit(next: LinkDraft[]) {
+    onChange(sortLinksBySection(next, (item) => item.group_name ?? ""));
+  }
+
+  function addLinkTo(group: string) {
+    setPendingSections((current) => current.filter((name) => name !== group));
+    commit([
+      ...value,
+      {
+        id: Math.max(0, ...value.map((item) => item.id)) + 1,
+        title: "",
+        url: "",
+        is_active: true,
+        is_featured: false,
+        thumbnail_path: null,
+        group_name: group,
+      },
+    ]);
+  }
+
+  function addSection() {
+    setPendingSections((current) => {
+      const taken = new Set([...value.map((item) => item.group_name), ...current]);
+      let index = 1;
+      let name = "New section";
+      while (taken.has(name)) {
+        index += 1;
+        name = `New section ${index}`;
+      }
+      return [...current, name];
+    });
+  }
+
+  function renameSection(from: string, to: string) {
+    commit(
+      value.map((item) =>
+        item.group_name === from ? { ...item, group_name: to } : item,
+      ),
+    );
+  }
+
+  function clearSection(name: string) {
+    commit(
+      value.map((item) =>
+        item.group_name === name ? { ...item, group_name: "" } : item,
+      ),
+    );
+  }
+
+  function renamePendingSection(from: string, to: string) {
+    // Renaming an empty section onto a name that already has links merges the
+    // two rather than leaving a duplicate heading.
+    if (value.some((item) => item.group_name === to)) {
+      setPendingSections((current) => current.filter((name) => name !== from));
+      return;
+    }
+    setPendingSections((current) =>
+      current.map((name) => (name === from ? to : name)),
+    );
+  }
+
+  function removePendingSection(name: string) {
+    setPendingSections((current) => current.filter((item) => item !== name));
   }
 
   function featureLink(id: number) {
@@ -378,7 +511,21 @@ export function LinksEditor({
     const nextIndex = value.findIndex((item) => item.id === over.id);
     if (previousIndex < 0 || nextIndex < 0) return;
 
-    onChange(arrayMove(value, previousIndex, nextIndex));
+    const moved = arrayMove(value, previousIndex, nextIndex);
+    // A link dropped next to a heading joins that section, so dragging across a
+    // boundary is how a link moves from one section to another.
+    const at = moved.findIndex((item) => item.id === active.id);
+    const before = moved[at - 1];
+    const after = moved[at + 1];
+    if (before || after) {
+      const group =
+        before && after && before.group_name === after.group_name
+          ? before.group_name
+          : (before ?? after).group_name;
+      moved[at] = { ...moved[at], group_name: group };
+    }
+
+    commit(moved);
     notify({ message: "Link order updated", severity: "success" });
   }
 
@@ -436,6 +583,8 @@ export function LinksEditor({
     notify({ message: "Thumbnail removed", severity: "warning" });
   }
 
+  const sections = groupLinksBySection(value, (item) => item.group_name ?? "");
+
   return (
     <Box className="links-editor">
       <div className="link-quick-add">
@@ -465,31 +614,80 @@ export function LinksEditor({
           items={value.map((item) => item.id)}
           strategy={verticalListSortingStrategy}
         >
-          <Stack spacing={2}>
-            {value.map((item) => (
-              <SortableLinkEditor
-                key={item.id}
-                item={item}
-                uploading={uploadingThumbnailId === item.id}
-                onUpdate={updateLink}
-                onFeature={featureLink}
-                onVisibility={toggleLinkVisibility}
-                onRemove={removeLink}
-                onUpload={uploadLinkThumbnail}
-                onRemoveThumbnail={removeLinkThumbnail}
-              />
+          <div className="link-sections">
+            {sections.map((section) => (
+              <section
+                className="link-section"
+                key={section.name || "__ungrouped"}
+              >
+                {section.name && (
+                  <SectionHeading
+                    name={section.name}
+                    onRename={renameSection}
+                    onRemove={() => clearSection(section.name)}
+                  />
+                )}
+                <Stack spacing={2}>
+                  {section.links.map((item) => (
+                    <SortableLinkEditor
+                      key={item.id}
+                      item={item}
+                      uploading={uploadingThumbnailId === item.id}
+                      onUpdate={updateLink}
+                      onFeature={featureLink}
+                      onVisibility={toggleLinkVisibility}
+                      onRemove={removeLink}
+                      onUpload={uploadLinkThumbnail}
+                      onRemoveThumbnail={removeLinkThumbnail}
+                    />
+                  ))}
+                </Stack>
+                {section.name && (
+                  <Button
+                    className="link-section__add"
+                    size="small"
+                    startIcon={<AddRounded fontSize="small" />}
+                    onClick={() => addLinkTo(section.name)}
+                  >
+                    Add to {section.name}
+                  </Button>
+                )}
+              </section>
             ))}
-          </Stack>
+          </div>
         </SortableContext>
       </DndContext>
-      <Button
-        sx={{ mt: 2 }}
-        variant="outlined"
-        startIcon={<AddRounded />}
-        onClick={addLink}
-      >
-        {addLabel}
-      </Button>
+
+      {pendingSections.map((name) => (
+        <section className="link-section" key={`pending-${name}`}>
+          <SectionHeading
+            name={name}
+            onRename={renamePendingSection}
+            onRemove={() => removePendingSection(name)}
+          />
+          <Button
+            className="link-section__add"
+            size="small"
+            startIcon={<AddRounded fontSize="small" />}
+            onClick={() => addLinkTo(name)}
+          >
+            Add link
+          </Button>
+        </section>
+      ))}
+
+      <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap" }}>
+        <Button variant="outlined" startIcon={<AddRounded />} onClick={addLink}>
+          {addLabel}
+        </Button>
+        <Button
+          variant="text"
+          startIcon={<PlaylistAddRounded />}
+          onClick={addSection}
+        >
+          Add section
+        </Button>
+      </Stack>
     </Box>
   );
 }

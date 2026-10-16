@@ -2689,6 +2689,40 @@ a {
   gap: 8px;
 }
 
+/* Editable sections inside the links editor. The heading is a live text field
+   so a section is renamed in place; the underline doubles as the divider. */
+.link-sections {
+  display: grid;
+  gap: 22px;
+}
+
+.link-section {
+  display: grid;
+  gap: 12px;
+}
+
+.link-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.link-section__heading .MuiFormControl-root {
+  flex: 1;
+}
+
+.link-section__heading input {
+  font: 700 0.72rem var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.link-section__add {
+  justify-self: start;
+}
+
 .link-editor--booking {
   border-color: color-mix(in srgb, #2f6fed 28%, transparent);
   background: color-mix(in srgb, #2f6fed 6%, transparent);
@@ -4111,6 +4145,36 @@ a {
 .public-template.profile-theme-custom .link-card h3 {
   color: var(--profile-text);
   font-family: var(--profile-display-font);
+}
+
+/* Creator typography controls. Each rule restates the base size it is scaling
+   so the multiplier applies to a known value, and the weight/slant land on the
+   same run of text. The custom-theme selector outranks the per-template rules,
+   so a creator's choice holds on every layout. */
+.public-template.profile-theme-custom .profile-copy h1 {
+  font-size: calc(clamp(1.9rem, 8vw, 5rem) * var(--profile-font-scale, 1));
+  font-weight: var(--profile-font-weight, 800);
+  font-style: var(--profile-font-style, normal);
+}
+
+.public-template.profile-theme-custom .profile-headline {
+  font-size: calc(
+    clamp(1.55rem, 6vw, 4rem) * var(--profile-font-scale, 1)
+  ) !important;
+  font-weight: var(--profile-font-weight, 800) !important;
+  font-style: var(--profile-font-style, normal);
+}
+
+.public-template.profile-theme-custom .profile-bio {
+  font-size: calc(0.95rem * var(--profile-font-scale, 1)) !important;
+}
+
+.public-template.profile-theme-custom .link-card h3 {
+  font-size: calc(1rem * var(--profile-font-scale, 1));
+}
+
+.public-template.profile-theme-custom .section-label {
+  font-size: calc(0.6875rem * var(--profile-font-scale, 1));
 }
 
 .public-template.profile-theme-custom .profile-handle,

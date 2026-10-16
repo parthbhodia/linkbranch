@@ -9,6 +9,8 @@ export type LinkItem = {
   color: string;
   featured?: boolean;
   thumbnailUrl?: string;
+  /** Optional section heading; empty/absent keeps the flat list. */
+  group?: string;
 };
 
 export type Referral = {
