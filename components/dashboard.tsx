@@ -2155,6 +2155,37 @@ export function Dashboard({
 
           {section === "content" && (
             <Stack className="workspace-panel" spacing={2}>
+              {/* Social profiles belong with the links, not in Settings: they
+                  are part of what the page is, not an account preference. */}
+              <Paper
+                id="content-socials"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
+                <div className="workspace-settings-card__heading">
+                  <HubOutlined />
+                  <Box>
+                    <Typography variant="h3">Social profiles</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The networks people can find you on. They show as icons on
+                      your public page.
+                    </Typography>
+                  </Box>
+                </div>
+                <SettingsConnectEditor
+                  profileId={profile.id}
+                  initialSocials={connectedSocials}
+                  onSaved={(next) => {
+                    setConnectedSocials(next);
+                    setNotice({
+                      severity: "success",
+                      message: "Social profiles updated.",
+                    });
+                    router.refresh();
+                  }}
+                />
+              </Paper>
+
               <div className="workspace-panel__heading">
                 <Box>
                   <Typography variant="h3">Links</Typography>
@@ -3452,34 +3483,6 @@ export function Dashboard({
                     it, and until now a single "not now" could hide the only
                     way to install for good. */}
                 <InstallApp requested />
-              </Paper>
-
-              <Paper
-                id="settings-connect"
-                className="workspace-settings-card"
-                variant="outlined"
-              >
-                <div className="workspace-settings-card__heading">
-                  <HubOutlined />
-                  <Box>
-                    <Typography variant="h3">Connect</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Social profiles shown as icons on your public page.
-                    </Typography>
-                  </Box>
-                </div>
-                <SettingsConnectEditor
-                  profileId={profile.id}
-                  initialSocials={connectedSocials}
-                  onSaved={(next) => {
-                    setConnectedSocials(next);
-                    setNotice({
-                      severity: "success",
-                      message: "Social profiles updated.",
-                    });
-                    router.refresh();
-                  }}
-                />
               </Paper>
 
               <Paper className="workspace-settings-card" variant="outlined">

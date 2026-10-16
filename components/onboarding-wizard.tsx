@@ -973,6 +973,18 @@ export function OnboardingWizard({
 
   async function next() {
     if (activeStep === 1) {
+      // Nudge, not a gate: a page with no social icons is still worth
+      // publishing, so continue but say what was skipped.
+      const hasSocial = socials.some(
+        (item) => item.platform.trim() && item.url.trim(),
+      );
+      if (!hasSocial) {
+        setNotice({
+          message:
+            "Add at least one social profile so people can reach you off-platform.",
+          severity: "warning",
+        });
+      }
       setActiveStep(2);
       return;
     }
@@ -1796,6 +1808,9 @@ export function OnboardingWizard({
                   spacing={2}
                 >
                   <Box>
+                    <Typography className="section-label" sx={{ mb: 0.5 }}>
+                      ESSENTIAL
+                    </Typography>
                     <Typography component="h2" variant="h3">
                       Social profiles
                     </Typography>
@@ -1804,7 +1819,9 @@ export function OnboardingWizard({
                       color="text.secondary"
                       sx={{ mt: 0.75 }}
                     >
-                      Optional. Add the full URL for every profile you want to show.
+                      Add the profiles your audience already follows you on. They
+                      show as icons on your page, and they are one of the first
+                      things a visitor taps.
                     </Typography>
                   </Box>
                   <Button
