@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
@@ -56,6 +56,7 @@ import {
   publicAssetUrl,
   validateImage,
 } from "@/lib/storage";
+import { EmojiPickerButton } from "@/components/emoji-picker";
 
 export type LinkDraft = {
   id: number;
@@ -101,11 +102,28 @@ export function SortableLinkEditor({
     isDragging,
   } = useSortable({ id: item.id });
 
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   const booking = detectBookingProvider(item.url);
   const music = booking ? null : detectMusicProvider(item.url);
   const brand = music || booking ? null : detectLinkBrand(item.url);
   const special = music ?? booking ?? brand;
   const urlPlaceholder = special?.placeholder ?? "https://example.com";
+
+  // The caret, not the end: "🎟 Tickets" is the common shape, and appending
+  // would fight anyone who has already typed a title.
+  function insertEmoji(emoji: string) {
+    const input = titleInputRef.current;
+    const current = item.title ?? "";
+    const start = input?.selectionStart ?? current.length;
+    const end = input?.selectionEnd ?? start;
+    onUpdate(item.id, "title", current.slice(0, start) + emoji + current.slice(end));
+    const caret = start + emoji.length;
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(caret, caret);
+    });
+  }
 
   return (
     <Box
@@ -136,8 +154,21 @@ export function SortableLinkEditor({
           label="Link title"
           value={item.title}
           onChange={(event) => onUpdate(item.id, "title", event.target.value)}
+          inputRef={titleInputRef}
           fullWidth
           size="small"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <EmojiPickerButton
+                    label="Add an emoji to this link's title"
+                    onInsert={insertEmoji}
+                  />
+                </InputAdornment>
+              ),
+            },
+          }}
         />
         <TextField
           label={

@@ -2723,6 +2723,50 @@ a {
   justify-self: start;
 }
 
+/* Emoji picker: a phone-style grid, for keyboards that have no emoji key. */
+.emoji-picker {
+  width: min(336px, calc(100vw - 32px));
+}
+
+.emoji-picker__tabs {
+  min-height: 40px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.emoji-picker__tabs .MuiTab-root {
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.emoji-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.emoji-picker__cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emoji-picker__cell:hover,
+.emoji-picker__cell:focus-visible {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 .link-editor--booking {
   border-color: color-mix(in srgb, #2f6fed 28%, transparent);
   background: color-mix(in srgb, #2f6fed 6%, transparent);

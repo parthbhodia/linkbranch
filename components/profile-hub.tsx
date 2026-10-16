@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FindUs } from "@/components/find-us";
 import type { PublicMapLocation } from "@/lib/map-location";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import EditRounded from "@mui/icons-material/EditRounded";
@@ -222,7 +221,7 @@ const LinkCard = memo(function LinkCard({
           ) : music ? (
             <MusicNoteRounded fontSize="small" />
           ) : booking ? (
-            <CalendarMonthRounded fontSize="small" />
+            booking.icon
           ) : brand ? (
             brand.icon
           ) : link.featured ? (
