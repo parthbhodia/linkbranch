@@ -111,6 +111,7 @@ import {
   ALIAS_LIMIT,
   aliasErrorMessage,
   aliasFormatError,
+  aliasSuggestions,
   normaliseAlias,
 } from "@/lib/aliases";
 import { useRouter } from "next/navigation";
@@ -578,6 +579,17 @@ export function Dashboard({
   const [aliasList, setAliasList] = useState<string[]>(aliases);
   const [aliasInput, setAliasInput] = useState("");
   const [aliasBusy, setAliasBusy] = useState(false);
+  // Offered as the placeholder rather than as a fixed example: a brand and the
+  // handle it was given rarely match, and the brand is what visitors type.
+  const aliasSuggestion = useMemo(
+    () =>
+      aliasSuggestions({
+        displayName: draft.display_name,
+        username: draft.username,
+        taken: aliasList,
+      })[0] ?? "yourbrand",
+    [draft.display_name, draft.username, aliasList],
+  );
 
   useEffect(() => {
     const shareKey = `cueful:share-prompt:${profile.id}`;
@@ -2057,7 +2069,7 @@ export function Dashboard({
                     onChange={(event) =>
                       setAliasInput(normaliseAlias(event.target.value))
                     }
-                    placeholder="mktv"
+                    placeholder={aliasSuggestion}
                     helperText={
                       aliasList.length >= ALIAS_LIMIT
                         ? `Up to ${ALIAS_LIMIT} extra names. Remove one to add another.`

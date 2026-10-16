@@ -297,15 +297,25 @@ export function SortableLinkEditor({
  * Editable section title. Renaming is committed on blur or Enter rather than
  * on every keystroke: an in-progress empty value would otherwise dissolve the
  * section out from under the field.
+ *
+ * The unsectioned list gets one of these too, with its heading shown as the
+ * placeholder rather than as a value. Renaming it writes a real heading onto
+ * those links, which is how "My links" becomes whatever the creator calls it;
+ * leaving it alone keeps them unheaded on the public page.
+ *
+ * `onRemove` is absent for that list: every section empties back into it, so it
+ * is the one heading with nothing to be removed from.
  */
 function SectionHeading({
   name,
+  placeholder = "Section name",
   onRename,
   onRemove,
 }: {
   name: string;
+  placeholder?: string;
   onRename: (from: string, to: string) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   const [text, setText] = useState(name);
 
@@ -333,19 +343,24 @@ function SectionHeading({
         }}
         size="small"
         variant="standard"
-        placeholder="Section name"
+        placeholder={placeholder}
         slotProps={{ input: { disableUnderline: true } }}
-        inputProps={{ maxLength: 60, "aria-label": "Section name" }}
+        inputProps={{
+          maxLength: 60,
+          "aria-label": name ? `${name} section name` : "Section name",
+        }}
       />
-      <Tooltip title="Remove section" arrow>
-        <IconButton
-          size="small"
-          onClick={onRemove}
-          aria-label={`Remove ${name} section`}
-        >
-          <DeleteOutlineRounded fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {onRemove && (
+        <Tooltip title="Remove section" arrow>
+          <IconButton
+            size="small"
+            onClick={onRemove}
+            aria-label={`Remove ${name} section`}
+          >
+            <DeleteOutlineRounded fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
     </div>
   );
 }
@@ -367,14 +382,12 @@ export function LinksEditor({
   userId,
   onNotice,
   onThumbnailOrphaned,
-  addLabel = "Add link",
 }: {
   value: LinkDraft[];
   onChange: (next: LinkDraft[]) => void;
   userId: string;
   onNotice?: (notice: EditorNotice) => void;
   onThumbnailOrphaned?: (path: string) => void;
-  addLabel?: string;
 }) {
   const [uploadingThumbnailId, setUploadingThumbnailId] = useState<number | null>(
     null,
@@ -398,22 +411,6 @@ export function LinksEditor({
     onChange(
       value.map((item) => (item.id === id ? { ...item, [field]: next } : item)),
     );
-  }
-
-  function addLink() {
-    onChange([
-      ...value,
-      {
-        // Client-side ids only: the caller assigns real ones when it saves.
-        id: Math.max(0, ...value.map((item) => item.id)) + 1,
-        title: "",
-        url: "",
-        is_active: true,
-        is_featured: false,
-        thumbnail_path: null,
-        group_name: "",
-      },
-    ]);
   }
 
   // A scheduler is the one link people arrive knowing they want, so it gets a
@@ -482,7 +479,7 @@ export function LinksEditor({
   function renameSection(from: string, to: string) {
     commit(
       value.map((item) =>
-        item.group_name === from ? { ...item, group_name: to } : item,
+        (item.group_name ?? "") === from ? { ...item, group_name: to } : item,
       ),
     );
   }
@@ -490,7 +487,7 @@ export function LinksEditor({
   function clearSection(name: string) {
     commit(
       value.map((item) =>
-        item.group_name === name ? { ...item, group_name: "" } : item,
+        (item.group_name ?? "") === name ? { ...item, group_name: "" } : item,
       ),
     );
   }
@@ -615,6 +612,11 @@ export function LinksEditor({
   }
 
   const sections = groupLinksBySection(value, (item) => item.group_name ?? "");
+  // A list with no links has no groups at all, and the flat list still has to be
+  // drawn: it is where the first link goes.
+  const drawnSections = sections.length
+    ? sections
+    : [{ name: "", links: [] as LinkDraft[] }];
 
   return (
     <Box className="links-editor">
@@ -646,18 +648,23 @@ export function LinksEditor({
           strategy={verticalListSortingStrategy}
         >
           <div className="link-sections">
-            {sections.map((section) => (
+            {drawnSections.map((section) => (
               <section
                 className="link-section"
                 key={section.name || "__ungrouped"}
               >
-                {section.name && (
-                  <SectionHeading
-                    name={section.name}
-                    onRename={renameSection}
-                    onRemove={() => clearSection(section.name)}
-                  />
-                )}
+                {/* The flat list is drawn with a heading like any other so it can
+                    be renamed; it reads "My links" as a placeholder until it is. */}
+                <SectionHeading
+                  name={section.name}
+                  placeholder="My links"
+                  onRename={renameSection}
+                  onRemove={
+                    section.name
+                      ? () => clearSection(section.name)
+                      : undefined
+                  }
+                />
                 <Stack spacing={2}>
                   {section.links.map((item) => (
                     <SortableLinkEditor
@@ -673,16 +680,16 @@ export function LinksEditor({
                     />
                   ))}
                 </Stack>
-                {section.name && (
-                  <Button
-                    className="link-section__add"
-                    size="small"
-                    startIcon={<AddRounded fontSize="small" />}
-                    onClick={() => addLinkTo(section.name)}
-                  >
-                    Add to {section.name}
-                  </Button>
-                )}
+                {/* Adding belongs to the section being looked at, so a new link
+                    cannot land in the wrong one. */}
+                <Button
+                  className="link-section__add"
+                  size="small"
+                  startIcon={<AddRounded fontSize="small" />}
+                  onClick={() => addLinkTo(section.name)}
+                >
+                  {section.name ? `Add to ${section.name}` : "Add link"}
+                </Button>
               </section>
             ))}
           </div>
@@ -702,15 +709,12 @@ export function LinksEditor({
             startIcon={<AddRounded fontSize="small" />}
             onClick={() => addLinkTo(name)}
           >
-            Add link
+            Add to {name}
           </Button>
         </section>
       ))}
 
-      <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap" }}>
-        <Button variant="outlined" startIcon={<AddRounded />} onClick={addLink}>
-          {addLabel}
-        </Button>
+      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
         <Button
           variant="text"
           startIcon={<PlaylistAddRounded />}
