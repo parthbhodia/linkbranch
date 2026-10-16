@@ -15,6 +15,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TemplatesPage() {
-  return <TemplatePicker />;
+// The picker reads ?template= and ?import=, which it used to do in the client.
+// Reading them here leaves it a plain component with no `useSearchParams`, so
+// the route does not need a Suspense boundary -- and with one, the static HTML
+// shipped the fallback and every visitor watched it swap to the real picker.
+export const dynamic = "force-dynamic";
+
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ template?: string; import?: string }>;
+}) {
+  const { template, import: importFlow } = await searchParams;
+  return (
+    <TemplatePicker
+      requestedTemplate={template}
+      importFlow={importFlow === "1"}
+    />
+  );
 }

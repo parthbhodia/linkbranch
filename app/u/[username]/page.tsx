@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   ProfileHub,
   type PublicMediaEmbed,
@@ -6,6 +7,7 @@ import {
   type PublicFaq,
   type PublicHighlight,
 } from "@/components/profile-hub";
+import { ProfileSkeleton } from "@/components/profile-skeleton";
 import {
   BRAND_URL,
   DEFAULT_SOCIAL_IMAGE,
@@ -163,7 +165,8 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
   const { published } = await searchParams;
-  const example = exampleProfileBySlug.get(username.toLowerCase());
+  const handle = username.toLowerCase();
+  const example = exampleProfileBySlug.get(handle);
 
   if (example) {
     const canonicalUrl = publicProfileUrl(example.slug);
@@ -192,11 +195,47 @@ export default async function PublicProfilePage({
   }
 
   const supabase = await createClient();
+  // Existence only, cheap and indexed. It decides 404 versus render, so it has
+  // to resolve before anything streams: once the shell has flushed, the status
+  // code is fixed and a missing handle answers 200 with a 404 page inside it.
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", handle)
+    .maybeSingle();
+
+  if (!existing) {
+    // A name someone actually typed that this profile does not hold -- the
+    // brand spelling of a hyphenated handle, or a name left behind by a rename.
+    const { data: canonical } = await supabase.rpc("resolve_profile_alias", {
+      candidate: handle,
+    });
+    if (typeof canonical === "string" && canonical && canonical !== handle) {
+      permanentRedirect(publicProfilePath(canonical));
+    }
+    notFound();
+  }
+
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ProfileContent handle={handle} published={published === "1"} />
+    </Suspense>
+  );
+}
+
+async function ProfileContent({
+  handle,
+  published,
+}: {
+  handle: string;
+  published: boolean;
+}) {
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("username", username.toLowerCase())
-    .single();
+    .eq("username", handle)
+    .maybeSingle();
 
   if (!profile) {
     notFound();
@@ -348,7 +387,7 @@ export default async function PublicProfilePage({
         profile={creatorProfile}
         template={profile.template}
         databaseProfileId={profile.id}
-        published={published === "1"}
+        published={published}
         showBadge={Boolean(profile.show_cueful_badge)}
         themeConfig={profile.theme_config}
         products={(products ?? []) as PublicProduct[]}
