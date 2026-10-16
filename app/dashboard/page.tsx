@@ -55,12 +55,21 @@ export default async function DashboardPage() {
     redirect("/auth?error=profile_missing");
   }
 
+  // Fetched here rather than in the workspace so a missing table (before the
+  // alias migration lands) cannot fail the dashboard's data block.
+  const { data: aliases } = await supabase
+    .from("profile_aliases")
+    .select("alias")
+    .eq("user_id", user.id)
+    .order("alias");
+
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardWorkspace
         profile={profile as DashboardProfile}
         email={user.email ?? ""}
         isAdmin={isAdminEmail(user.email)}
+        aliases={(aliases ?? []).map((item) => item.alias)}
       />
     </Suspense>
   );
@@ -70,10 +79,12 @@ async function DashboardWorkspace({
   profile,
   email,
   isAdmin,
+  aliases,
 }: {
   profile: DashboardProfile;
   email: string;
   isAdmin: boolean;
+  aliases: string[];
 }) {
   const supabase = await createClient();
   const [
@@ -170,6 +181,7 @@ async function DashboardWorkspace({
       profile={profile}
       email={email}
       isAdmin={isAdmin}
+      aliases={aliases}
       links={(links ?? []) as DashboardLink[]}
       referrals={(referrals ?? []) as DashboardReferral[]}
       socials={(socials ?? []) as DashboardSocial[]}

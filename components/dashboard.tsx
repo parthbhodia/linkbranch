@@ -106,6 +106,12 @@ import {
   publicProfilePath,
 } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
+import {
+  ALIAS_LIMIT,
+  aliasErrorMessage,
+  aliasFormatError,
+  normaliseAlias,
+} from "@/lib/aliases";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
@@ -431,6 +437,7 @@ export function Dashboard({
   profile,
   email,
   isAdmin,
+  aliases,
   links,
   referrals,
   socials,
@@ -447,6 +454,8 @@ export function Dashboard({
   profile: DashboardProfile;
   email: string;
   isAdmin: boolean;
+  /** Extra names that resolve to this page. See addAlias/removeAlias. */
+  aliases: string[];
   links: DashboardLink[];
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
@@ -546,6 +555,11 @@ export function Dashboard({
     severity: "success" | "error";
     message: string;
   } | null>(null);
+  // Extra names pointing at this page. The database owns the namespace rules,
+  // so this mirrors what it accepted rather than deciding anything itself.
+  const [aliasList, setAliasList] = useState<string[]>(aliases);
+  const [aliasInput, setAliasInput] = useState("");
+  const [aliasBusy, setAliasBusy] = useState(false);
 
   useEffect(() => {
     const shareKey = `cueful:share-prompt:${profile.id}`;
@@ -1153,8 +1167,76 @@ export function Dashboard({
       return;
     }
 
-    setNotice({ severity: "success", message: "Your page has been updated." });
+    // A rename leaves the old name behind as an alias (the database trigger),
+    // so links already shared keep working. Say so, and show it in the list.
+    const previousHandle = profile.username;
+    const nextHandle = draft.username.trim().toLowerCase();
+    if (previousHandle !== nextHandle) {
+      setAliasList((current) => [...new Set([...current, previousHandle])].sort());
+      setNotice({
+        severity: "success",
+        message: `Saved. ${publicProfileAddress(previousHandle)} now redirects to ${publicProfileAddress(nextHandle)}.`,
+      });
+    } else {
+      setNotice({ severity: "success", message: "Your page has been updated." });
+    }
     router.refresh();
+  }
+
+  async function addAlias() {
+    const candidate = normaliseAlias(aliasInput);
+    const problem = aliasFormatError(candidate);
+    if (problem) {
+      setNotice({ severity: "error", message: problem });
+      return;
+    }
+    if (aliasList.includes(candidate)) {
+      setNotice({
+        severity: "error",
+        message: `${publicProfileAddress(candidate)} already points here.`,
+      });
+      return;
+    }
+
+    setAliasBusy(true);
+    const { data, error } = await createClient().rpc("add_profile_alias", {
+      candidate,
+    });
+    setAliasBusy(false);
+
+    if (error) {
+      setNotice({ severity: "error", message: aliasErrorMessage(error.message) });
+      return;
+    }
+
+    // The function returns the stored name, which is the one to trust.
+    const stored = typeof data === "string" && data ? data : candidate;
+    setAliasList((current) => [...new Set([...current, stored])].sort());
+    setAliasInput("");
+    setNotice({
+      severity: "success",
+      message: `${publicProfileAddress(stored)} now points here.`,
+    });
+    router.refresh();
+  }
+
+  async function removeAlias(alias: string) {
+    setAliasBusy(true);
+    const { error } = await createClient().rpc("remove_profile_alias", {
+      candidate: alias,
+    });
+    setAliasBusy(false);
+
+    if (error) {
+      setNotice({ severity: "error", message: aliasErrorMessage(error.message) });
+      return;
+    }
+
+    setAliasList((current) => current.filter((item) => item !== alias));
+    setNotice({
+      severity: "success",
+      message: `${publicProfileAddress(alias)} no longer points here.`,
+    });
   }
 
   async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1921,6 +2003,54 @@ export function Dashboard({
                 helperText={`Public URL: ${publicProfileAddress(draft.username || "username")}`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+              {/* Names that also resolve here. A brand and its handle often
+                  differ -- MKTV against mk-tv -- and the name people type is
+                  the brand, which is how cueful.bio/mktv ended up 404ing. */}
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <TextField
+                    label="Also reachable at"
+                    value={aliasInput}
+                    onChange={(event) =>
+                      setAliasInput(normaliseAlias(event.target.value))
+                    }
+                    placeholder="mktv"
+                    helperText={
+                      aliasList.length >= ALIAS_LIMIT
+                        ? `Up to ${ALIAS_LIMIT} extra names. Remove one to add another.`
+                        : "Another name that redirects here, e.g. your brand without the dash."
+                    }
+                    fullWidth
+                    disabled={aliasList.length >= ALIAS_LIMIT}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addAlias}
+                    disabled={
+                      aliasBusy ||
+                      !aliasInput ||
+                      aliasList.length >= ALIAS_LIMIT
+                    }
+                    sx={{ mt: 0.5, flexShrink: 0 }}
+                  >
+                    Add name
+                  </Button>
+                </Stack>
+                {aliasList.length ? (
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                    {aliasList.map((alias) => (
+                      <Chip
+                        key={alias}
+                        label={publicProfileAddress(alias)}
+                        onDelete={() => removeAlias(alias)}
+                        disabled={aliasBusy}
+                        size="small"
+                      />
+                    ))}
+                  </Stack>
+                ) : null}
+              </Stack>
               {/* One headline, two lines. These were "Headline" + "Accent text",
                   which asked people to cut a sentence in half and guess which
                   half got coloured; a third field, Greeting, was a template
