@@ -228,13 +228,38 @@ a {
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.5);
   text-decoration: none;
+  position: relative;
   animation: enter 480ms both cubic-bezier(0.2, 0.75, 0.25, 1);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease,
     background-color 180ms ease;
 }
 
+/* The card is a div with the link stretched across it, so the share dots can be
+   a real button instead of a button nested inside an anchor. The anchor keeps
+   the whole card clickable; only the trailing controls sit above it. */
+.link-card__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* The arrow and the dots travel together, so the card's third column stays one
+   element wide and the arrow keeps the exact spot it had on its own. */
+.link-card__trailing {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.link-card__more {
+  color: inherit;
+}
+
 .link-card:hover,
-.link-card:focus-visible {
+.link-card:has(.link-card__hit:focus-visible) {
   transform: translateY(-3px);
   border-color: #787c6f;
   box-shadow: 0 8px 18px rgba(27, 28, 24, 0.12);
@@ -15416,4 +15441,165 @@ a {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+/* The share sheet behind the dots on a link. It renders in a portal outside the
+   themed page, so it reads as one light system sheet on every profile instead of
+   picking up the creator's colours -- the same reason the QR dialog fixes its
+   own paper rather than inheriting. */
+.share-sheet .MuiDialog-paper {
+  border-radius: 24px;
+}
+
+.share-sheet__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 56px 6px;
+}
+
+.share-sheet__head h2 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.share-sheet__head .MuiIconButton-root {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.share-sheet__body {
+  display: grid;
+  gap: 18px;
+  padding: 12px 20px 22px !important;
+}
+
+.share-sheet__preview {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 20px 18px;
+  border-radius: 18px;
+  background: #f2f1ec;
+  text-align: center;
+}
+
+.share-sheet__image {
+  width: 132px;
+  height: 132px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.share-sheet__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1b1c18;
+}
+
+.share-sheet__url {
+  font: 500 0.78rem var(--font-mono), monospace;
+  color: #5e6256;
+  word-break: break-all;
+}
+
+/* Three lines, then the More button. A GoFundMe blurb runs to paragraphs and
+   would push the share row off the sheet. */
+.share-sheet__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #5e6256;
+}
+
+.share-sheet__description.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.share-sheet__more {
+  border-radius: 999px !important;
+  text-transform: none !important;
+}
+
+.share-sheet__targets {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.share-sheet__targets::-webkit-scrollbar {
+  display: none;
+}
+
+.share-sheet__target {
+  flex: 0 0 auto;
+  width: 74px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.share-sheet__target-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #1b1c18;
+  transition: transform 160ms ease;
+}
+
+.share-sheet__target-icon .MuiSvgIcon-root {
+  font-size: 1.5rem;
+}
+
+.share-sheet__target:hover .share-sheet__target-icon,
+.share-sheet__target:focus-visible .share-sheet__target-icon {
+  transform: translateY(-2px);
+}
+
+.share-sheet__target-label {
+  font: 500 0.72rem var(--font-mono), monospace;
+  color: #1b1c18;
+  text-align: center;
+}
+
+/* Copy and the native sheet are neutral: they are the two with no brand. */
+.share-sheet__target--copy .share-sheet__target-icon,
+.share-sheet__target--more .share-sheet__target-icon {
+  color: #1b1c18;
+  background: #e3e2da;
+}
+
+.share-sheet__target--facebook .share-sheet__target-icon {
+  background: #1877f2;
+}
+
+.share-sheet__target--whatsapp .share-sheet__target-icon {
+  background: #25d366;
+}
+
+.share-sheet__target--linkedin .share-sheet__target-icon {
+  background: #0a66c2;
+}
+
+.share-sheet__target--email .share-sheet__target-icon {
+  background: #5e6256;
 }

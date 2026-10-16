@@ -38,6 +38,10 @@ import {
 } from "@/lib/booking-providers";
 import { ContactExchange } from "@/components/contact-exchange";
 import { ProfileContactForm } from "@/components/profile-contact-form";
+import {
+  LinkShareSheet,
+  ShareLinkButton,
+} from "@/components/link-share-sheet";
 import { detectLinkBrand } from "@/lib/link-brands";
 import {
   detectMusicProvider,
@@ -143,9 +147,11 @@ function searchable(values: Array<string | null | undefined>) {
 const LinkCard = memo(function LinkCard({
   link,
   onOpen,
+  onShare,
 }: {
   link: LinkItem;
   onOpen: (label: string, target: TrackTarget) => void;
+  onShare: (link: LinkItem) => void;
 }) {
   const [showEmbed, setShowEmbed] = useState(false);
   const music = detectMusicProvider(link.url);
@@ -177,22 +183,16 @@ const LinkCard = memo(function LinkCard({
         booking ? " link-card-wrap--booking" : ""
       }${brand ? " link-card-wrap--brand" : ""}`}
     >
-      <Box
-        component="a"
+      {/* A div with the anchor stretched across it, rather than an anchor
+          wrapping the whole card. The card needs a real share button in it, and
+          a button inside a link is neither valid HTML nor reachable by
+          keyboard. The anchor stays the only thing that opens the link. */}
+      <div
         className={`link-card${link.featured ? " link-card--featured" : ""}${
           music ? " link-card--music" : ""
         }${booking ? " link-card--booking" : ""}${
           brand ? " link-card--brand" : ""
         }`}
-        href={link.url}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() =>
-          onOpen(`Opened ${link.title}`, {
-            eventType: "link_open",
-            linkId: Number(link.id),
-          })
-        }
       >
         <span
           className={`link-index${
@@ -261,10 +261,26 @@ const LinkCard = memo(function LinkCard({
             </Typography>
           ) : null}
         </span>
-        <span className="link-card__arrow" aria-hidden="true">
-          <ArrowOutwardRounded fontSize="small" />
+        <span className="link-card__trailing">
+          <span className="link-card__arrow" aria-hidden="true">
+            <ArrowOutwardRounded fontSize="small" />
+          </span>
+          <ShareLinkButton label={link.title} onShare={() => onShare(link)} />
         </span>
-      </Box>
+        <a
+          className="link-card__hit"
+          href={link.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open ${link.title}`}
+          onClick={() =>
+            onOpen(`Opened ${link.title}`, {
+              eventType: "link_open",
+              linkId: Number(link.id),
+            })
+          }
+        />
+      </div>
       {embedSrc ? (
         <div className={music ? "music-embed" : "booking-embed"}>
           <Button
@@ -503,6 +519,9 @@ export function ProfileHub({
   }, [databaseProfileId]);
 
   const [qrOpen, setQrOpen] = useState(false);
+  // The link whose share sheet is open. Held as the whole link rather than an
+  // id so the sheet has its title and thumbnail without another lookup.
+  const [shareLink, setShareLink] = useState<LinkItem | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
   // Generated on first open rather than on mount: most visitors never ask for
@@ -1111,7 +1130,12 @@ export function ProfileHub({
                   </div>
                   <div className="link-list">
                     {spotlightLinks.map((link) => (
-                      <LinkCard key={link.id} link={link} onOpen={track} />
+                      <LinkCard
+                        key={link.id}
+                        link={link}
+                        onOpen={track}
+                        onShare={setShareLink}
+                      />
                     ))}
                   </div>
                 </section>
@@ -1146,7 +1170,12 @@ export function ProfileHub({
                         </div>
                         <div className="link-list">
                           {section.links.map((link) => (
-                            <LinkCard key={link.id} link={link} onOpen={track} />
+                            <LinkCard
+                              key={link.id}
+                              link={link}
+                              onOpen={track}
+                              onShare={setShareLink}
+                            />
                           ))}
                         </div>
                       </section>
@@ -1420,6 +1449,23 @@ export function ProfileHub({
           </Stack>
         </DialogContent>
       </Dialog>
+
+      {shareLink ? (
+        <LinkShareSheet
+          // Keyed by link so opening another one starts collapsed rather than
+          // inheriting the last sheet's expanded description.
+          key={shareLink.id}
+          link={{
+            id: shareLink.id,
+            title: shareLink.title,
+            url: shareLink.url,
+            subtitle: shareLink.subtitle,
+            thumbnailUrl: shareLink.thumbnailUrl,
+          }}
+          onClose={() => setShareLink(null)}
+          onNotice={setNotice}
+        />
+      ) : null}
 
       <Dialog
         open={showCardOffer}
