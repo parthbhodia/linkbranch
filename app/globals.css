@@ -2114,6 +2114,13 @@ a {
   height: 100%;
   padding: 34px 18px 28px;
   text-align: center;
+  /* The frame is a fixed 700px with overflow hidden, so every section past the
+     links used to be clipped and unreachable -- drawing them would have changed
+     nothing. The body scrolls instead, the way the real page does. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(130, 134, 122, 0.5) transparent;
 }
 
 .workspace-phone__avatar {
@@ -5655,6 +5662,35 @@ a {
 
 .workspace-phone__link svg {
   font-size: 0.95rem;
+}
+
+/* The preview draws every section the public page draws, so it needs the
+   highlight rail and an honest empty state. It used to invent two links and a
+   hardcoded "2 DESTINATIONS" when there were none, which read as a working
+   page and sent people into the editor looking for links that never existed. */
+.workspace-phone__highlight-rail {
+  margin-top: 7px;
+  display: flex;
+  gap: 7px;
+}
+
+.workspace-phone__highlight {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.workspace-phone__empty {
+  margin: 0;
+  padding: 14px 13px;
+  border: 1px dashed #dcded3;
+  border-radius: 10px;
+  color: #85897e;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .workspace-phone__link-image {
