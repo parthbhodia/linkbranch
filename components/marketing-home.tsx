@@ -895,7 +895,7 @@ export function MarketingHome() {
           <Typography>
             Paste a link from Spotify, Apple Music, SoundCloud, Bandcamp,
             Audiomack, YouTube, Vimeo, or Twitch and it embeds on your page.
-            Fourteen social platforms sit in the header, WhatsApp Business
+            Fifteen social platforms sit in the header, WhatsApp Business
             included.
           </Typography>
           <Button

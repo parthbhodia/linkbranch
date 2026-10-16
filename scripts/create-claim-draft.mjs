@@ -36,6 +36,7 @@ const SOCIAL_LABELS = [
   "Twitch",
   "Discord",
   "Bluesky",
+  "Partiful",
   "WhatsApp Business",
   "Website",
 ];
