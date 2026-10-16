@@ -1609,8 +1609,78 @@ a {
   box-shadow: 0 14px 34px rgba(40, 42, 34, 0.2);
 }
 
+/* The creator's own silhouette, three classes deep so a template that shapes
+   its avatar itself (soft-studio rounds and tilts it) gives way to the choice
+   rather than fighting it. Nothing is applied unless one was picked, which is
+   what keeps those templates looking the way they always have. */
+.public-template .avatar.avatar--circle {
+  border-radius: 50%;
+  transform: none;
+}
+
+.public-template .avatar.avatar--rounded {
+  border-radius: 28px;
+  transform: none;
+}
+
+.public-template .avatar.avatar--square {
+  border-radius: 6px;
+  transform: none;
+}
+
+/* A ring rather than an outline: it takes up space, so the photo inside is
+   cropped by it instead of overflowing over it. */
+.public-template .avatar.avatar--ring {
+  border: 7px solid var(--profile-text, var(--ink));
+  background-clip: padding-box;
+}
+
 .public-template .eyebrow {
   margin: 0 0 16px;
+}
+
+/* The photo, blown up and faded, behind the name and headline. It lives inside
+   .profile-copy rather than on the page so it can never land over the link
+   list, and .profile-copy is made its own stacking context so a negative
+   z-index can put the wash behind the name. Without that context it would be
+   painted behind the card's own background and never seen at all. */
+.public-template .profile-copy:has(.avatar-backdrop) {
+  position: relative;
+  isolation: isolate;
+}
+
+.public-template .avatar-backdrop {
+  position: absolute;
+  top: -76px;
+  left: -40px;
+  right: -40px;
+  bottom: -16px;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  /* A soft ellipse from the top, so the wash has no edge on any side to see. */
+  -webkit-mask-image: radial-gradient(
+    135% 100% at 50% 4%,
+    #000 0 30%,
+    transparent 86%
+  );
+  mask-image: radial-gradient(135% 100% at 50% 4%, #000 0 30%, transparent 86%);
+}
+
+/* Blurred on a child, not on the wash itself, so the blur's bleed is clipped
+   by the wash's own box instead of widening the page. The image is handed
+   down as a custom property rather than set on the wash, because a
+   background on the wash itself would paint a second, unblurred copy of it
+   across the whole box. */
+.public-template .avatar-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  background-image: var(--avatar-backdrop);
+  background-size: cover;
+  background-position: center 30%;
+  filter: blur(52px) saturate(1.15);
+  opacity: 0.28;
 }
 
 /* Hero type has to survive two things the design didn't account for: long
@@ -3996,6 +4066,17 @@ a {
 
 .workspace-branding-row__preview--wallpaper {
   height: 64px;
+}
+
+.workspace-branding-row__preview--avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border-style: solid;
+}
+
+.workspace-branding-row__preview--avatar img {
+  object-fit: cover;
 }
 
 .workspace-branding-row__preview img {

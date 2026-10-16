@@ -642,6 +642,9 @@ export function ProfileHub({
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
   const showContactForm = applyCustomTheme && customTheme.contactForm === true;
   const showSearch = customTheme.search !== false;
+  const avatarShape = customTheme.avatarShape;
+  const avatarRing = customTheme.avatarRing === true;
+  const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -751,6 +754,21 @@ export function ProfileHub({
           </div>
 
           <Box className="profile-copy">
+            {/* The photo, blown up and faded, behind the name. It lives here
+                rather than on the page so it can never land over the link
+                list, and .profile-copy is made its own stacking context so it
+                can sit behind the name without the card hiding it. */}
+            {avatarBackdrop ? (
+              <Box
+                className="avatar-backdrop"
+                style={
+                  {
+                    "--avatar-backdrop": `url("${profile.avatarUrl}")`,
+                  } as React.CSSProperties
+                }
+                aria-hidden="true"
+              />
+            ) : null}
             {brandingLogoUrl && (
               <Box
                 component="img"
@@ -767,7 +785,9 @@ export function ProfileHub({
               />
             ) : null}
             <Box
-              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}`}
+              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
+                avatarShape ? ` avatar--${avatarShape}` : ""
+              }${avatarRing ? " avatar--ring" : ""}`}
               aria-label={
                 profile.avatarUrl
                   ? `${profile.displayName} profile photo`

@@ -20,6 +20,8 @@ export type ThemeDensity = "relaxed" | "compact";
 export type ThemeFontScale = "sm" | "md" | "lg" | "xl";
 export type ThemeFontWeight = "regular" | "medium" | "bold";
 export type ThemeFontStyle = "normal" | "italic";
+/** Silhouette of the avatar on the public page. */
+export type ThemeAvatarShape = "circle" | "rounded" | "square";
 
 export type ProfileThemeConfig = {
   version: 1;
@@ -49,6 +51,12 @@ export type ProfileThemeConfig = {
    * that predates this setting keeps the box it already had.
    */
   search?: boolean;
+  /** Silhouette of the avatar. Absent means the circle every page started with. */
+  avatarShape?: ThemeAvatarShape;
+  /** A solid ring around the avatar, as a frame against a busy backdrop. */
+  avatarRing?: boolean;
+  /** Blow the avatar up, blurred and faded, behind the name and headline. */
+  avatarBackdrop?: boolean;
   /** Optional custom brand mark shown above the profile intro. */
   logoPath?: string | null;
   /** Optional full-bleed wallpaper image layered under the page. */
@@ -100,6 +108,7 @@ const densities = new Set<ThemeDensity>(["relaxed", "compact"]);
 const fontScales = new Set<ThemeFontScale>(["sm", "md", "lg", "xl"]);
 const fontWeights = new Set<ThemeFontWeight>(["regular", "medium", "bold"]);
 const fontStyles = new Set<ThemeFontStyle>(["normal", "italic"]);
+const avatarShapes = new Set<ThemeAvatarShape>(["circle", "rounded", "square"]);
 
 export const themeFontScaleOptions: Array<{
   id: ThemeFontScale;
@@ -127,6 +136,16 @@ export const themeFontStyleOptions: Array<{
 }> = [
   { id: "normal", name: "Upright" },
   { id: "italic", name: "Italic" },
+];
+
+export const themeAvatarShapeOptions: Array<{
+  id: ThemeAvatarShape;
+  name: string;
+  note: string;
+}> = [
+  { id: "circle", name: "Circle", note: "The default round photo" },
+  { id: "rounded", name: "Rounded", note: "A squircle, like an app icon" },
+  { id: "square", name: "Square", note: "A hard-edged tile" },
 ];
 
 export const themePalettes: ThemePalette[] = [
@@ -406,6 +425,8 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
     fontStyle: theme.fontStyle ?? "normal",
     contactForm: theme.contactForm ?? false,
     search: theme.search ?? true,
+    avatarRing: theme.avatarRing ?? false,
+    avatarBackdrop: theme.avatarBackdrop ?? false,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
   };
@@ -474,6 +495,14 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
     // Not `=== true`: the box shipped before the setting did, so a theme that
     // predates it means "shown" rather than "hidden".
     search: candidate.search !== false,
+    // Left off entirely unless the creator picks one. A template is allowed to
+    // give its own avatar a shape -- soft-studio rounds and tilts it -- and a
+    // default of "circle" here would quietly straighten every one of them.
+    ...(avatarShapes.has(candidate.avatarShape as ThemeAvatarShape)
+      ? { avatarShape: candidate.avatarShape as ThemeAvatarShape }
+      : {}),
+    avatarRing: candidate.avatarRing === true,
+    avatarBackdrop: candidate.avatarBackdrop === true,
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
         ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)

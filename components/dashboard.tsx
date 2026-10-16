@@ -134,6 +134,7 @@ import {
   profileThemeClassName,
   profileThemeStyle,
   resolveProfileTheme,
+  themeAvatarShapeOptions,
   themeBackgroundOptions,
   themeFontScaleOptions,
   themeFontStyleOptions,
@@ -2844,6 +2845,155 @@ export function Dashboard({
                           updateTheme((current) => ({
                             ...current,
                             contactForm: enabled,
+                          }))
+                        }
+                        key={String(enabled)}
+                      >
+                        {enabled ? "On" : "Off"}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Your photo</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The picture at the top of your page, and how it sits there.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-branding-row">
+                  <span className="workspace-branding-row__preview workspace-branding-row__preview--avatar">
+                    {draft.avatar_path ? (
+                      <Box
+                        component="img"
+                        src={publicAssetUrl(draft.avatar_path)}
+                        alt=""
+                      />
+                    ) : (
+                      <Typography variant="caption">{initials}</Typography>
+                    )}
+                  </span>
+                  <Box>
+                    <Typography fontWeight={850}>Profile photo</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A square photo works best. Keep it under 5 MB.
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 1.25 }}
+                    >
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={avatarUploading}
+                        startIcon={
+                          avatarUploading ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <PhotoCameraOutlined />
+                          )
+                        }
+                      >
+                        {draft.avatar_path ? "Replace photo" : "Upload photo"}
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={uploadAvatar}
+                        />
+                      </Button>
+                      {draft.avatar_path && (
+                        <Button
+                          color="inherit"
+                          onClick={removeAvatar}
+                          disabled={avatarUploading}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </div>
+
+                <div className="workspace-design-split" style={{ marginTop: 18 }}>
+                  <div className="workspace-design-group">
+                    <Typography variant="h3">Shape</Typography>
+                    <div className="workspace-segmented">
+                      {themeAvatarShapeOptions.map((option) => (
+                        <ButtonBase
+                          className={
+                            (activeTheme.avatarShape ?? "circle") === option.id
+                              ? "is-selected"
+                              : ""
+                          }
+                          onClick={() =>
+                            updateTheme((current) => ({
+                              ...current,
+                              avatarShape: option.id,
+                            }))
+                          }
+                          aria-label={`Use a ${option.name.toLowerCase()} avatar`}
+                          title={option.note}
+                          key={option.id}
+                        >
+                          {option.name}
+                        </ButtonBase>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="workspace-design-group">
+                    <Typography variant="h3">Frame</Typography>
+                    <div className="workspace-segmented">
+                      {([true, false] as const).map((enabled) => (
+                        <ButtonBase
+                          className={
+                            Boolean(activeTheme.avatarRing) === enabled
+                              ? "is-selected"
+                              : ""
+                          }
+                          onClick={() =>
+                            updateTheme((current) => ({
+                              ...current,
+                              avatarRing: enabled,
+                            }))
+                          }
+                          key={String(enabled)}
+                        >
+                          {enabled ? "On" : "Off"}
+                        </ButtonBase>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="workspace-design-group" style={{ marginTop: 18 }}>
+                  <Typography variant="h3">Faded backdrop</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.25 }}
+                  >
+                    Blow the photo up behind your name, blurred and faded.
+                  </Typography>
+                  <div className="workspace-segmented">
+                    {([true, false] as const).map((enabled) => (
+                      <ButtonBase
+                        className={
+                          Boolean(activeTheme.avatarBackdrop) === enabled
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            avatarBackdrop: enabled,
                           }))
                         }
                         key={String(enabled)}
