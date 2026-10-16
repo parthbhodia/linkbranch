@@ -39,6 +39,7 @@ import {
 } from "@/lib/booking-providers";
 import { ContactExchange } from "@/components/contact-exchange";
 import { ProfileContactForm } from "@/components/profile-contact-form";
+import { detectLinkBrand } from "@/lib/link-brands";
 import {
   detectMusicProvider,
   isLikelyCompleteMusicUrl,
@@ -149,6 +150,8 @@ const LinkCard = memo(function LinkCard({
   const [showEmbed, setShowEmbed] = useState(false);
   const music = detectMusicProvider(link.url);
   const booking = music ? null : detectBookingProvider(link.url);
+  const brand =
+    music || booking ? null : detectLinkBrand(link.url);
   const musicEmbedSrc =
     music?.embeddable && isLikelyCompleteMusicUrl(link.url)
       ? musicPlayerUrl(link.url, music.id, {
@@ -165,19 +168,22 @@ const LinkCard = memo(function LinkCard({
     link.subtitle ||
     (music ? music.subtitle : null) ||
     (booking ? booking.subtitle : null) ||
+    (brand ? brand.subtitle : null) ||
     "";
 
   return (
     <div
       className={`link-card-wrap${music ? " link-card-wrap--music" : ""}${
         booking ? " link-card-wrap--booking" : ""
-      }`}
+      }${brand ? " link-card-wrap--brand" : ""}`}
     >
       <Box
         component="a"
         className={`link-card${link.featured ? " link-card--featured" : ""}${
           music ? " link-card--music" : ""
-        }${booking ? " link-card--booking" : ""}`}
+        }${booking ? " link-card--booking" : ""}${
+          brand ? " link-card--brand" : ""
+        }`}
         href={link.url}
         target="_blank"
         rel="noreferrer"
@@ -196,10 +202,13 @@ const LinkCard = memo(function LinkCard({
                 ? " link-index--music"
                 : booking
                   ? " link-index--booking"
-                  : " link-index--icon"
+                  : brand
+                    ? " link-index--brand"
+                    : " link-index--icon"
           }`}
           style={{
-            background: music || booking ? undefined : link.color,
+            background: music || booking ? undefined : brand?.color ?? link.color,
+            color: brand && !link.thumbnailUrl ? brand.ink : undefined,
           }}
         >
           {link.thumbnailUrl ? (
@@ -213,6 +222,8 @@ const LinkCard = memo(function LinkCard({
             <MusicNoteRounded fontSize="small" />
           ) : booking ? (
             <CalendarMonthRounded fontSize="small" />
+          ) : brand ? (
+            brand.icon
           ) : link.featured ? (
             <StarRounded fontSize="small" />
           ) : (
@@ -232,7 +243,10 @@ const LinkCard = memo(function LinkCard({
                 size="small"
               />
             )}
-            {link.featured && !music && !booking && (
+            {brand && (
+              <Chip className="brand-chip" label={brand.label} size="small" />
+            )}
+            {link.featured && !music && !booking && !brand && (
               <Chip
                 className="featured-chip"
                 icon={<StarRounded />}
@@ -393,6 +407,7 @@ export function ProfileHub({
   resumeHref = null,
   mapLocation = null,
   timeline = [],
+  preview = false,
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -420,6 +435,8 @@ export function ProfileHub({
   mapLocation?: PublicMapLocation | null;
   /** Education and experience, for a student or anyone with a background worth showing. */
   timeline?: TimelineEntry[];
+  /** Claim / outreach previews: phone-width, no search chrome. */
+  preview?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -594,11 +611,16 @@ export function ProfileHub({
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
   const customTheme = resolveProfileTheme(themeConfig, template);
-  const brandingLogoUrl = publicAssetUrl(customTheme.logoPath);
-  const wallpaperUrl = publicAssetUrl(customTheme.wallpaperPath);
+  const applyCustomTheme = Boolean(themeConfig) || !preview;
+  const brandingLogoUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.logoPath : null,
+  );
+  const wallpaperUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.wallpaperPath : null,
+  );
   const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
-  const showContactForm = customTheme.contactForm === true;
+  const showContactForm = applyCustomTheme && customTheme.contactForm === true;
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -632,12 +654,14 @@ export function ProfileHub({
   return (
     <main
       className={`app-shell public-template public-template--${template}${
-        customTheme
+        preview ? " public-template--preview" : ""
+      }${
+        applyCustomTheme
           ? ` ${profileThemeClassName(customTheme, { wallpaperUrl: pageWallpaperUrl })}`
           : ""
       }`}
       style={
-        customTheme
+        applyCustomTheme
           ? (profileThemeStyle(customTheme, {
               wallpaperUrl: pageWallpaperUrl,
             }) as React.CSSProperties)
@@ -864,7 +888,7 @@ export function ProfileHub({
           )}
           {/* A search box over nothing is furniture, and it invites exactly the
               dead end this page used to show. */}
-          {totalContentCount > 0 && (
+          {totalContentCount > 0 && !preview && (
             <div className="profile-search">
               <TextField
                 className="search-field"

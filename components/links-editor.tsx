@@ -39,6 +39,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { detectBookingProvider } from "@/lib/booking-providers";
+import { detectLinkBrand } from "@/lib/link-brands";
 import { detectMusicProvider } from "@/lib/music-providers";
 import { normalizeHttpUrl } from "@/lib/urls";
 import { createClient } from "@/lib/supabase/client";
@@ -93,7 +94,8 @@ export function SortableLinkEditor({
 
   const booking = detectBookingProvider(item.url);
   const music = booking ? null : detectMusicProvider(item.url);
-  const special = music ?? booking;
+  const brand = music || booking ? null : detectLinkBrand(item.url);
+  const special = music ?? booking ?? brand;
   const urlPlaceholder = special?.placeholder ?? "https://example.com";
 
   return (
@@ -101,7 +103,9 @@ export function SortableLinkEditor({
       ref={setNodeRef}
       className={`link-editor${isDragging ? " is-dragging" : ""}${
         music ? " link-editor--music" : ""
-      }${booking ? " link-editor--booking" : ""}`}
+      }${booking ? " link-editor--booking" : ""}${
+        brand ? ` link-editor--brand link-editor--brand-${brand.id}` : ""
+      }`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -132,7 +136,9 @@ export function SortableLinkEditor({
               ? `${music.label} URL`
               : booking
                 ? `${booking.label} booking URL`
-                : "URL"
+                : brand
+                  ? `${brand.label} URL`
+                  : "URL"
           }
           type="url"
           placeholder={urlPlaceholder}
@@ -141,7 +147,9 @@ export function SortableLinkEditor({
               ? `Paste your full ${music.label} link — Cueful shows an inline player.`
               : booking
                 ? `Paste your full ${booking.label} event link so people can schedule.`
-                : undefined
+                : brand
+                  ? `${brand.label} detected — Cueful shows the brand mark on your page.`
+                  : undefined
           }
           value={item.url}
           onChange={(event) => onUpdate(item.id, "url", event.target.value)}

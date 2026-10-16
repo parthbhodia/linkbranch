@@ -101,7 +101,7 @@ export default async function ClaimPage({
   };
 
   return (
-    <>
+    <div className="claim-page">
       <ClaimPanel
         token={draft.token}
         suggestedUsername={draft.suggested_username}
@@ -111,7 +111,11 @@ export default async function ClaimPage({
       />
       {/* No databaseProfileId: there is no profiles row yet, so ProfileHub
           must not try to write click_events against one. */}
-      <ProfileHub profile={previewProfile} template={payload.template} />
-    </>
+      <ProfileHub
+        profile={previewProfile}
+        template={payload.template}
+        preview
+      />
+    </div>
   );
 }
