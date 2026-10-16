@@ -1483,6 +1483,10 @@ export function ProfileHub({
             url: shareLink.url,
             subtitle: shareLink.subtitle,
             thumbnailUrl: shareLink.thumbnailUrl,
+            // The card's own colour and Spotlight flag, so the preview wears
+            // the same fill and mark as the row the visitor just tapped.
+            color: shareLink.color,
+            featured: shareLink.featured,
           }}
           onClose={() => setShareLink(null)}
           onNotice={setNotice}
