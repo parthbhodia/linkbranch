@@ -648,6 +648,15 @@ export function Dashboard({
   const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
   const wallpaperUrl = publicAssetUrl(activeTheme.wallpaperPath);
   const previewWallpaperUrl = pendingWallpaper?.previewUrl ?? wallpaperUrl;
+  // The preview is a hand-built phone rather than a mounted ProfileHub, so
+  // every avatar setting has to be read here too or the preview quietly
+  // disagrees with the page it is previewing. These three mirror
+  // profile-hub.tsx exactly -- same fields, same class names.
+  const previewAvatarUrl = publicAssetUrl(draft.avatar_path);
+  const previewAvatarShape = activeTheme.avatarShape;
+  const previewAvatarRing = activeTheme.avatarRing === true;
+  const previewAvatarBackdrop =
+    activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
     displayName: draft.display_name,
@@ -4190,12 +4199,26 @@ export function Dashboard({
             { wallpaperUrl: previewWallpaperUrl },
           )}`}
           style={
-            profileThemeStyle(activeTheme, {
-              wallpaperUrl: previewWallpaperUrl,
-            }) as React.CSSProperties
+            {
+              ...profileThemeStyle(activeTheme, {
+                wallpaperUrl: previewWallpaperUrl,
+              }),
+              // Handed down as a custom property so only the blurred layer
+              // paints it -- a background here would draw a second, sharp copy.
+              ...(previewAvatarBackdrop
+                ? { "--avatar-backdrop": `url("${previewAvatarUrl}")` }
+                : {}),
+            } as React.CSSProperties
           }
+          data-avatar-backdrop={previewAvatarBackdrop ? "on" : undefined}
         >
           <div className="workspace-phone__body">
+            {/* Inside the body, not behind it: the theme background is painted
+                on the body itself, so a wash layered underneath would be
+                covered by it. Sits under the content and scrolls with it. */}
+            {previewAvatarBackdrop ? (
+              <div className="workspace-phone__backdrop" aria-hidden="true" />
+            ) : null}
             {brandingLogoUrl && (
               <Box
                 component="img"
@@ -4205,8 +4228,10 @@ export function Dashboard({
               />
             )}
             <Avatar
-              className="workspace-phone__avatar"
-              src={publicAssetUrl(draft.avatar_path)}
+              className={`workspace-phone__avatar${
+                previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
+              }${previewAvatarRing ? " avatar--ring" : ""}`}
+              src={previewAvatarUrl}
             >
               {initials}
             </Avatar>
