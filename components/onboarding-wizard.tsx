@@ -1737,7 +1737,7 @@ export function OnboardingWizard({
                     onChange={(event) => setGreeting(event.target.value)}
                     fullWidth
                     inputProps={{ maxLength: 32 }}
-                    helperText="Appears before your display name."
+                    helperText="Optional. Appears before your display name."
                   />
                   <TextField
                     label="Headline"
@@ -2030,7 +2030,8 @@ export function OnboardingWizard({
               {initials}
             </Avatar>
             <Typography fontWeight={800} textAlign="center" sx={{ mt: 1.5 }}>
-              {greeting || "Hello, I’m"} {displayName || "Your name"}.
+              {greeting ? `${greeting} ` : ""}
+              {displayName || "Your name"}.
             </Typography>
             <Typography variant="caption" color="inherit" sx={{ opacity: 0.72 }}>
               @{username || "username"}

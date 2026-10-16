@@ -767,7 +767,8 @@ export function ProfileHub({
             </Box>
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1">
-              {profile.greeting} {profile.displayName}.
+              {profile.greeting ? `${profile.greeting} ` : ""}
+              {profile.displayName}.
             </Typography>
             <Typography component="h2" className="profile-headline">
               {profile.headline}{" "}

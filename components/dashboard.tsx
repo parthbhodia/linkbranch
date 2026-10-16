@@ -1915,7 +1915,7 @@ export function Dashboard({
               />
               <div className="workspace-form-pair">
                 <TextField
-                  label="Greeting"
+                  label="Greeting (optional)"
                   value={draft.greeting}
                   onChange={(event) => update("greeting", event.target.value)}
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -3747,7 +3747,10 @@ export function Dashboard({
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">{draft.greeting} {draft.display_name}.</Typography>
+            <Typography component="h2">
+              {draft.greeting ? `${draft.greeting} ` : ""}
+              {draft.display_name}.
+            </Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>
