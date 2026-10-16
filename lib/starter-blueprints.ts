@@ -36,11 +36,6 @@ export type StarterRails = {
 };
 
 export type StarterBlueprint = {
-  /**
-   * A shop is a "this is", a person is a "hey, I'm". Getting this wrong makes
-   * a business page read like someone's personal profile.
-   */
-  greeting: string;
   headline: string;
   headlineAccent: string;
   rails: StarterRails;
@@ -48,9 +43,6 @@ export type StarterBlueprint = {
   stepTitle: string;
   stepSubtitle: string;
 };
-
-const BUSINESS = "This is";
-const PERSONAL = "Hey, I'm";
 
 const NO_RAILS: StarterRails = { music: [], booking: false, contact: false };
 const BOOKING: StarterRails = { ...NO_RAILS, booking: true };
@@ -63,7 +55,6 @@ const LINKS_STEP = {
 
 export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
   sales: {
-    greeting: PERSONAL,
     headline: "Let's talk about what you",
     headlineAccent: "need.",
     rails: BOOKING,
@@ -71,7 +62,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   realtor: {
-    greeting: PERSONAL,
     headline: "Homes, viewings, and",
     headlineAccent: "honest advice.",
     // Viewings are booked, and a listing without directions is half a listing.
@@ -80,7 +70,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   recruiter: {
-    greeting: PERSONAL,
     headline: "Open roles and",
     headlineAccent: "quick chats.",
     rails: BOOKING,
@@ -88,7 +77,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   trades: {
-    greeting: BUSINESS,
     headline: "Quotes, callouts,",
     headlineAccent: "and repairs.",
     rails: CONTACT,
@@ -98,7 +86,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
       "Your jobs and prices come first — that is what people are checking. Links go underneath.",
   },
   creator: {
-    greeting: PERSONAL,
     headline: "I make",
     headlineAccent: "useful things.",
     // Video and podcast, not the full music rack.
@@ -107,7 +94,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   freelancer: {
-    greeting: PERSONAL,
     headline: "Available for",
     headlineAccent: "new work.",
     rails: BOOKING,
@@ -115,7 +101,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   coach: {
-    greeting: PERSONAL,
     headline: "Let's work on",
     headlineAccent: "your goals.",
     rails: BOOKING,
@@ -123,7 +108,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   student: {
-    greeting: PERSONAL,
     headline: "Studying, building, and",
     headlineAccent: "looking for work.",
     // A CV link and a portfolio, not a booking tool or a music rack.
@@ -134,7 +118,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
       "Education and experience come first, then your CV, portfolio and profiles.",
   },
   musician: {
-    greeting: PERSONAL,
     headline: "New music and",
     headlineAccent: "live dates.",
     rails: {
@@ -148,7 +131,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
       "The player goes on the page itself. Links to shows and merch go underneath.",
   },
   referral: {
-    greeting: PERSONAL,
     headline: "The tools I",
     headlineAccent: "actually use.",
     rails: NO_RAILS,
@@ -156,7 +138,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
     ...LINKS_STEP,
   },
   "local-shop": {
-    greeting: BUSINESS,
     headline: "What we sell, and where to",
     headlineAccent: "find us.",
     rails: CONTACT,
@@ -166,7 +147,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
       "Start with what people come in for. Links and everything else go underneath.",
   },
   "whatsapp-business": {
-    greeting: BUSINESS,
     headline: "Message us and we'll",
     headlineAccent: "sort it out.",
     rails: CONTACT,
@@ -176,7 +156,6 @@ export const STARTER_BLUEPRINTS: Record<StarterPurpose, StarterBlueprint> = {
       "Each item can open a WhatsApp chat with its name already typed. Links go underneath.",
   },
   "business-links": {
-    greeting: BUSINESS,
     headline: "Everything you need,",
     headlineAccent: "one page.",
     rails: { music: [], booking: true, contact: true },

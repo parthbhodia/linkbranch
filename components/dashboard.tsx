@@ -138,7 +138,6 @@ export type DashboardProfile = {
   id: string;
   username: string;
   display_name: string;
-  greeting: string;
   headline: string;
   headline_accent: string;
   bio: string;
@@ -1112,7 +1111,6 @@ export function Dashboard({
       .update({
         username: draft.username.trim().toLowerCase(),
         display_name: draft.display_name.trim(),
-        greeting: draft.greeting.trim(),
         headline: draft.headline.trim(),
         headline_accent: draft.headline_accent.trim(),
         bio: draft.bio.trim(),
@@ -1923,28 +1921,27 @@ export function Dashboard({
                 helperText={`Public URL: ${publicProfileAddress(draft.username || "username")}`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+              {/* One headline, two lines. These were "Headline" + "Accent text",
+                  which asked people to cut a sentence in half and guess which
+                  half got coloured; a third field, Greeting, was a template
+                  prefix that read as part of the name. */}
               <div className="workspace-form-pair">
                 <TextField
-                  label="Greeting (optional)"
-                  value={draft.greeting}
-                  onChange={(event) => update("greeting", event.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Headline"
+                  label="Headline line 1"
                   value={draft.headline}
                   onChange={(event) => update("headline", event.target.value)}
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
+                <TextField
+                  label="Headline line 2"
+                  value={draft.headline_accent}
+                  onChange={(event) => update("headline_accent", event.target.value)}
+                  helperText="Shown in your accent colour"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
               </div>
               <TextField
-                label="Accent text"
-                value={draft.headline_accent}
-                onChange={(event) => update("headline_accent", event.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Supporting paragraph"
+                label="About"
                 value={draft.bio}
                 onChange={(event) => update("bio", event.target.value)}
                 multiline
@@ -3828,10 +3825,7 @@ export function Dashboard({
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">
-              {draft.greeting ? `${draft.greeting} ` : ""}
-              {draft.display_name}.
-            </Typography>
+            <Typography component="h2">{draft.display_name}.</Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>

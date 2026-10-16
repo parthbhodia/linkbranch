@@ -280,7 +280,6 @@ export default async function PublicProfilePage({
     username: profile.username,
     initials,
     displayName: profile.display_name,
-    greeting: profile.greeting,
     headline: profile.headline,
     headlineAccent: profile.headline_accent,
     eyebrow:

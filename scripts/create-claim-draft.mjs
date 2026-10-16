@@ -84,7 +84,6 @@ function validate(spec) {
   }
 
   checkLength(errors, "bio", spec.bio, 160);
-  checkLength(errors, "greeting", spec.greeting, 32);
   checkLength(errors, "headline", spec.headline, 48);
   checkLength(errors, "headline_accent", spec.headline_accent, 24);
   checkLength(errors, "eyebrow", spec.eyebrow, 60);
@@ -164,7 +163,7 @@ function buildPayload(spec) {
     display_name: spec.display_name,
     bio: spec.bio ?? "",
   };
-  for (const key of ["greeting", "headline", "headline_accent", "eyebrow", "template"]) {
+  for (const key of ["headline", "headline_accent", "eyebrow", "template"]) {
     if (spec[key] !== undefined) payload[key] = spec[key];
   }
   if (spec.tags?.length) payload.tags = spec.tags;
