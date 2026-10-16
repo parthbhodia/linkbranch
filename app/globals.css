@@ -1639,48 +1639,67 @@ a {
   margin: 0 0 16px;
 }
 
-/* The photo, blown up and faded, behind the name and headline. It lives inside
-   .profile-copy rather than on the page so it can never land over the link
-   list, and .profile-copy is made its own stacking context so a negative
-   z-index can put the wash behind the name. Without that context it would be
-   painted behind the card's own background and never seen at all. */
-.public-template .profile-copy:has(.avatar-backdrop) {
+/* The photo, blown up, blurred, and faded across the top of the page -- the
+   wallpaper's treatment, driven by the photo the creator already has. It sits
+   on the page rather than inside the card so it covers what the wallpaper
+   covers, and the card rides above it. */
+.public-template.profile-theme-avatar-backdrop.app-shell {
   position: relative;
-  isolation: isolate;
 }
 
 .public-template .avatar-backdrop {
   position: absolute;
-  top: -76px;
-  left: -40px;
-  right: -40px;
-  bottom: -16px;
-  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 72vh;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* A soft ellipse from the top, so the wash has no edge on any side to see. */
-  -webkit-mask-image: radial-gradient(
-    135% 100% at 50% 4%,
-    #000 0 30%,
-    transparent 86%
-  );
-  mask-image: radial-gradient(135% 100% at 50% 4%, #000 0 30%, transparent 86%);
+  /* Strongest at the top, gone well before the links. */
+  -webkit-mask-image: linear-gradient(#000 0 22%, transparent 82%);
+  mask-image: linear-gradient(#000 0 22%, transparent 82%);
 }
 
 /* Blurred on a child, not on the wash itself, so the blur's bleed is clipped
    by the wash's own box instead of widening the page. The image is handed
-   down as a custom property rather than set on the wash, because a
-   background on the wash itself would paint a second, unblurred copy of it
-   across the whole box. */
+   down as a custom property rather than set on the wash, because a background
+   on the wash itself would paint a second, unblurred copy of it across the
+   whole box. */
 .public-template .avatar-backdrop::before {
   content: "";
   position: absolute;
-  inset: -18%;
+  inset: -12%;
   background-image: var(--avatar-backdrop);
   background-size: cover;
-  background-position: center 30%;
-  filter: blur(52px) saturate(1.15);
-  opacity: 0.28;
+  background-position: center 26%;
+  filter: blur(56px) saturate(1.15);
+  opacity: 0.4;
+}
+
+/* The card rides above the wash and opens at the top so the wash reads through
+   it, going solid further down. An opaque card would leave the whole effect in
+   the page gutters, which on a phone are not there at all.
+   
+   Signal-deck is left out: its card is transparent and sits on a full-bleed
+   cover already, and it is the one template that never redefines --paper, so
+   painting the card with it would put cream on a dark page. */
+.public-template.profile-theme-avatar-backdrop:not(.public-template--signal-deck)
+  .creator-card {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    color-mix(in srgb, var(--paper) 58%, transparent) 0,
+    var(--paper) 46vh
+  );
+}
+
+.public-template.profile-theme-avatar-backdrop:not(.public-template--signal-deck).profile-theme-custom
+  .creator-card {
+  background: linear-gradient(
+    color-mix(in srgb, var(--profile-surface) 58%, transparent) 0,
+    var(--profile-surface) 46vh
+  );
 }
 
 /* Hero type has to survive two things the design didn't account for: long

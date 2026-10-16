@@ -683,15 +683,29 @@ export function ProfileHub({
         applyCustomTheme
           ? ` ${profileThemeClassName(customTheme, { wallpaperUrl: pageWallpaperUrl })}`
           : ""
-      }`}
+      }${avatarBackdrop ? " profile-theme-avatar-backdrop" : ""}`}
       style={
-        applyCustomTheme
-          ? (profileThemeStyle(customTheme, {
-              wallpaperUrl: pageWallpaperUrl,
-            }) as React.CSSProperties)
-          : undefined
+        {
+          ...(applyCustomTheme
+            ? profileThemeStyle(customTheme, {
+                wallpaperUrl: pageWallpaperUrl,
+              })
+            : {}),
+          // Handed down as a custom property rather than painted here, so the
+          // blurred layer is the only thing that draws it.
+          ...(avatarBackdrop
+            ? { "--avatar-backdrop": `url("${profile.avatarUrl}")` }
+            : {}),
+        } as React.CSSProperties
       }
     >
+      {/* The photo, blown up, blurred, and faded across the top of the page --
+          the wallpaper's treatment, driven by the photo the creator already
+          has. On the page rather than inside the card, so it covers what the
+          wallpaper covers. */}
+      {avatarBackdrop ? (
+        <Box className="avatar-backdrop" aria-hidden="true" />
+      ) : null}
       {template === "signal-deck" ? (
         <Box
           className={`profile-cover profile-cover--bleed${coverUrl ? "" : " profile-cover--fallback"}`}
@@ -754,21 +768,6 @@ export function ProfileHub({
           </div>
 
           <Box className="profile-copy">
-            {/* The photo, blown up and faded, behind the name. It lives here
-                rather than on the page so it can never land over the link
-                list, and .profile-copy is made its own stacking context so it
-                can sit behind the name without the card hiding it. */}
-            {avatarBackdrop ? (
-              <Box
-                className="avatar-backdrop"
-                style={
-                  {
-                    "--avatar-backdrop": `url("${profile.avatarUrl}")`,
-                  } as React.CSSProperties
-                }
-                aria-hidden="true"
-              />
-            ) : null}
             {brandingLogoUrl && (
               <Box
                 component="img"
