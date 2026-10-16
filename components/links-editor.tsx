@@ -20,6 +20,7 @@ import {
   Switch,
   TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import {
   closestCenter,
@@ -38,7 +39,11 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { detectBookingProvider } from "@/lib/booking-providers";
+import {
+  bookingProviders,
+  detectBookingProvider,
+  type BookingProvider,
+} from "@/lib/booking-providers";
 import { detectLinkBrand } from "@/lib/link-brands";
 import { detectMusicProvider } from "@/lib/music-providers";
 import { normalizeHttpUrl } from "@/lib/urls";
@@ -315,6 +320,33 @@ export function LinksEditor({
     ]);
   }
 
+  // A scheduler is the one link people arrive knowing they want, so it gets a
+  // labelled row instead of a blank one they have to recognise from the URL.
+  // This mirrors the wizard's "Book a call" rail; the URL is a host stub until
+  // they paste their real booking page, and the row is not auto-spotlighted so
+  // it can't collide with the one-featured-link rule on save.
+  function addBookingLink(providerId: BookingProvider["id"]) {
+    const provider = bookingProviders.find((item) => item.id === providerId);
+    if (!provider) return;
+    const starterUrl =
+      provider.placeholder.split("/").slice(0, 3).join("/") + "/";
+    onChange([
+      ...value,
+      {
+        id: Math.max(0, ...value.map((item) => item.id)) + 1,
+        title: provider.title,
+        url: starterUrl,
+        is_active: true,
+        is_featured: false,
+        thumbnail_path: null,
+      },
+    ]);
+    notify({
+      message: `${provider.label} booking link added — paste your full scheduling URL.`,
+      severity: "success",
+    });
+  }
+
   function featureLink(id: number) {
     onChange(
       value.map((item) => ({
@@ -406,6 +438,24 @@ export function LinksEditor({
 
   return (
     <Box className="links-editor">
+      <div className="link-quick-add">
+        <Typography variant="caption" color="text.secondary">
+          BOOK A CALL
+        </Typography>
+        <div>
+          {bookingProviders.map((provider) => (
+            <Button
+              key={provider.id}
+              size="small"
+              variant="outlined"
+              startIcon={provider.icon}
+              onClick={() => addBookingLink(provider.id)}
+            >
+              {provider.label}
+            </Button>
+          ))}
+        </div>
+      </div>
       <DndContext
         sensors={dragSensors}
         collisionDetection={closestCenter}
