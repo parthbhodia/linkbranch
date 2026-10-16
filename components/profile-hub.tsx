@@ -645,6 +645,7 @@ export function ProfileHub({
   const avatarShape = customTheme.avatarShape;
   const avatarRing = customTheme.avatarRing === true;
   const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
+  const socialSize = customTheme.socialSize;
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -826,7 +827,12 @@ export function ProfileHub({
           </Box>
 
           {profile.socials.length > 0 && (
-            <nav className="social-rail" aria-label="Social profiles">
+            <nav
+              className={`social-rail${
+                socialSize ? ` social-rail--${socialSize}` : ""
+              }`}
+              aria-label="Social profiles"
+            >
             {profile.socials.map((social) => (
                 <Tooltip title={social.platform} arrow key={social.platform}>
                   <IconButton

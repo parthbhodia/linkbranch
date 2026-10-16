@@ -140,6 +140,7 @@ import {
   themeFontStyleOptions,
   themeFontWeightOptions,
   themePalettes,
+  themeSocialSizeOptions,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
 
@@ -2756,6 +2757,38 @@ export function Dashboard({
                       </ButtonBase>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Social icons</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      How large the row of icons under your name sits.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-segmented">
+                  {themeSocialSizeOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        (activeTheme.socialSize ?? "md") === option.id
+                          ? "is-selected"
+                          : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          socialSize: option.id,
+                        }))
+                      }
+                      title={option.note}
+                      key={option.id}
+                    >
+                      {option.name}
+                    </ButtonBase>
+                  ))}
                 </div>
               </div>
 

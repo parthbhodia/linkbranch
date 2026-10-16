@@ -22,6 +22,8 @@ export type ThemeFontWeight = "regular" | "medium" | "bold";
 export type ThemeFontStyle = "normal" | "italic";
 /** Silhouette of the avatar on the public page. */
 export type ThemeAvatarShape = "circle" | "rounded" | "square";
+/** Size step for the row of social icons. */
+export type ThemeSocialSize = "sm" | "md" | "lg" | "xl";
 
 export type ProfileThemeConfig = {
   version: 1;
@@ -57,6 +59,11 @@ export type ProfileThemeConfig = {
   avatarRing?: boolean;
   /** Blow the avatar up, blurred and faded, behind the name and headline. */
   avatarBackdrop?: boolean;
+  /**
+   * Size step for the row of social icons. Absent means the size the page
+   * already had, so a template that sizes its own row keeps it.
+   */
+  socialSize?: ThemeSocialSize;
   /** Optional custom brand mark shown above the profile intro. */
   logoPath?: string | null;
   /** Optional full-bleed wallpaper image layered under the page. */
@@ -109,6 +116,7 @@ const fontScales = new Set<ThemeFontScale>(["sm", "md", "lg", "xl"]);
 const fontWeights = new Set<ThemeFontWeight>(["regular", "medium", "bold"]);
 const fontStyles = new Set<ThemeFontStyle>(["normal", "italic"]);
 const avatarShapes = new Set<ThemeAvatarShape>(["circle", "rounded", "square"]);
+const socialSizes = new Set<ThemeSocialSize>(["sm", "md", "lg", "xl"]);
 
 export const themeFontScaleOptions: Array<{
   id: ThemeFontScale;
@@ -146,6 +154,17 @@ export const themeAvatarShapeOptions: Array<{
   { id: "circle", name: "Circle", note: "The default round photo" },
   { id: "rounded", name: "Rounded", note: "A squircle, like an app icon" },
   { id: "square", name: "Square", note: "A hard-edged tile" },
+];
+
+export const themeSocialSizeOptions: Array<{
+  id: ThemeSocialSize;
+  name: string;
+  note: string;
+}> = [
+  { id: "sm", name: "Small", note: "Tucked in" },
+  { id: "md", name: "Default", note: "The size the row ships at" },
+  { id: "lg", name: "Large", note: "Easier to hit" },
+  { id: "xl", name: "Extra large", note: "The loudest the row gets" },
 ];
 
 export const themePalettes: ThemePalette[] = [
@@ -503,6 +522,11 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
       : {}),
     avatarRing: candidate.avatarRing === true,
     avatarBackdrop: candidate.avatarBackdrop === true,
+    // Left off unless picked, for the same reason as the shape above: a
+    // template is allowed to size its own row.
+    ...(socialSizes.has(candidate.socialSize as ThemeSocialSize)
+      ? { socialSize: candidate.socialSize as ThemeSocialSize }
+      : {}),
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
         ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)
