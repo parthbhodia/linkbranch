@@ -2276,6 +2276,7 @@ a {
 }
 
 .workspace-phone__body {
+  position: relative;
   height: 100%;
   padding: 34px 18px 28px;
   text-align: center;
@@ -2286,6 +2287,30 @@ a {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(130, 134, 122, 0.5) transparent;
+}
+
+.workspace-phone__backdrop {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image: var(--avatar-backdrop);
+  background-position: center 22%;
+  background-size: cover;
+  filter: blur(22px) saturate(118%);
+  opacity: 0.55;
+  transform: scale(1.25);
+  transform-origin: top center;
+  -webkit-mask-image: linear-gradient(#000 0, #000 34%, transparent 92%);
+  mask-image: linear-gradient(#000 0, #000 34%, transparent 92%);
+}
+
+/* The backdrop is the body's first child, so positioning the rest puts them
+   above it in paint order without a z-index on each one. */
+.workspace-phone__body > *:not(.workspace-phone__backdrop) {
+  position: relative;
 }
 
 .workspace-phone__avatar {
@@ -4733,6 +4758,29 @@ a {
   border-radius: var(--profile-radius) !important;
   background: var(--profile-button) !important;
   transform: none;
+}
+
+/* Shape and Frame wrote to theme_config and changed nothing here: their rules
+   are scoped to .public-template, which the preview is not inside. Sized for a
+   74px photo rather than the page's much larger one -- the public 28px corner
+   is no corner at all this small. */
+.workspace-phone .workspace-phone__avatar.avatar--circle {
+  border-radius: 50% !important;
+}
+
+.workspace-phone .workspace-phone__avatar.avatar--rounded {
+  border-radius: 20px !important;
+}
+
+.workspace-phone .workspace-phone__avatar.avatar--square {
+  border-radius: 5px !important;
+}
+
+/* The photo already carries a border in the page's own colour, so Frame is a
+   colour change as much as a width one: invisible against the page, then not. */
+.workspace-phone .workspace-phone__avatar.avatar--ring {
+  border: 4px solid var(--profile-text, #191a17) !important;
+  background-clip: padding-box;
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__bio,
