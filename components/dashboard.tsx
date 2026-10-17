@@ -94,7 +94,7 @@ import {
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
 import { LinksEditor, type LinkDraft } from "@/components/links-editor";
-import { sortLinksBySection } from "@/lib/link-groups";
+import { groupLinksBySection, sortLinksBySection } from "@/lib/link-groups";
 import {
   ReferralsEditor,
   type ReferralDraft,
@@ -622,6 +622,12 @@ export function Dashboard({
 
   // The preview has to answer "did that save?", so everything it draws is
   // filtered the way the public page filters it.
+  // The same grouping call the public page makes, so a heading that saved shows
+  // up here under its own name rather than folded into one flat run.
+  const previewLinkSections = useMemo(
+    () => groupLinksBySection(activeLinks, (item) => item.group_name ?? ""),
+    [activeLinks],
+  );
   const activeFaqs = useMemo(
     () => faqs.filter((item) => item.is_active),
     [faqs],
@@ -4321,37 +4327,51 @@ export function Dashboard({
               </div>
             )}
 
-            <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
-              <Typography className="section-label">MY LINKS</Typography>
-              <small>
-                {activeLinks.length}{" "}
-                {activeLinks.length === 1 ? "DESTINATION" : "DESTINATIONS"}
-              </small>
-            </div>
-            <div className="workspace-phone__links">
-              {activeLinks.slice(0, 4).map((item) => (
-                <div className="workspace-phone__link" key={item.id}>
-                  {item.thumbnail_path && (
-                    <Box
-                      component="img"
-                      className="workspace-phone__link-image"
-                      src={publicAssetUrl(item.thumbnail_path)}
-                      alt=""
-                    />
-                  )}
-                  <span>
-                    <b>{item.title}</b>
-                    {item.subtitle && <small>{item.subtitle}</small>}
-                  </span>
-                  <ArrowOutwardRounded />
+            {previewLinkSections.map((group) => (
+              <div key={group.name || "all-links"}>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">
+                    {(group.name || "My links").toUpperCase()}
+                  </Typography>
+                  <small>
+                    {group.links.length}{" "}
+                    {group.links.length === 1 ? "DESTINATION" : "DESTINATIONS"}
+                  </small>
                 </div>
-              ))}
-              {activeLinks.length === 0 && (
-                <p className="workspace-phone__empty">
-                  No links yet — add one and it appears here.
-                </p>
-              )}
-            </div>
+                <div className="workspace-phone__links">
+                  {group.links.slice(0, 4).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      {item.thumbnail_path && (
+                        <Box
+                          component="img"
+                          className="workspace-phone__link-image"
+                          src={publicAssetUrl(item.thumbnail_path)}
+                          alt=""
+                        />
+                      )}
+                      <span>
+                        <b>{item.title}</b>
+                        {item.subtitle && <small>{item.subtitle}</small>}
+                      </span>
+                      <ArrowOutwardRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {activeLinks.length === 0 && (
+              <>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">MY LINKS</Typography>
+                  <small>0 DESTINATIONS</small>
+                </div>
+                <div className="workspace-phone__links">
+                  <p className="workspace-phone__empty">
+                    No links yet — add one and it appears here.
+                  </p>
+                </div>
+              </>
+            )}
             {activeFaqs.length > 0 && (
               <div className="workspace-phone__offers">
                 <div className="workspace-phone__section-heading">
