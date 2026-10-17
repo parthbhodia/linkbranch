@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
@@ -95,6 +95,10 @@ import {
 import { ShareDialog } from "@/components/share-dialog";
 import { LinksEditor, type LinkDraft } from "@/components/links-editor";
 import { groupLinksBySection, sortLinksBySection } from "@/lib/link-groups";
+import {
+  DEFAULT_WORKSPACE_SECTION,
+  type WorkspaceSection,
+} from "@/lib/workspace-sections";
 import {
   ReferralsEditor,
   type ReferralDraft,
@@ -245,17 +249,6 @@ export type DashboardView = {
   event_tag?: string | null;
 };
 
-type WorkspaceSection =
-  | "profile"
-  | "connections"
-  | "content"
-  | "commerce"
-  | "appearance"
-  | "analytics"
-  | "account"
-  | "more"
-  | "highlights"
-  | "health";
 
 const workspaceSections: Array<{
   id: WorkspaceSection;
@@ -471,6 +464,7 @@ export function Dashboard({
   highlights,
   connections,
   referralCount,
+  initialSection,
 }: {
   profile: DashboardProfile;
   email: string;
@@ -489,6 +483,14 @@ export function Dashboard({
   highlights: DashboardHighlight[];
   connections: DashboardConnection[];
   referralCount: number;
+  /**
+   * The section to open on the first render, resolved on the server from
+   * `?tab=`. Passed as a prop rather than read from `window` here so the
+   * server and client agree on the first paint -- reading the URL in a state
+   * initialiser would render "profile" on the server and something else on
+   * the client.
+   */
+  initialSection?: WorkspaceSection | null;
 }) {
   const router = useRouter();
   // Raw text for the comma-separated tags field while it has focus; null hands
@@ -549,7 +551,35 @@ export function Dashboard({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
-  const [section, setSection] = useState<WorkspaceSection>("profile");
+  const [section, setSectionState] = useState<WorkspaceSection>(
+    initialSection ?? DEFAULT_WORKSPACE_SECTION,
+  );
+  /**
+   * Switch section, and leave a record of it in the URL.
+   *
+   * ⚠️ `history.replaceState`, never `router.replace`: this route is
+   * `force-dynamic`, so a real navigation would re-run the page's dozen
+   * Supabase queries -- two of them 5,000 rows -- on every tab click. The URL
+   * only has to survive a reload, and replaceState is enough for that.
+   *
+   * It has to survive one because the browser reloads this page on its own:
+   * opening the native photo picker backgrounds the tab, and the OS can
+   * discard and reload it on the way back. The upload is already safely in
+   * the database by then, so what that reload costs is only the user's place
+   * -- it drops them on Profile mid-edit. Measured: router.refresh() does
+   * NOT lose state here, so this is not a React problem to fix in React.
+   */
+  const selectSection = useCallback((next: WorkspaceSection) => {
+    setSectionState(next);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (next === DEFAULT_WORKSPACE_SECTION) {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", next);
+    }
+    window.history.replaceState(null, "", url);
+  }, []);
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
   const editorScrollRef = useRef<HTMLDivElement | null>(null);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
@@ -1028,7 +1058,7 @@ export function Dashboard({
   function showTourStep(index: number) {
     const nextIndex = Math.max(0, Math.min(dashboardTour.length - 1, index));
     setTourStep(nextIndex);
-    setSection(dashboardTour[nextIndex].section);
+    selectSection(dashboardTour[nextIndex].section);
   }
 
   function finishTour() {
@@ -1359,7 +1389,10 @@ export function Dashboard({
     update("avatar_path", path);
     setAvatarUploading(false);
     setNotice({ severity: "success", message: "Profile photo updated." });
-    router.refresh();
+    // No router.refresh() here. `draft` is seeded from the `profile` prop
+    // once, with nothing syncing it afterwards, so a refreshed prop cannot
+    // reach this component's state -- update() above is what the UI reads.
+    // The refresh only re-ran the page's dozen Supabase queries for nothing.
   }
 
   async function removeAvatar() {
@@ -1383,7 +1416,10 @@ export function Dashboard({
     update("avatar_path", null);
     setAvatarUploading(false);
     setNotice({ severity: "success", message: "Profile photo removed." });
-    router.refresh();
+    // No router.refresh() here. `draft` is seeded from the `profile` prop
+    // once, with nothing syncing it afterwards, so a refreshed prop cannot
+    // reach this component's state -- update() above is what the UI reads.
+    // The refresh only re-ran the page's dozen Supabase queries for nothing.
   }
 
   async function uploadResume(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1721,7 +1757,7 @@ export function Dashboard({
   }
 
   function jumpToSettings(id: SettingsJumpId) {
-    setSection("account");
+    selectSection("account");
     setSettingsJump(id);
     window.setTimeout(() => {
       document.getElementById(id)?.scrollIntoView({
@@ -1848,7 +1884,7 @@ export function Dashboard({
             <div className="workspace-mobile-page-card__actions">
               <Button
                 color="inherit"
-                onClick={() => setSection("account")}
+                onClick={() => selectSection("account")}
               >
                 Account
               </Button>
@@ -1887,7 +1923,7 @@ export function Dashboard({
                 className={section === item.id ? "is-active" : ""}
                 aria-label={item.label}
                 aria-current={section === item.id ? "page" : undefined}
-                onClick={() => setSection(item.id)}
+                onClick={() => selectSection(item.id)}
               >
                 {item.icon}
               </IconButton>
@@ -1998,13 +2034,13 @@ export function Dashboard({
             <div className="workspace-mobile-design-tabs" aria-label="Design settings">
               <ButtonBase
                 className={section === "profile" ? "is-active" : ""}
-                onClick={() => setSection("profile")}
+                onClick={() => selectSection("profile")}
               >
                 Profile
               </ButtonBase>
               <ButtonBase
                 className={section === "appearance" ? "is-active" : ""}
-                onClick={() => setSection("appearance")}
+                onClick={() => selectSection("appearance")}
               >
                 Theme
               </ButtonBase>
@@ -3410,7 +3446,7 @@ export function Dashboard({
             <div className="workspace-more">
               <Typography className="section-label">CREATE & MAINTAIN</Typography>
               <div className="workspace-more__list">
-                <ButtonBase onClick={() => setSection("commerce")}>
+                <ButtonBase onClick={() => selectSection("commerce")}>
                   <span className="workspace-more__icon workspace-more__icon--highlight">
                     <StorefrontOutlined />
                   </span>
@@ -3420,7 +3456,7 @@ export function Dashboard({
                   </span>
                   <ChevronRightRounded />
                 </ButtonBase>
-                <ButtonBase onClick={() => setSection("highlights")}>
+                <ButtonBase onClick={() => selectSection("highlights")}>
                   <span className="workspace-more__icon workspace-more__icon--highlight">
                     <StarOutlineRounded />
                   </span>
@@ -3430,7 +3466,7 @@ export function Dashboard({
                   </span>
                   <ChevronRightRounded />
                 </ButtonBase>
-                <ButtonBase onClick={() => setSection("health")}>
+                <ButtonBase onClick={() => selectSection("health")}>
                   <span className="workspace-more__icon workspace-more__icon--health">
                     <FavoriteBorderRounded />
                   </span>
@@ -3458,7 +3494,7 @@ export function Dashboard({
               </div>
               <Typography className="section-label">ACCOUNT</Typography>
               <div className="workspace-more__list">
-                <ButtonBase onClick={() => setSection("account")}>
+                <ButtonBase onClick={() => selectSection("account")}>
                   <span className="workspace-more__icon workspace-more__icon--account">
                     <SettingsOutlined />
                   </span>
@@ -4513,7 +4549,7 @@ export function Dashboard({
         <ButtonBase
           className={section === "content" ? "is-active" : ""}
           onClick={() => {
-            setSection("content");
+            selectSection("content");
             setMobileMode("edit");
           }}
           aria-current={section === "content" ? "page" : undefined}
@@ -4526,7 +4562,7 @@ export function Dashboard({
             section === "profile" || section === "appearance" ? "is-active" : ""
           }
           onClick={() => {
-            setSection(
+            selectSection(
               section === "profile" || section === "appearance"
                 ? section
                 : "profile",
@@ -4545,7 +4581,7 @@ export function Dashboard({
         <ButtonBase
           className={section === "connections" ? "is-active" : ""}
           onClick={() => {
-            setSection("connections");
+            selectSection("connections");
             setMobileMode("edit");
           }}
           aria-current={section === "connections" ? "page" : undefined}
@@ -4556,7 +4592,7 @@ export function Dashboard({
         <ButtonBase
           className={section === "analytics" ? "is-active" : ""}
           onClick={() => {
-            setSection("analytics");
+            selectSection("analytics");
             setMobileMode("edit");
           }}
           aria-current={section === "analytics" ? "page" : undefined}
@@ -4571,7 +4607,7 @@ export function Dashboard({
               : ""
           }
           onClick={() => {
-            setSection("more");
+            selectSection("more");
             setMobileMode("edit");
           }}
           aria-current={

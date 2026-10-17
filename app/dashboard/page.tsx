@@ -18,6 +18,10 @@ import { type DashboardConnection } from "@/components/connections-inbox";
 import { type DashboardFaq } from "@/components/faq-editor";
 import { type DashboardHighlight } from "@/components/highlights-editor";
 import { isAdminEmail } from "@/lib/admin-access";
+import {
+  parseWorkspaceSection,
+  type WorkspaceSection,
+} from "@/lib/workspace-sections";
 import { createClient } from "@/lib/supabase/server";
 import type { TimelineEntry } from "@/lib/timeline";
 
@@ -32,7 +36,14 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // Resolved here, so the very first render already shows the right section.
+  // See the dashboard's selectSection for why the URL carries it at all.
+  const initialSection = parseWorkspaceSection((await searchParams).tab);
   const supabase = await createClient();
   const {
     data: { user },
@@ -70,6 +81,7 @@ export default async function DashboardPage() {
         email={user.email ?? ""}
         isAdmin={isAdminEmail(user.email)}
         aliases={(aliases ?? []).map((item) => item.alias)}
+        initialSection={initialSection}
       />
     </Suspense>
   );
@@ -80,11 +92,13 @@ async function DashboardWorkspace({
   email,
   isAdmin,
   aliases,
+  initialSection,
 }: {
   profile: DashboardProfile;
   email: string;
   isAdmin: boolean;
   aliases: string[];
+  initialSection: WorkspaceSection | null;
 }) {
   const supabase = await createClient();
   const [
@@ -194,6 +208,7 @@ async function DashboardWorkspace({
       highlights={(highlights ?? []) as DashboardHighlight[]}
       connections={(connections ?? []) as DashboardConnection[]}
       referralCount={referralCount ?? 0}
+      initialSection={initialSection}
     />
   );
 }
