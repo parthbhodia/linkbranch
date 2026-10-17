@@ -137,6 +137,7 @@ import {
   defaultProfileTheme,
   profileThemeClassName,
   profileThemeStyle,
+  resolveAvatarPresentation,
   resolveProfileTheme,
   themeAvatarShapeOptions,
   themeBackgroundOptions,
@@ -683,10 +684,15 @@ export function Dashboard({
   // disagrees with the page it is previewing. These three mirror
   // profile-hub.tsx exactly -- same fields, same class names.
   const previewAvatarUrl = publicAssetUrl(draft.avatar_path);
-  const previewAvatarShape = activeTheme.avatarShape;
-  const previewAvatarRing = activeTheme.avatarRing === true;
-  const previewAvatarBackdrop =
-    activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
+  // The SAME rule the public page applies, not a second copy of it. The
+  // preview reading these settings separately is how it came to ignore all
+  // three of them while the page honoured them.
+  const {
+    hero: previewAvatarHero,
+    shape: previewAvatarShape,
+    ring: previewAvatarRing,
+    backdrop: previewAvatarBackdrop,
+  } = resolveAvatarPresentation(activeTheme, Boolean(previewAvatarUrl));
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
     displayName: draft.display_name,
@@ -3000,6 +3006,47 @@ export function Dashboard({
                   </Box>
                 </div>
 
+                <div className="workspace-design-group" style={{ marginTop: 18 }}>
+                  <Typography variant="h3">Photo style</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.25 }}
+                  >
+                    {activeTheme.avatarHero
+                      ? "Your photo runs across the top of the page."
+                      : "Your photo sits above your name as an avatar."}
+                  </Typography>
+                  <div className="workspace-segmented">
+                    {([false, true] as const).map((hero) => (
+                      <ButtonBase
+                        className={
+                          Boolean(activeTheme.avatarHero) === hero
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            avatarHero: hero,
+                          }))
+                        }
+                        key={String(hero)}
+                      >
+                        {hero ? "Across the top" : "Avatar"}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ⚠️ Hidden rather than disabled while the photo runs across
+                    the top: there is no small round photo left to give a
+                    shape or a frame to, and the sharp photo is already the
+                    backdrop. The renderers ignore these three in that mode
+                    too, so a page that had a frame before does not keep a
+                    stray ring behind its hero. */}
+                {!activeTheme.avatarHero && (
+                  <>
                 <div className="workspace-design-split" style={{ marginTop: 18 }}>
                   <div className="workspace-design-group">
                     <Typography variant="h3">Shape</Typography>
@@ -3081,6 +3128,8 @@ export function Dashboard({
                     ))}
                   </div>
                 </div>
+                  </>
+                )}
               </div>
 
               <div className="workspace-design-group">
@@ -4263,14 +4312,20 @@ export function Dashboard({
                 alt=""
               />
             )}
-            <Avatar
-              className={`workspace-phone__avatar${
-                previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
-              }${previewAvatarRing ? " avatar--ring" : ""}`}
-              src={previewAvatarUrl}
-            >
-              {initials}
-            </Avatar>
+            {previewAvatarHero ? (
+              <div className="workspace-phone__hero">
+                <Box component="img" src={previewAvatarUrl} alt="" />
+              </div>
+            ) : (
+              <Avatar
+                className={`workspace-phone__avatar${
+                  previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
+                }${previewAvatarRing ? " avatar--ring" : ""}`}
+                src={previewAvatarUrl}
+              >
+                {initials}
+              </Avatar>
+            )}
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>

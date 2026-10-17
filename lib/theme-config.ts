@@ -60,6 +60,17 @@ export type ProfileThemeConfig = {
   /** Blow the avatar up, blurred and faded, behind the name and headline. */
   avatarBackdrop?: boolean;
   /**
+   * Show the photo full width across the top of the page instead of as an
+   * avatar.
+   *
+   * ⚠️ This REPLACES avatarShape, avatarRing and avatarBackdrop rather than
+   * composing with them -- there is no small round photo left to give a shape
+   * or a frame to, and the sharp photo is already the backdrop. The editor
+   * hides those three controls while this is on, and the renderers ignore
+   * them. Uses the same profile photo; it is not a second upload.
+   */
+  avatarHero?: boolean;
+  /**
    * Size step for the row of social icons. Absent means the size the page
    * already had, so a template that sizes its own row keeps it.
    */
@@ -446,6 +457,7 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
     search: theme.search ?? true,
     avatarRing: theme.avatarRing ?? false,
     avatarBackdrop: theme.avatarBackdrop ?? false,
+    avatarHero: theme.avatarHero ?? false,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
   };
@@ -522,6 +534,7 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
       : {}),
     avatarRing: candidate.avatarRing === true,
     avatarBackdrop: candidate.avatarBackdrop === true,
+    avatarHero: candidate.avatarHero === true,
     // Left off unless picked, for the same reason as the shape above: a
     // template is allowed to size its own row.
     ...(socialSizes.has(candidate.socialSize as ThemeSocialSize)
@@ -684,4 +697,39 @@ export function profileThemeClassName(
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * What the avatar area actually shows, with the hero's precedence applied.
+ *
+ * ⚠️ ONE implementation on purpose. The public page and the dashboard's
+ * preview are separate renderers -- the preview is hand-built markup, not a
+ * mounted ProfileHub -- so every avatar setting otherwise has to be read
+ * twice. That is precisely how the preview came to ignore shape, frame and
+ * the wash while the published page honoured all three. A rule written once
+ * cannot drift between them.
+ *
+ * The hero REPLACES shape, ring and backdrop rather than composing with
+ * them: there is no small round photo left to shape or frame, and the sharp
+ * photo is already the backdrop.
+ */
+export function resolveAvatarPresentation(
+  theme: ProfileThemeConfig,
+  hasPhoto: boolean,
+): {
+  hero: boolean;
+  shape: ThemeAvatarShape | undefined;
+  ring: boolean;
+  backdrop: boolean;
+} {
+  // Needs a photo: there is no hero for a page that only has initials, and
+  // blowing two letters up full width is worse than the avatar it replaced.
+  const hero = theme.avatarHero === true && hasPhoto;
+  return {
+    hero,
+    shape: hero ? undefined : theme.avatarShape,
+    ring: !hero && theme.avatarRing === true,
+    // The wash is a blurred copy of the photo, so it needs one too.
+    backdrop: !hero && theme.avatarBackdrop === true && hasPhoto,
+  };
 }
