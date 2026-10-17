@@ -1676,7 +1676,10 @@ a {
   background-image: var(--avatar-backdrop);
   background-size: cover;
   background-position: center 26%;
-  filter: blur(56px) saturate(1.15);
+  /* 56px turned the photo into an unreadable colour wash -- the point is that
+     a visitor recognises the image, not that the page gains a tint. Halved,
+     with the opacity left where it was so the text keeps the same contrast. */
+  filter: blur(26px) saturate(1.15);
   opacity: 0.4;
 }
 
@@ -2299,8 +2302,8 @@ a {
   background-image: var(--avatar-backdrop);
   background-position: center 22%;
   background-size: cover;
-  filter: blur(22px) saturate(118%);
-  opacity: 0.55;
+  filter: blur(11px) saturate(115%);
+  opacity: 0.5;
   transform: scale(1.25);
   transform-origin: top center;
   -webkit-mask-image: linear-gradient(#000 0, #000 34%, transparent 92%);
@@ -4779,7 +4782,7 @@ a {
 /* The photo already carries a border in the page's own colour, so Frame is a
    colour change as much as a width one: invisible against the page, then not. */
 .workspace-phone .workspace-phone__avatar.avatar--ring {
-  border: 4px solid var(--profile-text, #191a17) !important;
+  border: 3px solid var(--profile-text, #191a17) !important;
   background-clip: padding-box;
 }
 
