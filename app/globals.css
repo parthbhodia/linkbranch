@@ -2276,7 +2276,6 @@ a {
 }
 
 .workspace-phone__body {
-  position: relative;
   height: 100%;
   padding: 34px 18px 28px;
   text-align: center;
@@ -2287,30 +2286,6 @@ a {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(130, 134, 122, 0.5) transparent;
-}
-
-.workspace-phone__backdrop {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 46%;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  background-image: var(--avatar-backdrop);
-  background-position: center 22%;
-  background-size: cover;
-  filter: blur(22px) saturate(118%);
-  opacity: 0.55;
-  transform: scale(1.25);
-  transform-origin: top center;
-  -webkit-mask-image: linear-gradient(#000 0, #000 34%, transparent 92%);
-  mask-image: linear-gradient(#000 0, #000 34%, transparent 92%);
-}
-
-/* The backdrop is the body's first child, so positioning the rest puts them
-   above it in paint order without a z-index on each one. */
-.workspace-phone__body > *:not(.workspace-phone__backdrop) {
-  position: relative;
 }
 
 .workspace-phone__avatar {
@@ -4758,29 +4733,6 @@ a {
   border-radius: var(--profile-radius) !important;
   background: var(--profile-button) !important;
   transform: none;
-}
-
-/* Shape and Frame wrote to theme_config and changed nothing here: their rules
-   are scoped to .public-template, which the preview is not inside. Sized for a
-   74px photo rather than the page's much larger one -- the public 28px corner
-   is no corner at all this small. */
-.workspace-phone .workspace-phone__avatar.avatar--circle {
-  border-radius: 50% !important;
-}
-
-.workspace-phone .workspace-phone__avatar.avatar--rounded {
-  border-radius: 20px !important;
-}
-
-.workspace-phone .workspace-phone__avatar.avatar--square {
-  border-radius: 5px !important;
-}
-
-/* The photo already carries a border in the page's own colour, so Frame is a
-   colour change as much as a width one: invisible against the page, then not. */
-.workspace-phone .workspace-phone__avatar.avatar--ring {
-  border: 4px solid var(--profile-text, #191a17) !important;
-  background-clip: padding-box;
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__bio,
@@ -15831,4 +15783,95 @@ a {
 
 .share-sheet__target--email .share-sheet__target-icon {
   background: #5e6256;
+}
+
+/* ===== Live preview: avatar shape, frame and faded backdrop ================
+   The preview phone is hand-built markup rather than a mounted ProfileHub,
+   so every avatar setting has to be honoured here as well. Until this block
+   existed the three controls moved the saved theme and the published page
+   while the preview ignored them, which reads as the controls being broken.
+   Same class vocabulary as `.public-template .avatar` so the two renderers
+   stay legible side by side. */
+
+/* Four classes deep on purpose: `.workspace-phone.profile-theme-custom
+   .workspace-phone__avatar` sets border-radius from --profile-radius with
+   !important, and --profile-radius is the BUTTON shape token (999px for pill,
+   glass and outline). That is what pinned the preview avatar to a circle no
+   matter what Shape was set to, so an explicit shape has to outrank it. */
+.workspace-preview .workspace-phone .workspace-phone__avatar.avatar--circle {
+  border-radius: 50% !important;
+  transform: none;
+}
+
+.workspace-preview .workspace-phone .workspace-phone__avatar.avatar--rounded {
+  border-radius: 22px !important;
+  transform: none;
+}
+
+.workspace-preview .workspace-phone .workspace-phone__avatar.avatar--square {
+  border-radius: 6px !important;
+  transform: none;
+}
+
+/* No frame unless one was asked for. The preview drew a 5px ring
+   unconditionally, left over from a cover image it no longer renders
+   (`.workspace-phone__cover` has no markup behind it any more), so Frame: Off
+   still showed a frame. */
+.workspace-preview .workspace-phone .workspace-phone__avatar {
+  border: 0;
+}
+
+/* 5px rather than the page's 7px: the preview avatar is 72-74px against the
+   page's 96px, so the ring is scaled to read the same. A ring, not an outline,
+   so the photo is cropped by it instead of spilling over it. */
+.workspace-preview .workspace-phone .workspace-phone__avatar.avatar--ring {
+  border: 5px solid var(--profile-text, #1d1e1a);
+  background-clip: padding-box;
+}
+
+/* The photo blown up, blurred and faded behind the name -- the page's
+   treatment at the phone's scale. */
+.workspace-phone[data-avatar-backdrop="on"] .workspace-phone__body {
+  position: relative;
+}
+
+/* Every direct child is lifted above the wash. The body holds the content
+   directly rather than wrapping it, so there is no single element to raise.
+   The wash is excluded by name: without that it matches its own rule and is
+   lifted into the content layer, which paints it over the avatar and name
+   instead of behind them. */
+.workspace-phone[data-avatar-backdrop="on"]
+  .workspace-phone__body
+  > *:not(.workspace-phone__backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.workspace-phone__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Strongest at the top, gone well before the links. */
+  -webkit-mask-image: linear-gradient(#000 0 22%, transparent 82%);
+  mask-image: linear-gradient(#000 0 22%, transparent 82%);
+}
+
+/* Blurred on a child so the bleed is clipped by the wash's own box. The image
+   arrives as a custom property because a background on the wash itself would
+   paint a second, unblurred copy across the whole box. Blur is 34px against
+   the page's 56px, scaled for a 352px phone. */
+.workspace-phone__backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background-image: var(--avatar-backdrop);
+  background-size: cover;
+  background-position: center 26%;
+  filter: blur(34px) saturate(1.15);
+  opacity: 0.4;
 }
