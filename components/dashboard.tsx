@@ -651,6 +651,11 @@ export function Dashboard({
     [mediaEmbeds],
   );
   const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
+  const previewAvatarUrl = publicAssetUrl(draft.avatar_path);
+  // The public page requires a photo for the backdrop -- blowing up an initials
+  // circle is nothing to look at -- so the preview asks the same question.
+  const previewAvatarBackdrop =
+    activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
   const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
   const wallpaperUrl = publicAssetUrl(activeTheme.wallpaperPath);
   const previewWallpaperUrl = pendingWallpaper?.previewUrl ?? wallpaperUrl;
@@ -4210,9 +4215,22 @@ export function Dashboard({
                 alt=""
               />
             )}
+            {previewAvatarBackdrop && (
+              <div
+                className="workspace-phone__backdrop"
+                style={
+                  {
+                    "--avatar-backdrop": `url("${previewAvatarUrl}")`,
+                  } as React.CSSProperties
+                }
+                aria-hidden="true"
+              />
+            )}
             <Avatar
-              className="workspace-phone__avatar"
-              src={publicAssetUrl(draft.avatar_path)}
+              className={`workspace-phone__avatar avatar--${
+                activeTheme.avatarShape ?? "circle"
+              }${activeTheme.avatarRing ? " avatar--ring" : ""}`}
+              src={previewAvatarUrl ?? undefined}
             >
               {initials}
             </Avatar>
