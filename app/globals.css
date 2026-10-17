@@ -15875,3 +15875,88 @@ a {
   filter: blur(34px) saturate(1.15);
   opacity: 0.4;
 }
+
+/* ---------------------------------------------------------------------------
+   The photo across the top of the page, instead of a small round avatar
+   (themeConfig.avatarHero).
+
+   ⚠️ This REPLACES the avatar rather than decorating it, so there is no
+   shape, frame or faded wash in here -- see the field's own comment in
+   lib/theme-config.ts. The renderers drop those three while it is on.
+
+   Deliberately no text over the photo. The image is the creator's own upload,
+   so its brightness is unknown and unknowable at author time; a name laid
+   over it is a contrast gamble that no check reading tokens could catch. The
+   name sits below, where it is legible against a surface we control.
+--------------------------------------------------------------------------- */
+.profile-hero {
+  width: 100%;
+  margin: 0 0 clamp(20px, 4vw, 28px);
+  border-radius: var(--profile-card-radius, 20px);
+  overflow: hidden;
+  /* Tall enough to read as a photograph of a person rather than a letterbox
+     crop, short enough that the name is still on screen without scrolling. */
+  aspect-ratio: 4 / 3;
+  background: var(--profile-surface, rgba(0, 0, 0, 0.06));
+}
+
+.profile-hero img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  /* Biased up: a head sits near the top of a portrait, so a centred crop
+     takes the forehead off. */
+  object-position: center 28%;
+}
+
+/* On a phone the copy column is already almost the full width, so the gutter
+   is all that stands between the photo and the screen edge.
+
+   ⚠️ Self-computing, NOT a hand-written gutter: 50% is half the copy column
+   and 50vw half the screen, so the margin resolves to exactly the gutter
+   whatever it happens to be. A measured pass caught the reason this matters
+   -- the gutter is 20px and lives on .profile-panel, not the .hub-panel rule
+   it would be natural to read it off, and a hand-written -16px left a 4px
+   sliver of background down each side. Desktop is deliberately left alone:
+   the column is 590px inside a wide panel, and bleeding there would stretch
+   the photo across the whole window. */
+@media (max-width: 700px) {
+  .profile-hero {
+    width: auto;
+    margin-inline: calc(50% - 50vw);
+    border-radius: 0;
+  }
+}
+
+/* The same photo-across-the-top inside the preview phone, so the preview and
+   the page cannot disagree about what publishing does.
+
+   ⚠️ TWO rules because the body's own horizontal padding is two values: 18px
+   under .profile-theme-custom, 20px otherwise. Reversing the wrong one would
+   leave the photo 2px short of the frame on half the templates -- small, and
+   exactly the quiet arithmetic this file has paid for before. The custom rule
+   is (0,4,0) so it wins on specificity rather than on source order.
+
+   The top padding is deliberately NOT reversed: it varies across five rules,
+   and the real page leaves space above its hero too (.profile-copy carries a
+   clamp(54px, 8vw, 78px) top margin), so keeping it is what matches. */
+.workspace-preview .workspace-phone .workspace-phone__hero {
+  margin: 0 -20px 14px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.workspace-preview .workspace-phone.profile-theme-custom .workspace-phone__hero {
+  margin-inline: -18px;
+}
+
+.workspace-preview .workspace-phone .workspace-phone__hero img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  /* Biased up, same as the page: a centred crop takes the forehead off. */
+  object-position: center 28%;
+}

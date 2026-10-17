@@ -63,6 +63,7 @@ import {
   profileThemeClassName,
   profileThemeStyle,
   readableForeground,
+  resolveAvatarPresentation,
   resolveProfileTheme,
 } from "@/lib/theme-config";
 import { groupLinksBySection } from "@/lib/link-groups";
@@ -642,9 +643,14 @@ export function ProfileHub({
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
   const showContactForm = applyCustomTheme && customTheme.contactForm === true;
   const showSearch = customTheme.search !== false;
-  const avatarShape = customTheme.avatarShape;
-  const avatarRing = customTheme.avatarRing === true;
-  const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
+  // One shared rule, so this renderer and the dashboard preview cannot
+  // disagree about what the avatar area shows. See resolveAvatarPresentation.
+  const {
+    hero: avatarHero,
+    shape: avatarShape,
+    ring: avatarRing,
+    backdrop: avatarBackdrop,
+  } = resolveAvatarPresentation(customTheme, Boolean(profile.avatarUrl));
   const socialSize = customTheme.socialSize;
 
   // The wash drifts down as the page scrolls, which in the viewport reads as it
@@ -818,28 +824,38 @@ export function ProfileHub({
                 aria-hidden="true"
               />
             ) : null}
-            <Box
-              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
-                avatarShape ? ` avatar--${avatarShape}` : ""
-              }${avatarRing ? " avatar--ring" : ""}`}
-              aria-label={
-                profile.avatarUrl
-                  ? `${profile.displayName} profile photo`
-                  : `${profile.displayName} initials`
-              }
-            >
-              {profile.avatarUrl ? (
+            {avatarHero ? (
+              <Box className="profile-hero">
                 <Box
                   component="img"
-                  src={profile.avatarUrl}
-                  alt={`${profile.displayName} profile`}
+                  src={profile.avatarUrl!}
+                  alt={`${profile.displayName} profile photo`}
                 />
-              ) : (
-                <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
-                  {profile.initials}
-                </Typography>
-              )}
-            </Box>
+              </Box>
+            ) : (
+              <Box
+                className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
+                  avatarShape ? ` avatar--${avatarShape}` : ""
+                }${avatarRing ? " avatar--ring" : ""}`}
+                aria-label={
+                  profile.avatarUrl
+                    ? `${profile.displayName} profile photo`
+                    : `${profile.displayName} initials`
+                }
+              >
+                {profile.avatarUrl ? (
+                  <Box
+                    component="img"
+                    src={profile.avatarUrl}
+                    alt={`${profile.displayName} profile`}
+                  />
+                ) : (
+                  <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
+                    {profile.initials}
+                  </Typography>
+                )}
+              </Box>
+            )}
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1">
               {profile.displayName}.
