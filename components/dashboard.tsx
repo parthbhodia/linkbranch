@@ -91,6 +91,7 @@ import { SettingsConnectEditor } from "@/components/settings-connect-editor";
 import {
   AppearanceJumpNav,
   SettingsJumpNav,
+  jumpToGroup,
   type AppearanceJumpId,
   type SettingsJumpId,
 } from "@/components/settings-jump-nav";
@@ -1728,24 +1729,14 @@ export function Dashboard({
   function jumpToSettings(id: SettingsJumpId) {
     setSection("account");
     setSettingsJump(id);
-    window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 40);
+    window.setTimeout(() => jumpToGroup(id), 40);
   }
 
   // No section switch, unlike the account version: this one only exists inside
   // the appearance panel, so the panel it scrolls is already the one on screen.
   function jumpToAppearance(id: AppearanceJumpId) {
     setAppearanceJump(id);
-    window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 40);
+    window.setTimeout(() => jumpToGroup(id), 40);
   }
 
   async function downloadAccountData() {

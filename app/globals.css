@@ -6029,6 +6029,14 @@ a {
     gap: 2px;
   }
 
+  /* Under this width the workspace grows a sticky bar of its own, so the jump
+     bar has to sit below it rather than slide underneath. 74px is that bar's
+     min-height; it paints over this one if it ever ends up taller, which is
+     the better of the two ways to be wrong. */
+  .settings-jump {
+    top: 74px;
+  }
+
   .workspace-mobile-brand {
     width: max-content;
     color: #fff;
@@ -12836,13 +12844,27 @@ a {
 .settings-jump {
   display: grid;
   gap: 10px;
+  /* Stays put while the panel scrolls past it. These pills are only useful in
+     the first screenful of a panel that runs to a dozen groups otherwise, and
+     that was how the avatar controls kept going missing: you would jump down to
+     them and then have to climb back to the top to jump somewhere else. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
 }
 
-/* A jumped-to group should land with its own heading clear of the viewport edge
-   rather than glued to it. Matches the appearance anchors by prefix, which is
-   the only place that prefix is used. */
-[id^="appearance-"] {
-  scroll-margin-top: 16px;
+/* The bar's background has to reach over the gap beneath it. Without this a
+   group scrolling up shows through that gap for the few pixels it takes to
+   pass behind the bar. 24px is the stack spacing this sits inside. */
+.settings-jump::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: #fff;
 }
 
 .settings-jump__label {

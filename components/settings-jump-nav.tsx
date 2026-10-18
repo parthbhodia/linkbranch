@@ -3,6 +3,27 @@
 import { ButtonBase } from "@mui/material";
 
 /**
+ * Scrolls a panel group into view, clear of the sticky jump bar above it.
+ *
+ * A plain scrollIntoView puts the group against the top of the viewport, which
+ * with a sticky bar means the group's own heading lands *behind* the bar --
+ * jump to "Your photo" and you get the photo controls with no heading telling
+ * you what you are looking at. The bar is measured rather than assumed, because
+ * how many rows the pills wrap to is the viewport's business.
+ */
+export function jumpToGroup(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const bar = document.querySelector<HTMLElement>(".settings-jump");
+  // 16px of air under the bar, matching the gap the groups sit in.
+  const offset = (bar?.offsetHeight ?? 0) + 16;
+  window.scrollTo({
+    top: window.scrollY + target.getBoundingClientRect().top - offset,
+    behavior: "smooth",
+  });
+}
+
+/**
  * The row of pills that jumps to a section further down the panel.
  *
  * Both long settings panels need one, and they started as two separate copies
