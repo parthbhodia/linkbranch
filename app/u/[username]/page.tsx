@@ -255,7 +255,7 @@ async function ProfileContent({
       supabase
         .from("links")
         .select(
-          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name",
+          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name,card_style",
         )
         .eq("user_id", profile.id)
         .eq("is_active", true)
@@ -354,6 +354,11 @@ async function ProfileContent({
       featured: item.is_featured,
       thumbnailUrl: publicAssetUrl(item.thumbnail_path),
       group: item.group_name || undefined,
+      // Absent means a row, the shape every link already had. An image card
+      // with no picture to show would render as an empty box, so it only counts
+      // when there is a thumbnail to fill it with.
+      cardStyle:
+        item.card_style === "image" && item.thumbnail_path ? "image" : "row",
     })),
     referrals: (referrals ?? []).map((item) => ({
       id: String(item.id),

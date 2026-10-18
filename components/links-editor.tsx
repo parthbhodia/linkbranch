@@ -6,6 +6,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import ImageOutlined from "@mui/icons-material/ImageOutlined";
+import Crop169Rounded from "@mui/icons-material/Crop169Rounded";
 import PlaylistAddRounded from "@mui/icons-material/PlaylistAddRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import StarOutlineRounded from "@mui/icons-material/StarOutlineRounded";
@@ -67,6 +68,8 @@ export type LinkDraft = {
   thumbnail_path: string | null;
   /** Free-form section heading; empty/absent keeps the link in the flat list. */
   group_name?: string;
+  /** How this one link is drawn on the page. Absent is a row. */
+  card_style?: string;
 };
 
 export type EditorNotice = {
@@ -86,7 +89,11 @@ export function SortableLinkEditor({
 }: {
   item: LinkDraft;
   uploading: boolean;
-  onUpdate: (id: number, field: "title" | "url", value: string) => void;
+  onUpdate: (
+    id: number,
+    field: "title" | "url" | "card_style",
+    value: string,
+  ) => void;
   onFeature: (id: number) => void;
   onVisibility: (id: number) => void;
   onRemove: (id: number) => void;
@@ -109,6 +116,7 @@ export function SortableLinkEditor({
   const brand = music || booking ? null : detectLinkBrand(item.url);
   const special = music ?? booking ?? brand;
   const urlPlaceholder = special?.placeholder ?? "https://example.com";
+  const imageCard = item.card_style === "image";
 
   // The caret, not the end: "🎟 Tickets" is the common shape, and appending
   // would fight anyone who has already typed a title.
@@ -253,6 +261,36 @@ export function SortableLinkEditor({
       </div>
 
       <div className="link-editor__actions">
+        <Tooltip
+          title={
+            imageCard
+              ? "Draw as a list row"
+              : item.thumbnail_path
+                ? "Draw as a full-width card"
+                : "Add a photo to draw this as a card"
+          }
+          arrow
+        >
+          <span>
+            <IconButton
+              color={imageCard ? "primary" : "default"}
+              // An image card is drawn out of the thumbnail, so without one
+              // there is nothing to draw. Left disabled rather than hidden, so
+              // the two shapes read as one control that is sometimes unavailable.
+              disabled={!imageCard && !item.thumbnail_path}
+              aria-label={
+                imageCard
+                  ? `Draw ${item.title || "link"} as a list row`
+                  : `Draw ${item.title || "link"} as a full-width card`
+              }
+              onClick={() =>
+                onUpdate(item.id, "card_style", imageCard ? "row" : "image")
+              }
+            >
+              <Crop169Rounded />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip
           title={item.is_featured ? "Remove spotlight" : "Spotlight this link"}
           arrow
@@ -407,7 +445,11 @@ export function LinksEditor({
     onNotice?.(notice);
   }
 
-  function updateLink(id: number, field: "title" | "url", next: string) {
+  function updateLink(
+    id: number,
+    field: "title" | "url" | "card_style",
+    next: string,
+  ) {
     onChange(
       value.map((item) => (item.id === id ? { ...item, [field]: next } : item)),
     );

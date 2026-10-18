@@ -200,6 +200,7 @@ export type DashboardLink = {
   is_featured: boolean;
   thumbnail_path: string | null;
   group_name: string;
+  card_style?: string;
 };
 
 export type DashboardReferral = {
@@ -509,6 +510,7 @@ export function Dashboard({
         is_featured: item.is_featured,
         thumbnail_path: item.thumbnail_path,
         group_name: item.group_name,
+        card_style: item.card_style === "image" ? "image" : "row",
       })),
       (item) => item.group_name ?? "",
     ),
@@ -1098,6 +1100,7 @@ export function Dashboard({
         is_featured: item.is_featured,
         thumbnail_path: item.thumbnail_path,
         group_name: item.group_name ?? "",
+        card_style: item.card_style === "image" ? "image" : "row",
       };
       const { error } = existing.has(item.id)
         ? await supabase.from("links").update(row).eq("id", item.id)

@@ -1,3 +1,6 @@
+/** How a link is drawn on the public page. */
+export type LinkCardStyle = "row" | "image";
+
 export type LinkItem = {
   id: string;
   index: string;
@@ -11,6 +14,11 @@ export type LinkItem = {
   thumbnailUrl?: string;
   /** Optional section heading; empty/absent keeps the flat list. */
   group?: string;
+  /**
+   * Per-link choice of shape. Absent is a row, the shape every link has always
+   * had, so nothing that never asks changes.
+   */
+  cardStyle?: LinkCardStyle;
 };
 
 export type Referral = {

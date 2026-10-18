@@ -275,10 +275,111 @@ a {
   font: 500 0.75rem "DM Mono", monospace;
 }
 
-.link-index--image {
-  overflow: hidden;
+/* A link drawn as a full-width card: the picture is the whole card and the
+   title sits on a scrim across its foot.
+
+   Block layout rather than a single-column grid, and that is not a style
+   choice. Every template redefines the row's grid columns on a selector deeper
+   than a bare .link-card--image can match, so a one-column grid here would lose
+   and the title would end up back in a 44px column. Dropping out of grid
+   removes the contest: there are no columns to fight over, and the title is
+   placed against the card instead. */
+.public-template .link-card--image {
+  display: block;
+  min-height: 208px;
   padding: 0;
-  border: 1px solid var(--line);
+  overflow: hidden;
+  border-color: transparent;
+  background: var(--paper);
+}
+
+/* The custom-theme rule sets the row's height from a variable on a selector too
+   deep to out-match from here, so this feeds that rule a taller value instead
+   of fighting it: it reads --profile-link-height, so raising it here raises the
+   card without needing to win a contest we would only win by uglier selectors. */
+.public-template.profile-theme-custom .link-card--image {
+  --profile-link-height: 208px;
+}
+
+.public-template .link-card--image:hover,
+.public-template .link-card--image:has(.link-card__hit:focus-visible) {
+  border-color: transparent;
+  background: var(--paper);
+}
+
+/* The photograph, full-bleed. Absolutely positioned so it does not take a grid
+   row, and behind the text, which sits over it. */
+.link-card__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center 32%;
+}
+
+/* The scrim, on a child rather than as a second background layer on the same
+   box: the photograph arrives as an inline background-image, and a rule in the
+   stylesheet setting background-image would simply win over it and the card
+   would come out as a plain gradient. */
+.link-card__backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(16, 18, 14, 0.88) 0,
+    rgba(16, 18, 14, 0.55) 40%,
+    rgba(16, 18, 14, 0.06) 74%
+  );
+}
+
+/* The row's mark has no job in this shape and would sit over the photograph. */
+.link-index--hidden {
+  display: none;
+}
+
+/* The title block, on the scrim, pinned to the foot of the card. The title is a
+   MUI Typography carrying its own colour, so it has to be named here. The
+   subtitle is a plain element -- see the note in profile-hub -- so this owns it
+   outright, with no !important anywhere. */
+.public-template .link-card--image .link-card__text {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  padding: 18px 20px;
+  color: #fffef8;
+}
+
+.public-template .link-card--image .link-card__text .MuiTypography-h3 {
+  color: inherit;
+}
+
+.public-template .link-card--image .link-card__subtitle {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, #fffef8 80%, transparent);
+}
+
+.link-card--image .link-card__trailing {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+}
+
+.link-card--image .link-card__arrow {
+  background: rgba(16, 18, 14, 0.5);
+  color: #fffef8;
+}
+
+.link-card--image .MuiChip-root {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fffef8;
+}
+
+.link-card--image .link-card__more {
+  color: #fffef8;
 }
 
 .perk-card {

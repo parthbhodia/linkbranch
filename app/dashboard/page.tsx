@@ -104,7 +104,7 @@ async function DashboardWorkspace({
     await Promise.all([
       supabase
         .from("links")
-        .select("id,title,subtitle,url,thumbnail_path,position,is_active,is_featured,group_name")
+        .select("id,title,subtitle,url,thumbnail_path,position,is_active,is_featured,group_name,card_style")
         .eq("user_id", profile.id)
         .order("position"),
       supabase

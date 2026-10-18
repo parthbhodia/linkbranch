@@ -179,6 +179,7 @@ const LinkCard = memo(function LinkCard({
       ? bookingEmbedUrl(link.url, booking.id)
       : null;
   const embedSrc = musicEmbedSrc || bookingEmbedSrc;
+  const imageCard = link.cardStyle === "image" && Boolean(link.thumbnailUrl);
   const subtitle =
     link.subtitle ||
     (music ? music.subtitle : null) ||
@@ -201,19 +202,32 @@ const LinkCard = memo(function LinkCard({
           music ? " link-card--music" : ""
         }${booking ? " link-card--booking" : ""}${
           brand ? " link-card--brand" : ""
-        }`}
+        }${imageCard ? " link-card--image" : ""}`}
       >
+        {/* Drawn from the thumbnail as a full-bleed background rather than as
+            the 44px mark a row gets, because the picture is the point of this
+            shape. The title sits on a scrim at the foot of it, so it stays
+            readable over any photograph. */}
+        {imageCard ? (
+          <span
+            className="link-card__backdrop"
+            aria-hidden="true"
+            style={{ backgroundImage: `url("${link.thumbnailUrl}")` }}
+          />
+        ) : null}
         <span
           className={`link-index${
-            link.thumbnailUrl
-              ? " link-index--image"
-              : music
-                ? " link-index--music"
-                : booking
-                  ? " link-index--booking"
-                  : brand
-                    ? " link-index--brand"
-                    : " link-index--icon"
+            imageCard
+              ? " link-index--hidden"
+              : link.thumbnailUrl
+                ? " link-index--image"
+                : music
+                  ? " link-index--music"
+                  : booking
+                    ? " link-index--booking"
+                    : brand
+                      ? " link-index--brand"
+                      : " link-index--icon"
           }`}
           style={{
             background: music || booking ? undefined : brand?.color ?? link.color,
@@ -239,7 +253,7 @@ const LinkCard = memo(function LinkCard({
             <LinkRounded fontSize="small" />
           )}
         </span>
-        <span>
+        <span className="link-card__text">
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="h3">{link.title}</Typography>
             {music && (
@@ -265,9 +279,19 @@ const LinkCard = memo(function LinkCard({
             )}
           </Stack>
           {subtitle ? (
-            <Typography variant="body2" color="text.secondary">
-              {subtitle}
-            </Typography>
+            imageCard ? (
+              /* A plain element on purpose. As a Typography this line would
+                  inherit the theme's muted body2 colour, which two rules in
+                  globals.css force on with !important, and nothing short of
+                  out-ranking both would keep it light enough to read on the
+                  scrim. A card that draws its own title over its own picture
+                  draws its own subtitle too. */
+              <p className="link-card__subtitle">{subtitle}</p>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {subtitle}
+              </Typography>
+            )
           ) : null}
         </span>
         <span className="link-card__trailing">

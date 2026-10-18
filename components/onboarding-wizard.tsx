@@ -584,7 +584,11 @@ export function OnboardingWizard({
     contentRef.current?.scrollTo({ top: 0 });
   }, [activeStep]);
 
-  function updateLink(id: number, field: "title" | "url", value: string) {
+  function updateLink(
+    id: number,
+    field: "title" | "url" | "card_style",
+    value: string,
+  ) {
     setLinks((current) =>
       current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
