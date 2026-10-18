@@ -12854,17 +12854,35 @@ a {
   background: #fff;
 }
 
-/* The bar's background has to reach over the gap beneath it. Without this a
-   group scrolling up shows through that gap for the few pixels it takes to
-   pass behind the bar. 24px is the stack spacing this sits inside. */
+/* The bar's background has to reach over the gap beneath it, and over the strip
+   above it. A sticky element's `top` is measured from its scroller's padding
+   edge, so the bar sits one scroller-padding below the top of what the reader
+   can actually see, and without this a group scrolling up shows through that
+   strip on its way past. --jump-cover is that distance, measured by the
+   component because both parts of it change with the breakpoint.
+
+   Both layers are decoration and take no clicks: the strip above and the gap
+   below belong to the groups scrolling through them, and a bar that silently
+   swallowed clicks on the controls underneath it would be far worse than no bar
+   at all. */
+.settings-jump::before,
 .settings-jump::after {
   content: "";
   position: absolute;
-  top: 100%;
   left: 0;
   right: 0;
-  height: 24px;
   background: #fff;
+  pointer-events: none;
+}
+
+.settings-jump::before {
+  bottom: 100%;
+  height: var(--jump-cover, 0px);
+}
+
+.settings-jump::after {
+  top: 100%;
+  height: 24px;
 }
 
 .settings-jump__label {

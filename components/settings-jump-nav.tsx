@@ -1,26 +1,67 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { ButtonBase } from "@mui/material";
+
+/**
+ * How much of the panel is hidden above the sticky bar once it has stuck.
+ *
+ * This is the number that is easy to get wrong twice over, so it is measured
+ * rather than assumed. A sticky element's `top` is measured from its scroll
+ * container's padding edge, not from the top of what the reader can actually
+ * see. The dashboard's editor column has its own top padding, so `top: 0` puts
+ * the bar one padding below the top edge of the column, with that strip left
+ * uncovered for groups to scroll through on their way past. On a phone the bar
+ * is pushed further down again, to clear the mobile header, and the strip grows
+ * with it. Both the padding and the sticky offset change with the breakpoint,
+ * so neither can be hardcoded.
+ *
+ * Published on the bar as --jump-cover, where the CSS uses it to close the strip
+ * and jumpToGroup uses it to land groups below the bar.
+ */
+function measureCover(bar: HTMLElement) {
+  let scroller = bar.parentElement;
+  while (scroller) {
+    const overflowY = getComputedStyle(scroller).overflowY;
+    if (overflowY === "auto" || overflowY === "scroll") break;
+    scroller = scroller.parentElement;
+  }
+  const paddingTop = scroller
+    ? parseFloat(getComputedStyle(scroller).paddingTop) || 0
+    : 0;
+  const stickyTop = parseFloat(getComputedStyle(bar).top) || 0;
+  const cover = paddingTop + stickyTop;
+  bar.style.setProperty("--jump-cover", `${cover}px`);
+  return cover;
+}
 
 /**
  * Scrolls a panel group into view, clear of the sticky jump bar above it.
  *
- * A plain scrollIntoView puts the group against the top of the viewport, which
- * with a sticky bar means the group's own heading lands *behind* the bar --
- * jump to "Your photo" and you get the photo controls with no heading telling
- * you what you are looking at. The bar is measured rather than assumed, because
- * how many rows the pills wrap to is the viewport's business.
+ * Two things this has to get right, both of them learned the hard way:
+ *
+ * A plain scrollIntoView puts the group against the top of the scrollport,
+ * which with a sticky bar means the group's own heading lands *behind* the bar
+ * -- jump to "Your photo" and you get the photo controls with nothing saying
+ * you are looking at them.
+ *
+ * And it has to reach the group by walking up to its scroll parent, not by
+ * scrolling the window: the dashboard does not scroll the window at all. It is
+ * a 100svh shell with overflow hidden, and the editor scrolls its own column,
+ * so a window.scrollTo here silently does nothing.
  */
 export function jumpToGroup(id: string) {
   const target = document.getElementById(id);
   if (!target) return;
   const bar = document.querySelector<HTMLElement>(".settings-jump");
-  // 16px of air under the bar, matching the gap the groups sit in.
-  const offset = (bar?.offsetHeight ?? 0) + 16;
-  window.scrollTo({
-    top: window.scrollY + target.getBoundingClientRect().top - offset,
-    behavior: "smooth",
-  });
+  // The strip above the bar, the bar itself, then 16px of air matching the gap
+  // the groups sit in.
+  const cover = bar
+    ? parseFloat(getComputedStyle(bar).getPropertyValue("--jump-cover")) || 0
+    : 0;
+  const offset = cover + (bar?.offsetHeight ?? 0) + 16;
+  target.style.scrollMarginTop = `${offset}px`;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /**
@@ -45,8 +86,26 @@ function JumpNav<T extends string>({
   /** What is being jumped to, read out rather than shown. */
   section: string;
 }) {
+  const barRef = useRef<HTMLElement | null>(null);
+
+  // Re-measured on resize because the scroller's padding and the sticky offset
+  // both change with the breakpoint, and a pill row that wraps to fewer rows on
+  // a wider window is a shorter bar to jump past.
+  useEffect(() => {
+    const node = barRef.current;
+    if (!node) return;
+    const measure = () => measureCover(node);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
   return (
-    <nav className="settings-jump" aria-label={`Jump to ${section}`}>
+    <nav
+      ref={barRef}
+      className="settings-jump"
+      aria-label={`Jump to ${section}`}
+    >
       <span className="settings-jump__label">Jump to</span>
       <div className="settings-jump__list">
         {targets.map((item) => (
