@@ -67,6 +67,15 @@ import {
 } from "@/lib/theme-config";
 import { groupLinksBySection } from "@/lib/link-groups";
 
+/**
+ * How much taller than the card the backdrop photo is drawn, top and bottom.
+ * The scroll drift slides it by at most this much before it reaches the limit,
+ * which is what stops a long page dragging an edge into view.
+ *
+ * Must match the photo's vertical inset in globals.css.
+ */
+const PHOTO_SLACK = 0.14;
+
 type TrackTarget = {
   eventType:
     | "link_open"
@@ -647,37 +656,51 @@ export function ProfileHub({
   const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
   const socialSize = customTheme.socialSize;
 
-  // The wash drifts down as the page scrolls, which in the viewport reads as it
-  // rising slower than everything else -- the photo sits behind the card rather
-  // than being printed on it. Driven off the scroll position rather than left to
-  // a fixed background: a fixed layer would be pinned to the viewport, so it
-  // would also refuse to move as you scroll back up, and it would hang there in
-  // the gutters with the card's fade no longer over it.
+  // The photo drifts down as the page scrolls, which in the viewport reads as it
+  // rising slower than everything else -- so the backdrop sits behind the card
+  // rather than being printed on it.
+  //
+  // The drift is written to the photo, not to the frame around it. The frame is
+  // the card and must not move: it is absolutely positioned inside a card that
+  // clips, so moving the frame itself would slide the backdrop out from under
+  // the rounded corners. Sliding the photo inside a fixed frame is also the
+  // honest version of the effect -- a background moving slower than the content
+  // in front of it.
+  //
+  // It stops at the slack the photo carries, so a long page can never drag an
+  // edge into view.
   const washRef = useRef<HTMLDivElement | null>(null);
+  const photoRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!avatarBackdrop) return;
-    const node = washRef.current;
-    if (!node) return;
-    // Someone who asked their machine not to animate things gets the wash
+    const frame = washRef.current;
+    const photo = photoRef.current;
+    if (!frame || !photo) return;
+    // Someone who asked their machine not to animate things gets the photo
     // exactly where it always was, not a slower version of the drift.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    let frame = 0;
+    let frame2 = 0;
     const place = () => {
-      frame = 0;
-      node.style.transform = `translate3d(0, ${window.scrollY * 0.4}px, 0)`;
+      frame2 = 0;
+      // Must match the photo's vertical inset in CSS.
+      const slack = frame.offsetHeight * PHOTO_SLACK;
+      const drift = Math.min(window.scrollY * 0.4, slack);
+      photo.style.transform = `translate3d(0, ${drift}px, 0)`;
     };
     const onScroll = () => {
       // One write per frame at most; scroll fires far more often than that.
-      if (frame) return;
-      frame = window.requestAnimationFrame(place);
+      if (frame2) return;
+      frame2 = window.requestAnimationFrame(place);
     };
 
     place();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", place);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", place);
+      if (frame2) window.cancelAnimationFrame(frame2);
     };
   }, [avatarBackdrop]);
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
@@ -734,13 +757,6 @@ export function ProfileHub({
         } as React.CSSProperties
       }
     >
-      {/* The photo, blown up, blurred, and faded across the top of the page --
-          the wallpaper's treatment, driven by the photo the creator already
-          has. On the page rather than inside the card, so it covers what the
-          wallpaper covers. */}
-      {avatarBackdrop ? (
-        <Box ref={washRef} className="avatar-backdrop" aria-hidden="true" />
-      ) : null}
       {template === "signal-deck" ? (
         <Box
           className={`profile-cover profile-cover--bleed${coverUrl ? "" : " profile-cover--fallback"}`}
@@ -749,6 +765,15 @@ export function ProfileHub({
         />
       ) : null}
       <article className="creator-card">
+        {/* The photo, washed, as this card's own backdrop. Inside the card
+            rather than on the page, so it fills the card and inherits its
+            radius and clip instead of having to reproduce them -- and so it
+            reads as the card's surface, not as a wallpaper behind it. */}
+        {avatarBackdrop ? (
+          <Box ref={washRef} className="avatar-backdrop" aria-hidden="true">
+            <Box ref={photoRef} className="avatar-backdrop__photo" />
+          </Box>
+        ) : null}
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
             <Stack direction="row" spacing={0.5} alignItems="center">

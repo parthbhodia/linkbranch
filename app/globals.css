@@ -1647,61 +1647,77 @@ a {
   position: relative;
 }
 
+/* The photo is the card's own backdrop: it fills the card and inherits the
+   card's radius and overflow clip, so the rounded corners and the link list all
+   still work untouched. It sits as the card's first child, behind the content. */
 .public-template .avatar-backdrop {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 72vh;
+  inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* The scroll drift is written to this element's transform. Named here so the
-     blurred layer is promoted once rather than at the first scroll frame. */
-  will-change: transform;
-  /* Strongest at the top, gone well before the links. */
-  -webkit-mask-image: linear-gradient(#000 0 22%, transparent 82%);
-  mask-image: linear-gradient(#000 0 22%, transparent 82%);
 }
 
-/* Blurred on a child, not on the wash itself, so the blur's bleed is clipped
-   by the wash's own box instead of widening the page. The image is handed
-   down as a custom property rather than set on the wash, because a background
-   on the wash itself would paint a second, unblurred copy of it across the
-   whole box. */
-.public-template .avatar-backdrop::before {
-  content: "";
+/* The photo, drawn slightly larger than the card and blurred lightly rather than
+   heavily -- a big blur stops reading as a photograph and becomes a colour cast.
+   The image is handed down as a custom property rather than set here, because
+   setting it on the wash itself would paint a second, unblurred copy across the
+   whole box.
+
+   The vertical inset is the drift's slack -- see PHOTO_SLACK in profile-hub. */
+.public-template .avatar-backdrop__photo {
   position: absolute;
-  inset: -12%;
+  top: -14%;
+  bottom: -14%;
+  left: -6%;
+  right: -6%;
   background-image: var(--avatar-backdrop);
   background-size: cover;
-  background-position: center 26%;
-  filter: blur(56px) saturate(1.15);
-  opacity: 0.4;
+  background-position: center 22%;
+  filter: blur(14px) saturate(1.06);
+  opacity: 0.72;
+  will-change: transform;
 }
 
-/* The card rides above the wash and opens at the top so the wash reads through
-   it, going solid further down. An opaque card would leave the whole effect in
-   the page gutters, which on a phone are not there at all.
-   
-   Signal-deck is left out: its card is transparent and sits on a full-bleed
-   cover already, and it is the one template that never redefines --paper, so
-   painting the card with it would put cream on a dark page. */
-.public-template.profile-theme-avatar-backdrop:not(.public-template--signal-deck)
-  .creator-card {
+/* Lift the card's own content above the backdrop. Everything in the card is in
+   normal flow, which paints beneath any positioned layer, so without this the
+   photo would cover the link list. */
+.public-template.profile-theme-avatar-backdrop .creator-card > * {
   position: relative;
   z-index: 1;
-  background: linear-gradient(
-    color-mix(in srgb, var(--paper) 58%, transparent) 0,
-    var(--paper) 46vh
-  );
 }
 
-.public-template.profile-theme-avatar-backdrop:not(.public-template--signal-deck).profile-theme-custom
-  .creator-card {
+/* The wash over the photo. Not one flat percentage: a flat veil either buries
+   the photo or bleaches the text, because the photo brightens whatever it sits
+   on and dark text disappears with it. So this is a scrim that is lightest at
+   the top and bottom edges -- where the photograph should read -- and heaviest
+   through the middle band, where the name, headline and link list live.
+
+   Mixed from the theme's own surface, the colour the text was designed to
+   contrast against, and never the ink: veiling with the ink paints the text's
+   own colour underneath the text and erases it.
+
+   This is unavoidably stronger on a light theme than a dark one. A near-white
+   card cannot show a bright photograph strongly and keep dark text readable at
+   the same time; the scrim can only be as open as legibility allows. On a light
+   template this reads as a tint, on a dark one as a real backdrop. */
+.public-template.profile-theme-avatar-backdrop .creator-card {
   background: linear-gradient(
-    color-mix(in srgb, var(--profile-surface) 58%, transparent) 0,
-    var(--profile-surface) 46vh
+    color-mix(in srgb, var(--paper) 26%, transparent) 0,
+    color-mix(in srgb, var(--paper) 74%, transparent) 28%,
+    color-mix(in srgb, var(--paper) 76%, transparent) 72%,
+    color-mix(in srgb, var(--paper) 42%, transparent) 100%
+  );
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.public-template.profile-theme-avatar-backdrop.profile-theme-custom .creator-card {
+  background: linear-gradient(
+    color-mix(in srgb, var(--profile-surface) 26%, transparent) 0,
+    color-mix(in srgb, var(--profile-surface) 74%, transparent) 28%,
+    color-mix(in srgb, var(--profile-surface) 76%, transparent) 72%,
+    color-mix(in srgb, var(--profile-surface) 42%, transparent) 100%
   );
 }
 
