@@ -12838,6 +12838,13 @@ a {
   gap: 10px;
 }
 
+/* A jumped-to group should land with its own heading clear of the viewport edge
+   rather than glued to it. Matches the appearance anchors by prefix, which is
+   the only place that prefix is used. */
+[id^="appearance-"] {
+  scroll-margin-top: 16px;
+}
+
 .settings-jump__label {
   color: #8a8d83;
   font: 800 0.63rem var(--font-mono);

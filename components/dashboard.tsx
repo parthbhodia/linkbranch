@@ -89,7 +89,9 @@ import {
 } from "@/components/seo-preview";
 import { SettingsConnectEditor } from "@/components/settings-connect-editor";
 import {
+  AppearanceJumpNav,
   SettingsJumpNav,
+  type AppearanceJumpId,
   type SettingsJumpId,
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
@@ -545,6 +547,9 @@ export function Dashboard({
   }));
   const [connectedSocials, setConnectedSocials] = useState(socials);
   const [settingsJump, setSettingsJump] = useState<SettingsJumpId | null>(null);
+  const [appearanceJump, setAppearanceJump] = useState<AppearanceJumpId | null>(
+    null,
+  );
   const [exportingData, setExportingData] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -1731,6 +1736,18 @@ export function Dashboard({
     }, 40);
   }
 
+  // No section switch, unlike the account version: this one only exists inside
+  // the appearance panel, so the panel it scrolls is already the one on screen.
+  function jumpToAppearance(id: AppearanceJumpId) {
+    setAppearanceJump(id);
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 40);
+  }
+
   async function downloadAccountData() {
     setExportingData(true);
     try {
@@ -2525,7 +2542,11 @@ export function Dashboard({
 
           {section === "appearance" && (
             <Stack className="workspace-panel" spacing={3}>
-              <div className="workspace-design-group">
+              <AppearanceJumpNav
+                activeId={appearanceJump}
+                onJump={jumpToAppearance}
+              />
+              <div className="workspace-design-group" id="appearance-layout">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Start with a layout</Typography>
@@ -2565,346 +2586,7 @@ export function Dashboard({
                   ))}
                 </div>
               </div>
-
-              <div className="workspace-design-group">
-                <div className="workspace-design-heading">
-                  <Box>
-                    <Typography variant="h3">Color direction</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Curated combinations with accessible text contrast.
-                    </Typography>
-                  </Box>
-                </div>
-                <div className="workspace-palette-grid">
-                  {themePalettes.map((palette) => {
-                    const selected =
-                      palette.colors.background === activeTheme.colors.background &&
-                      palette.colors.accent === activeTheme.colors.accent &&
-                      palette.colors.button === activeTheme.colors.button;
-                    return (
-                      <ButtonBase
-                        className={`workspace-palette${selected ? " is-selected" : ""}`}
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            colors: { ...palette.colors },
-                          }))
-                        }
-                        aria-label={`Use ${palette.name} colors`}
-                        key={palette.id}
-                      >
-                        <span className="workspace-palette__swatches">
-                          <i style={{ background: palette.colors.background }} />
-                          <i style={{ background: palette.colors.surface }} />
-                          <i style={{ background: palette.colors.accent }} />
-                          <i style={{ background: palette.colors.button }} />
-                        </span>
-                        <span>
-                          <b>{palette.name}</b>
-                          <small>{palette.note}</small>
-                        </span>
-                      </ButtonBase>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <details className="workspace-color-details">
-                <summary>Fine-tune individual colors</summary>
-                <div className="workspace-color-grid">
-                  {themeColorFields.map((field) => (
-                    <label className="workspace-color-control" key={field.key}>
-                      <span>{field.label}</span>
-                      <span>
-                        <input
-                          type="color"
-                          value={activeTheme.colors[field.key]}
-                          onChange={(event) =>
-                            updateTheme((current) => ({
-                              ...current,
-                              colors: {
-                                ...current.colors,
-                                [field.key]: event.target.value,
-                              },
-                            }))
-                          }
-                          aria-label={`${field.label} color`}
-                        />
-                        <code>{activeTheme.colors[field.key]}</code>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              <div className="workspace-design-group">
-                <div className="workspace-design-heading">
-                  <Box>
-                    <Typography variant="h3">Type pairing</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Headline personality without sacrificing readable body copy.
-                    </Typography>
-                  </Box>
-                </div>
-                <div className="workspace-choice-grid workspace-choice-grid--fonts">
-                  {themeFontOptions.map((font) => (
-                    <ButtonBase
-                      className={`workspace-type-choice workspace-type-choice--${font.id} ${
-                        activeTheme.font === font.id ? "is-selected" : ""
-                      }`}
-                      onClick={() =>
-                        updateTheme((current) => ({ ...current, font: font.id }))
-                      }
-                      aria-label={`Use ${font.name} type pairing`}
-                      key={font.id}
-                    >
-                      <b>{font.sample}</b>
-                      <small>{font.name}</small>
-                    </ButtonBase>
-                  ))}
-                </div>
-              </div>
-
-              <div className="workspace-design-split">
-                <div className="workspace-design-group">
-                  <Typography variant="h3">Type size</Typography>
-                  <div className="workspace-segmented">
-                    {themeFontScaleOptions.map((option) => (
-                      <ButtonBase
-                        className={
-                          activeTheme.fontScale === option.id ? "is-selected" : ""
-                        }
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            fontScale: option.id,
-                          }))
-                        }
-                        aria-label={`Use ${option.name} type size`}
-                        title={option.note}
-                        key={option.id}
-                      >
-                        {option.name}
-                      </ButtonBase>
-                    ))}
-                  </div>
-                </div>
-                <div className="workspace-design-group">
-                  <Typography variant="h3">Boldness</Typography>
-                  <div className="workspace-segmented">
-                    {themeFontWeightOptions.map((option) => (
-                      <ButtonBase
-                        className={
-                          activeTheme.fontWeight === option.id ? "is-selected" : ""
-                        }
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            fontWeight: option.id,
-                          }))
-                        }
-                        aria-label={`Use ${option.name} text weight`}
-                        key={option.id}
-                      >
-                        {option.name}
-                      </ButtonBase>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="workspace-design-group">
-                <Typography variant="h3">Style</Typography>
-                <div className="workspace-segmented">
-                  {themeFontStyleOptions.map((option) => (
-                    <ButtonBase
-                      className={
-                        activeTheme.fontStyle === option.id ? "is-selected" : ""
-                      }
-                      onClick={() =>
-                        updateTheme((current) => ({
-                          ...current,
-                          fontStyle: option.id,
-                        }))
-                      }
-                      aria-label={`Use ${option.name} text style`}
-                      key={option.id}
-                    >
-                      {option.name}
-                    </ButtonBase>
-                  ))}
-                </div>
-              </div>
-
-              <div className="workspace-design-split">
-                <div className="workspace-design-group">
-                  <Typography variant="h3">Button shape</Typography>
-                  <div className="workspace-segmented">
-                    {(["soft", "pill", "sharp", "glass", "outline"] as const).map(
-                      (shape) => (
-                      <ButtonBase
-                        className={activeTheme.buttonShape === shape ? "is-selected" : ""}
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            buttonShape: shape,
-                          }))
-                        }
-                        key={shape}
-                      >
-                        {shape}
-                      </ButtonBase>
-                    ))}
-                  </div>
-                </div>
-                <div className="workspace-design-group">
-                  <Typography variant="h3">Spacing</Typography>
-                  <div className="workspace-segmented">
-                    {(["relaxed", "compact"] as const).map((density) => (
-                      <ButtonBase
-                        className={activeTheme.density === density ? "is-selected" : ""}
-                        onClick={() =>
-                          updateTheme((current) => ({ ...current, density }))
-                        }
-                        key={density}
-                      >
-                        {density}
-                      </ButtonBase>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="workspace-design-group">
-                <div className="workspace-design-heading">
-                  <Box>
-                    <Typography variant="h3">Social icons</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      How large the row of icons under your name sits.
-                    </Typography>
-                  </Box>
-                </div>
-                <div className="workspace-segmented">
-                  {themeSocialSizeOptions.map((option) => (
-                    <ButtonBase
-                      className={
-                        (activeTheme.socialSize ?? "md") === option.id
-                          ? "is-selected"
-                          : ""
-                      }
-                      onClick={() =>
-                        updateTheme((current) => ({
-                          ...current,
-                          socialSize: option.id,
-                        }))
-                      }
-                      title={option.note}
-                      key={option.id}
-                    >
-                      {option.name}
-                    </ButtonBase>
-                  ))}
-                </div>
-              </div>
-
-              <div className="workspace-design-group">
-                <div className="workspace-design-heading">
-                  <Box>
-                    <Typography variant="h3">Wallpapers</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Prism, graph, flare, and other textures — or upload your own full-bleed image.
-                    </Typography>
-                  </Box>
-                </div>
-                <div className="workspace-choice-grid workspace-choice-grid--wallpapers">
-                  {themeBackgroundOptions.map((background) => (
-                    <ButtonBase
-                      className={`workspace-background-choice workspace-background-choice--${background.id} ${
-                        activeTheme.background === background.id
-                          ? "is-selected"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        updateTheme((current) => {
-                          const blockPalettes: Record<
-                            string,
-                            (typeof themePalettes)[number]["colors"]
-                          > = {
-                            ink: themePalettes.find((p) => p.id === "charcoal-block")!
-                              .colors,
-                            lagoon: themePalettes.find((p) => p.id === "teal-block")!
-                              .colors,
-                            lilac: themePalettes.find((p) => p.id === "lavender-block")!
-                              .colors,
-                          };
-                          const colors = blockPalettes[background.id];
-                          return {
-                            ...current,
-                            background: background.id,
-                            ...(colors ? { colors: { ...colors } } : {}),
-                          };
-                        })
-                      }
-                      key={background.id}
-                    >
-                      <i
-                        style={
-                          {
-                            "--choice-bg": activeTheme.colors.background,
-                            "--choice-accent": activeTheme.colors.accent,
-                          } as React.CSSProperties
-                        }
-                      />
-                      <span>
-                        <b>{background.name}</b>
-                        <small>{background.note}</small>
-                      </span>
-                    </ButtonBase>
-                  ))}
-                </div>
-                <WallpaperUploader
-                  currentUrl={wallpaperUrl}
-                  busy={brandingUploading === "wallpaper"}
-                  onPreview={setPendingWallpaper}
-                  onSave={async (prepared) => {
-                    const saved = await uploadBrandAsset("wallpaper", prepared.file);
-                    if (!saved) throw new Error("The wallpaper was not saved. See the message above.");
-                  }}
-                  onRemove={() => removeBrandAsset("wallpaper")}
-                />
-                <div className="workspace-design-group" style={{ marginTop: 18 }}>
-                  <Typography variant="h3">Contact form</Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 1.25 }}
-                  >
-                    Let visitors send you a name, email, and message from your page.
-                  </Typography>
-                  <div className="workspace-segmented">
-                    {([true, false] as const).map((enabled) => (
-                      <ButtonBase
-                        className={
-                          Boolean(activeTheme.contactForm) === enabled
-                            ? "is-selected"
-                            : ""
-                        }
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            contactForm: enabled,
-                          }))
-                        }
-                        key={String(enabled)}
-                      >
-                        {enabled ? "On" : "Off"}
-                      </ButtonBase>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="workspace-design-group">
+              <div className="workspace-design-group" id="appearance-photo">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Your photo</Typography>
@@ -3053,7 +2735,346 @@ export function Dashboard({
                 </div>
               </div>
 
+              <div className="workspace-design-group" id="appearance-colour">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Color direction</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Curated combinations with accessible text contrast.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-palette-grid">
+                  {themePalettes.map((palette) => {
+                    const selected =
+                      palette.colors.background === activeTheme.colors.background &&
+                      palette.colors.accent === activeTheme.colors.accent &&
+                      palette.colors.button === activeTheme.colors.button;
+                    return (
+                      <ButtonBase
+                        className={`workspace-palette${selected ? " is-selected" : ""}`}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            colors: { ...palette.colors },
+                          }))
+                        }
+                        aria-label={`Use ${palette.name} colors`}
+                        key={palette.id}
+                      >
+                        <span className="workspace-palette__swatches">
+                          <i style={{ background: palette.colors.background }} />
+                          <i style={{ background: palette.colors.surface }} />
+                          <i style={{ background: palette.colors.accent }} />
+                          <i style={{ background: palette.colors.button }} />
+                        </span>
+                        <span>
+                          <b>{palette.name}</b>
+                          <small>{palette.note}</small>
+                        </span>
+                      </ButtonBase>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <details className="workspace-color-details">
+                <summary>Fine-tune individual colors</summary>
+                <div className="workspace-color-grid">
+                  {themeColorFields.map((field) => (
+                    <label className="workspace-color-control" key={field.key}>
+                      <span>{field.label}</span>
+                      <span>
+                        <input
+                          type="color"
+                          value={activeTheme.colors[field.key]}
+                          onChange={(event) =>
+                            updateTheme((current) => ({
+                              ...current,
+                              colors: {
+                                ...current.colors,
+                                [field.key]: event.target.value,
+                              },
+                            }))
+                          }
+                          aria-label={`${field.label} color`}
+                        />
+                        <code>{activeTheme.colors[field.key]}</code>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              <div className="workspace-design-group" id="appearance-type">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Type pairing</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Headline personality without sacrificing readable body copy.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-choice-grid workspace-choice-grid--fonts">
+                  {themeFontOptions.map((font) => (
+                    <ButtonBase
+                      className={`workspace-type-choice workspace-type-choice--${font.id} ${
+                        activeTheme.font === font.id ? "is-selected" : ""
+                      }`}
+                      onClick={() =>
+                        updateTheme((current) => ({ ...current, font: font.id }))
+                      }
+                      aria-label={`Use ${font.name} type pairing`}
+                      key={font.id}
+                    >
+                      <b>{font.sample}</b>
+                      <small>{font.name}</small>
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Type size</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontScaleOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontScale === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontScale: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} type size`}
+                        title={option.note}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Boldness</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontWeightOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontWeight === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontWeight: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} text weight`}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="workspace-design-group">
+                <Typography variant="h3">Style</Typography>
+                <div className="workspace-segmented">
+                  {themeFontStyleOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        activeTheme.fontStyle === option.id ? "is-selected" : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          fontStyle: option.id,
+                        }))
+                      }
+                      aria-label={`Use ${option.name} text style`}
+                      key={option.id}
+                    >
+                      {option.name}
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split" id="appearance-buttons">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Button shape</Typography>
+                  <div className="workspace-segmented">
+                    {(["soft", "pill", "sharp", "glass", "outline"] as const).map(
+                      (shape) => (
+                      <ButtonBase
+                        className={activeTheme.buttonShape === shape ? "is-selected" : ""}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            buttonShape: shape,
+                          }))
+                        }
+                        key={shape}
+                      >
+                        {shape}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Spacing</Typography>
+                  <div className="workspace-segmented">
+                    {(["relaxed", "compact"] as const).map((density) => (
+                      <ButtonBase
+                        className={activeTheme.density === density ? "is-selected" : ""}
+                        onClick={() =>
+                          updateTheme((current) => ({ ...current, density }))
+                        }
+                        key={density}
+                      >
+                        {density}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group" id="appearance-social">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Social icons</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      How large the row of icons under your name sits.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-segmented">
+                  {themeSocialSizeOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        (activeTheme.socialSize ?? "md") === option.id
+                          ? "is-selected"
+                          : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          socialSize: option.id,
+                        }))
+                      }
+                      title={option.note}
+                      key={option.id}
+                    >
+                      {option.name}
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-group" id="appearance-wallpapers">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Wallpapers</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Prism, graph, flare, and other textures — or upload your own full-bleed image.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-choice-grid workspace-choice-grid--wallpapers">
+                  {themeBackgroundOptions.map((background) => (
+                    <ButtonBase
+                      className={`workspace-background-choice workspace-background-choice--${background.id} ${
+                        activeTheme.background === background.id
+                          ? "is-selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        updateTheme((current) => {
+                          const blockPalettes: Record<
+                            string,
+                            (typeof themePalettes)[number]["colors"]
+                          > = {
+                            ink: themePalettes.find((p) => p.id === "charcoal-block")!
+                              .colors,
+                            lagoon: themePalettes.find((p) => p.id === "teal-block")!
+                              .colors,
+                            lilac: themePalettes.find((p) => p.id === "lavender-block")!
+                              .colors,
+                          };
+                          const colors = blockPalettes[background.id];
+                          return {
+                            ...current,
+                            background: background.id,
+                            ...(colors ? { colors: { ...colors } } : {}),
+                          };
+                        })
+                      }
+                      key={background.id}
+                    >
+                      <i
+                        style={
+                          {
+                            "--choice-bg": activeTheme.colors.background,
+                            "--choice-accent": activeTheme.colors.accent,
+                          } as React.CSSProperties
+                        }
+                      />
+                      <span>
+                        <b>{background.name}</b>
+                        <small>{background.note}</small>
+                      </span>
+                    </ButtonBase>
+                  ))}
+                </div>
+                <WallpaperUploader
+                  currentUrl={wallpaperUrl}
+                  busy={brandingUploading === "wallpaper"}
+                  onPreview={setPendingWallpaper}
+                  onSave={async (prepared) => {
+                    const saved = await uploadBrandAsset("wallpaper", prepared.file);
+                    if (!saved) throw new Error("The wallpaper was not saved. See the message above.");
+                  }}
+                  onRemove={() => removeBrandAsset("wallpaper")}
+                />
+                <div className="workspace-design-group" style={{ marginTop: 18 }}>
+                  <Typography variant="h3">Contact form</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.25 }}
+                  >
+                    Let visitors send you a name, email, and message from your page.
+                  </Typography>
+                  <div className="workspace-segmented">
+                    {([true, false] as const).map((enabled) => (
+                      <ButtonBase
+                        className={
+                          Boolean(activeTheme.contactForm) === enabled
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            contactForm: enabled,
+                          }))
+                        }
+                        key={String(enabled)}
+                      >
+                        {enabled ? "On" : "Off"}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="workspace-design-group" id="appearance-branding">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Your branding</Typography>
