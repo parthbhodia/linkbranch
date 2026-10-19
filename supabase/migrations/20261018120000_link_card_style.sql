@@ -41,10 +41,10 @@ begin
 
   update public.profiles
   set username = lower(profile_data->>'username'),
-      display_name = profile_data->>'display_name'),
-      greeting = profile_data->>'greeting'),
-      headline = profile_data->>'headline'),
-      headline_accent = profile_data->>'headline_accent'),
+      display_name = profile_data->>'display_name',
+      greeting = profile_data->>'greeting',
+      headline = profile_data->>'headline',
+      headline_accent = profile_data->>'headline_accent',
       bio = coalesce(profile_data->>'bio', ''),
       location = coalesce(profile_data->>'location', ''),
       show_location = coalesce(
