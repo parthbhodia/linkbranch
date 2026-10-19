@@ -1802,12 +1802,30 @@ a {
    card cannot show a bright photograph strongly and keep dark text readable at
    the same time; the scrim can only be as open as legibility allows. On a light
    template this reads as a tint, on a dark one as a real backdrop. */
+/* The wash over the photo. Not one fixed strength: the veil is solved for from
+   the photograph and the theme (see lib/avatar-scrim) and published as
+   --avatar-veil, so a picture that can already carry the text gets none at all
+   and only a genuinely too-dark one gets covered.
+
+   --avatar-veil is absent until the photograph has been read, and until it can
+   be read at all -- a canvas the browser will not let us sample throws, and
+   that is not worth surfacing to a visitor. The fallback is deliberately
+   middling rather than zero, because an unreadable page is worse than a
+   slightly veiled one.
+
+   Mixed from the theme's own surface, the colour the text was designed to
+   contrast against, and never the ink: veiling with the ink paints the text's
+   own colour underneath the text and erases it.
+
+   This is unavoidably stronger on a light template than a dark one. A near-white
+   card cannot show a bright photograph strongly and keep dark text readable at
+   the same time; the veil can only be as open as legibility allows. */
 .public-template.profile-theme-avatar-backdrop .creator-card {
   background: linear-gradient(
-    color-mix(in srgb, var(--paper) 26%, transparent) 0,
-    color-mix(in srgb, var(--paper) 74%, transparent) 28%,
-    color-mix(in srgb, var(--paper) 76%, transparent) 72%,
-    color-mix(in srgb, var(--paper) 42%, transparent) 100%
+    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
+    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
+    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
+    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
   );
   box-shadow: none;
   border-color: transparent;
@@ -1815,10 +1833,10 @@ a {
 
 .public-template.profile-theme-avatar-backdrop.profile-theme-custom .creator-card {
   background: linear-gradient(
-    color-mix(in srgb, var(--profile-surface) 26%, transparent) 0,
-    color-mix(in srgb, var(--profile-surface) 74%, transparent) 28%,
-    color-mix(in srgb, var(--profile-surface) 76%, transparent) 72%,
-    color-mix(in srgb, var(--profile-surface) 42%, transparent) 100%
+    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
+    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
+    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
+    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
   );
 }
 
