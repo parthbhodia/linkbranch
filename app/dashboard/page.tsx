@@ -18,6 +18,7 @@ import { type DashboardConnection } from "@/components/connections-inbox";
 import { type DashboardFaq } from "@/components/faq-editor";
 import { type DashboardHighlight } from "@/components/highlights-editor";
 import { isAdminEmail } from "@/lib/admin-access";
+import { selectToleratingColumn } from "@/lib/optional-columns";
 import { createClient } from "@/lib/supabase/server";
 import type { TimelineEntry } from "@/lib/timeline";
 
@@ -88,7 +89,7 @@ async function DashboardWorkspace({
 }) {
   const supabase = await createClient();
   const [
-    { data: links },
+    links,
     { data: referrals },
     { data: socials },
     { data: events },
@@ -102,11 +103,19 @@ async function DashboardWorkspace({
     { count: referralCount },
   ] =
     await Promise.all([
-      supabase
-        .from("links")
-        .select("id,title,subtitle,url,thumbnail_path,position,is_active,is_featured,group_name,card_style")
-        .eq("user_id", profile.id)
-        .order("position"),
+      // Tolerated, so the editor still shows its links on a database where the
+      // card_style migration has not been run: an empty editor looks like the
+      // creator has no links, and saving it would then delete them.
+      selectToleratingColumn<DashboardLink>(
+        "id,title,subtitle,url,thumbnail_path,position,is_active,is_featured,group_name,card_style",
+        "card_style",
+        (columns) =>
+          supabase
+            .from("links")
+            .select(columns)
+            .eq("user_id", profile.id)
+            .order("position"),
+      ),
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,color,position,is_active")

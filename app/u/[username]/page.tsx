@@ -16,6 +16,7 @@ import {
 } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
+import { selectToleratingColumn } from "@/lib/optional-columns";
 import { createClient } from "@/lib/supabase/server";
 import { defaultProfileTheme } from "@/lib/theme-config";
 import type { CreatorProfile } from "@/lib/types";
@@ -23,6 +24,24 @@ import { publicMapLocation } from "@/lib/map-location";
 import type { TimelineEntry } from "@/lib/timeline";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
+
+/**
+ * The link columns this page reads. `card_style` arrives with a migration and
+ * may not be in the database yet, so it is allowed to be absent.
+ */
+type ProfileLinkRow = {
+  id: number;
+  title: string;
+  subtitle: string;
+  url: string;
+  thumbnail_path: string | null;
+  position: number;
+  is_featured: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+  group_name: string | null;
+  card_style?: string | null;
+};
 
 export const dynamic = "force-dynamic";
 
@@ -242,7 +261,7 @@ async function ProfileContent({
   }
 
   const [
-    { data: links },
+    links,
     { data: referrals },
     { data: socials },
     { data: products },
@@ -252,14 +271,21 @@ async function ProfileContent({
     { data: timeline },
   ] =
     await Promise.all([
-      supabase
-        .from("links")
-        .select(
-          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name,card_style",
-        )
-        .eq("user_id", profile.id)
-        .eq("is_active", true)
-        .order("position"),
+      // card_style is selected tolerantly: the public page must still show its
+      // links on a database where the card_style migration has not been run
+      // yet, rather than emptying the card because one requested column is
+      // unknown.
+      selectToleratingColumn<ProfileLinkRow>(
+        "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name,card_style",
+        "card_style",
+        (columns) =>
+          supabase
+            .from("links")
+            .select(columns)
+            .eq("user_id", profile.id)
+            .eq("is_active", true)
+            .order("position"),
+      ),
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,color,position")
