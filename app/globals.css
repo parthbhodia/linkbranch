@@ -6054,6 +6054,8 @@ a {
   color: #f4f4ef;
   border-color: #252720;
   background: #12130f;
+  /* The real card behind a backdrop on this template is #151712. */
+  --preview-card-surface: #151712;
 }
 
 .workspace-phone--after-dark .workspace-phone__cover {
@@ -6089,6 +6091,9 @@ a {
 
 .workspace-phone--soft-studio {
   background: #fff8fd;
+  /* The page's card on this template is near-opaque white: rgba(255,252,255,0.92)
+     over the page, which lands here. */
+  --preview-card-surface: #fffcfd;
 }
 
 .workspace-phone--soft-studio .workspace-phone__cover {
@@ -16034,26 +16039,44 @@ a {
   top: 0;
   left: 0;
   right: 0;
-  height: 62%;
+  height: 100%;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* Strongest at the top, gone well before the links. */
-  -webkit-mask-image: linear-gradient(#000 0 22%, transparent 82%);
-  mask-image: linear-gradient(#000 0 22%, transparent 82%);
 }
 
-/* Blurred on a child so the bleed is clipped by the wash's own box. The image
-   arrives as a custom property because a background on the wash itself would
-   paint a second, unblurred copy across the whole box. Blur is 34px against
-   the page's 56px, scaled for a 352px phone. */
-.workspace-phone__backdrop::before {
-  content: "";
+/* The photograph, with the card's own numbers rather than the ones this used to
+   have. Same insets as .avatar-backdrop__photo (which are the drift's slack --
+   see PHOTO_SLACK in profile-hub), same light blur: the old 34px read as a
+   colour cast rather than a picture, which made every avatar look like the same
+   avatar. Blur and inset are scaled for a 352px phone against a 760px card. */
+.workspace-phone__backdrop-photo {
   position: absolute;
-  inset: -12%;
+  top: -14%;
+  bottom: -14%;
+  left: -6%;
+  right: -6%;
   background-image: var(--avatar-backdrop);
   background-size: cover;
-  background-position: center 26%;
-  filter: blur(34px) saturate(1.15);
-  opacity: 0.4;
+  background-position: center 22%;
+  filter: blur(6px) saturate(1.06);
+  opacity: 0.72;
+}
+
+/* The veil over it, at the strength the page solved for -- the same four stops,
+   and absent entirely when the photograph can already carry the text. The
+   fallback matches the page's.
+
+   Painted as a sibling above the photo rather than as the frame's background:
+   an element's background paints under its own children, so putting it on the
+   frame would hide it behind the picture. */
+.workspace-phone__backdrop-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
+    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
+    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
+    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
+  );
 }

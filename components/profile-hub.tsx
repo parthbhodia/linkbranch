@@ -66,11 +66,7 @@ import {
   resolveProfileTheme,
 } from "@/lib/theme-config";
 import { groupLinksBySection } from "@/lib/link-groups";
-import {
-  parseRgb,
-  relativeLuminance,
-  requiredVeil,
-} from "@/lib/avatar-scrim";
+import { useAvatarVeil } from "@/components/use-avatar-veil";
 
 /**
  * How much taller than the card the backdrop photo is drawn, top and bottom.
@@ -80,68 +76,6 @@ import {
  * Must match the photo's vertical inset in globals.css.
  */
 const PHOTO_SLACK = 0.14;
-
-/**
- * Mean relative luminance of a photograph, or null when it cannot be read.
- *
- * Downsampled to a handful of pixels: this is looking for how bright the picture
- * is overall, and a thousand samples would cost a great deal more to answer the
- * same question. Transparent pixels count as the card showing through, not as
- * black, so a circular logo on a transparent background measures as the card it
- * sits on rather than as a dark disc.
- */
-function sampleLuminance(image: HTMLImageElement): number | null {
-  try {
-    const canvas = document.createElement("canvas");
-    const size = 24;
-    canvas.width = size;
-    canvas.height = size;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) return null;
-    context.drawImage(image, 0, 0, size, size);
-    const { data } = context.getImageData(0, 0, size, size);
-    let total = 0;
-    let counted = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      const alpha = data[i + 3] / 255;
-      if (alpha < 0.5) continue;
-      // Un-premultiply, so a semi-transparent pixel reads as its own colour.
-      total +=
-        relativeLuminance(
-          data[i] / alpha,
-          data[i + 1] / alpha,
-          data[i + 2] / alpha,
-        ) * alpha;
-      counted += alpha;
-    }
-    if (counted === 0) return null;
-    return total / counted;
-  } catch {
-    // A tainted canvas throws on read, which is the browser refusing to let a
-    // page sample an image it did not host. Not an error worth surfacing: it
-    // just means this picture cannot be measured.
-    return null;
-  }
-}
-
-/**
- * The colour the card would be without the backdrop, as a computed rgb string.
- *
- * Read through a probe rather than guessed at the call site, because the
- * fallback chain for "the card's own background" differs per template and per
- * whether a creator has a custom palette: the browser already knows the answer
- * for whichever page this is.
- */
-function resolveSurface(card: HTMLElement): string {
-  const probe = document.createElement("span");
-  probe.style.color = "var(--profile-surface, var(--paper, #faf9f1))";
-  probe.style.position = "absolute";
-  probe.style.visibility = "hidden";
-  card.appendChild(probe);
-  const colour = getComputedStyle(probe).color;
-  probe.remove();
-  return colour;
-}
 
 type TrackTarget = {
   eventType:
@@ -767,42 +701,15 @@ export function ProfileHub({
 
   // How hard to veil the photo is solved for rather than fixed, so a bright
   // photograph can sit under the text with nothing in the way and a dark one
-  // still gets covered. Measured here because the answer depends on the
-  // picture, the theme's text and the theme's card together.
-  useEffect(() => {
-    if (!avatarBackdrop) return;
-    const card = cardRef.current;
-    const src = profile.avatarUrl;
-    if (!card || !src) return;
+  // still gets covered. Shared with the dashboard preview, which draws its own
+  // phone and would otherwise disagree with this page.
+  useAvatarVeil({
+    enabled: avatarBackdrop,
+    avatarUrl: profile.avatarUrl,
+    targetRef: cardRef,
+    textRef: titleRef,
+  });
 
-    // A canvas can only be read back if the image server allows it. If it does
-    // not, the photograph cannot be measured and this returns nothing, which
-    // leaves the CSS fallback in place rather than painting the page from a
-    // guess.
-    let cancelled = false;
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => {
-      if (cancelled) return;
-      const photo = sampleLuminance(image);
-      if (photo === null) return;
-      const text = parseRgb(getComputedStyle(titleRef.current ?? card).color);
-      const surface = parseRgb(resolveSurface(card));
-      if (!text || !surface) return;
-      const veil = requiredVeil(
-        photo,
-        relativeLuminance(text.r, text.g, text.b),
-        relativeLuminance(surface.r, surface.g, surface.b),
-      );
-      card.style.setProperty("--avatar-veil", veil.toFixed(3));
-    };
-    image.onerror = () => {};
-    image.src = src;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [avatarBackdrop, profile.avatarUrl]);
   useEffect(() => {
     if (!avatarBackdrop) return;
     const frame = washRef.current;

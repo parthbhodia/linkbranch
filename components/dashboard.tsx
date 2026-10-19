@@ -146,6 +146,7 @@ import {
   themeSocialSizeOptions,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
+import { useAvatarVeil } from "@/components/use-avatar-veil";
 
 export type DashboardProfile = {
   id: string;
@@ -560,6 +561,8 @@ export function Dashboard({
   const [section, setSection] = useState<WorkspaceSection>("profile");
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
   const editorScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewPhoneRef = useRef<HTMLDivElement | null>(null);
+  const previewTitleRef = useRef<HTMLHeadingElement | null>(null);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
     "30d",
   );
@@ -671,6 +674,18 @@ export function Dashboard({
   const previewAvatarRing = activeTheme.avatarRing === true;
   const previewAvatarBackdrop =
     activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
+
+  // Solved here with the same code the page runs, so the preview shows the
+  // veil the visitor will actually get rather than a fixed guess. The surface
+  // expression is the preview's own: this phone names its colours per template
+  // instead of carrying the page's --paper and --profile-surface.
+  useAvatarVeil({
+    enabled: previewAvatarBackdrop,
+    avatarUrl: previewAvatarUrl,
+    targetRef: previewPhoneRef,
+    textRef: previewTitleRef,
+    surfaceCss: "var(--preview-card-surface, #fbfbf7)",
+  });
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
     displayName: draft.display_name,
@@ -4232,13 +4247,19 @@ export function Dashboard({
             } as React.CSSProperties
           }
           data-avatar-backdrop={previewAvatarBackdrop ? "on" : undefined}
+          ref={previewPhoneRef}
         >
           <div className="workspace-phone__body">
-            {/* Inside the body, not behind it: the theme background is painted
-                on the body itself, so a wash layered underneath would be
-                covered by it. Sits under the content and scrolls with it. */}
+            {/* Two layers, in the order the card paints them: the photograph,
+                then the veil solved for it. The preview used to show a blurred
+                62% band here, which was the page treatment two designs ago and
+                disagreed with the page about the one thing the creator switches
+                on this setting to look at. */}
             {previewAvatarBackdrop ? (
-              <div className="workspace-phone__backdrop" aria-hidden="true" />
+              <div className="workspace-phone__backdrop" aria-hidden="true">
+                <div className="workspace-phone__backdrop-photo" />
+                <div className="workspace-phone__backdrop-veil" />
+              </div>
             ) : null}
             {brandingLogoUrl && (
               <Box
@@ -4259,7 +4280,7 @@ export function Dashboard({
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">{draft.display_name}.</Typography>
+            <Typography component="h2" ref={previewTitleRef}>{draft.display_name}.</Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>
