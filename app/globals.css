@@ -3960,6 +3960,12 @@ a {
 
 .workspace-design-group {
   display: grid;
+  /* `1fr` alone means `minmax(auto, 1fr)`, and auto refuses to shrink below the
+     item's min-content. The type rail's min-content is wider than the panel, so
+     the column grew past the card and the last visible choice hung outside it.
+     `minmax(0, 1fr)` lets the track be narrower than its contents; the rail
+     inside already scrolls. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -4195,12 +4201,26 @@ a {
   font-weight: 500;
 }
 
+/* The poster face is one heavy condensed cut, so its sample is set the way the
+   face is actually used: caps, tight leading, no weight to ask for. */
+.workspace-type-choice--poster b {
+  font-family: var(--font-poster), Impact, Haettenschweiler, "Arial Narrow",
+    sans-serif;
+  font-size: 0.98rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
 /* A rail of choices rather than a four-across grid. The grid set a ceiling on
    the list: a fifth option became a second row and a ninth a third, so adding a
    choice meant making the panel longer. A rail holds any number in one row and
    lets the next card peek at the edge, which is what says "there is more". */
 .workspace-carousel {
   margin-top: 10px;
+  /* A scroll rail's intrinsic width can still be handed up as a minimum, so the
+     carousel itself says it may be narrower than the row it holds. */
+  min-width: 0;
 }
 
 .workspace-carousel__rail {
@@ -4264,7 +4284,7 @@ a {
 
 .workspace-design-split {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
 }
 

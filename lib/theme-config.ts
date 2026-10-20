@@ -8,7 +8,8 @@ export type ThemeFont =
   | "typewriter"
   | "humanist"
   | "slab"
-  | "didone";
+  | "didone"
+  | "poster";
 export type ThemeButtonShape = "soft" | "pill" | "sharp" | "glass" | "outline";
 export type ThemeBackground =
   | "solid"
@@ -128,6 +129,9 @@ export const themeFontOptions: Array<{
   { id: "humanist", name: "Humanist", sample: "Useful things" },
   { id: "slab", name: "Slab", sample: "Useful things" },
   { id: "didone", name: "Didone", sample: "Useful things" },
+  // A poster face: one heavy condensed cut, no light weights to fall back on.
+  // The sample is uppercased by the card's own rule, the way the face is used.
+  { id: "poster", name: "Poster", sample: "Big energy" },
 ];
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -142,6 +146,7 @@ const fonts = new Set<ThemeFont>([
   "humanist",
   "slab",
   "didone",
+  "poster",
 ]);
 const shapes = new Set<ThemeButtonShape>([
   "soft",
@@ -633,6 +638,13 @@ const fontStacks: Record<ThemeFont, { display: string; body: string }> = {
   },
   didone: {
     display: 'Didot, "Bodoni MT", "Playfair Display", Georgia, serif',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  // Self-hosted by next/font (see app/layout.tsx); the fallbacks are the heavy
+  // condensed faces machines already have, so the first paint is not a
+  // sentence-case sans that reflows into a different shape.
+  poster: {
+    display: 'var(--font-poster), Impact, Haettenschweiler, "Arial Narrow", sans-serif',
     body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
   },
 };
