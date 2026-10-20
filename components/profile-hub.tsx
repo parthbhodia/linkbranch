@@ -1309,8 +1309,14 @@ export function ProfileHub({
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {query && index === 0
-                              ? `${totalResults} results`
-                              : `${section.links.length} destinations`}
+                              ? `${totalResults} ${
+                                  totalResults === 1 ? "result" : "results"
+                                }`
+                              : `${section.links.length} ${
+                                  section.links.length === 1
+                                    ? "destination"
+                                    : "destinations"
+                                }`}
                           </Typography>
                         </div>
                         <div className="link-list">
