@@ -111,6 +111,7 @@ import {
   publicProfileUrl,
 } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
+import { curatedThemes, isCuratedThemeActive } from "@/lib/curated-themes";
 import {
   ALIAS_LIMIT,
   aliasErrorMessage,
@@ -274,8 +275,10 @@ const workspaceSections: Array<{
   { id: "profile", label: "Profile", icon: <PersonOutlineRounded /> },
   { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
   { id: "content", label: "Links & referrals", icon: <InsertLinkRounded /> },
-  { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
+  // Appearance sits directly under Links: it is the second thing a creator
+  // opens after adding a link, and Shop & media between them made it a hunt.
   { id: "appearance", label: "Appearance", icon: <ColorLensOutlined /> },
+  { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "analytics", label: "Analytics", icon: <AnalyticsOutlined /> },
   { id: "account", label: "Account", icon: <SettingsOutlined /> },
 ];
@@ -2633,6 +2636,61 @@ export function Dashboard({
                       {draft.template === template.id && <CheckCircleRounded />}
                     </ButtonBase>
                   ))}
+                </div>
+              </div>
+              <div className="workspace-design-group" id="appearance-curated">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Curated themes</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A whole direction in one tap -- colours, texture, type and
+                      spacing. Anything below can still be nudged afterwards.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-curated-grid">
+                  {curatedThemes.map((theme) => {
+                    const selected = isCuratedThemeActive(activeTheme, theme);
+                    return (
+                      <ButtonBase
+                        className={`workspace-curated${
+                          selected ? " is-selected" : ""
+                        }`}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            colors: { ...theme.colors },
+                            background: theme.background,
+                            font: theme.font,
+                            buttonShape: theme.buttonShape,
+                            density: theme.density,
+                          }))
+                        }
+                        aria-label={`Use the ${theme.name} theme`}
+                        title={theme.note}
+                        key={theme.id}
+                      >
+                        <span
+                          className={`workspace-curated__tile workspace-curated__tile--${theme.background}`}
+                          style={
+                            profileThemeStyle({
+                              version: 1,
+                              colors: theme.colors,
+                              font: theme.font,
+                              buttonShape: theme.buttonShape,
+                              background: theme.background,
+                              density: theme.density,
+                            }) as React.CSSProperties
+                          }
+                        >
+                          <b>Aa</b>
+                          <span className="workspace-curated__pill" />
+                          <span className="workspace-curated__line" />
+                        </span>
+                        <small>{theme.name}</small>
+                      </ButtonBase>
+                    );
+                  })}
                 </div>
               </div>
               <div className="workspace-design-group" id="appearance-photo">
