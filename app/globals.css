@@ -1780,11 +1780,15 @@ a {
   mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
 }
 
-/* The photo, drawn slightly larger than the card and blurred lightly rather than
-   heavily -- a big blur stops reading as a photograph and becomes a colour cast.
-   The image is handed down as a custom property rather than set here, because
-   setting it on the wash itself would paint a second, unblurred copy across the
-   whole box.
+/* The photograph, sharp. It used to carry a 14px blur and 0.72 opacity, which
+   turned the picture into a colour cast and made every avatar look like the same
+   avatar.
+
+   The only softness left is the band's own bottom blend -- the mask on
+   .avatar-backdrop, which dissolves the picture into the card surface over its
+   last 48px. Nothing blurs the picture itself: a blurred edge is still an edge,
+   whereas a blend lets the photograph end in the card rather than be cut off by
+   it.
 
    The vertical inset is the drift's slack -- see PHOTO_SLACK in profile-hub. */
 .public-template .avatar-backdrop__photo {
@@ -1796,8 +1800,6 @@ a {
   background-image: var(--avatar-backdrop);
   background-size: cover;
   background-position: center 22%;
-  filter: blur(14px) saturate(1.06);
-  opacity: 0.72;
   will-change: transform;
 }
 
@@ -16106,11 +16108,11 @@ a {
   mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
 }
 
-/* The photograph, with the card's own numbers rather than the ones this used to
-   have. Same insets as .avatar-backdrop__photo (which are the drift's slack --
-   see PHOTO_SLACK in profile-hub), same light blur: the old 34px read as a
-   colour cast rather than a picture, which made every avatar look like the same
-   avatar. Blur and inset are scaled for a 352px phone against a 760px card. */
+/* The photograph, sharp, matching the page. Same insets as
+   .avatar-backdrop__photo (which are the drift's slack -- see PHOTO_SLACK in
+   profile-hub); inset and blend are scaled for a 352px phone against a 760px
+   card. The softness is the frame's bottom blend above, not a blur: a blurred
+   edge is still an edge, a blend lets the picture end in the card. */
 .workspace-phone__backdrop-photo {
   position: absolute;
   top: -14%;
@@ -16120,8 +16122,6 @@ a {
   background-image: var(--avatar-backdrop);
   background-size: cover;
   background-position: center 22%;
-  filter: blur(6px) saturate(1.06);
-  opacity: 0.72;
 }
 
 /* The veil over it, at the strength the page solved for -- and nothing at all
