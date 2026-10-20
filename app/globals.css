@@ -275,62 +275,60 @@ a {
   font: 500 0.75rem "DM Mono", monospace;
 }
 
-/* A link drawn as a full-width card: the picture is the whole card and the
-   title sits on a scrim across its foot.
+/* A link drawn as a print rather than as a banner.
+
+   The photograph is inset on the card's own surface, with its own smaller
+   radius, and the title is printed underneath it. The picture is the point, so
+   it gets most of the card; the title gets a caption strip, not a scrim. That
+   is what stops a photograph with a busy lower half from fighting the words:
+   nothing is ever laid over the image.
 
    Block layout rather than a single-column grid, and that is not a style
    choice. Every template redefines the row's grid columns on a selector deeper
    than a bare .link-card--image can match, so a one-column grid here would lose
    and the title would end up back in a 44px column. Dropping out of grid
-   removes the contest: there are no columns to fight over, and the title is
-   placed against the card instead. */
-.public-template .link-card--image {
+   removes the contest: there are no columns to fight over, and the frame is
+   laid out against the card instead.
+
+   The extra `.link-card` in the frame selectors is specificity, not taste: the
+   template blocks further down the file style `.link-card` at the same depth. */
+.public-template .link-card.link-card--image {
   display: block;
-  min-height: 208px;
-  padding: 0;
+  min-height: 0;
+  padding: 10px 10px 4px;
   overflow: hidden;
   border-color: transparent;
+  border-radius: 24px;
   background: var(--paper);
+  box-shadow: 0 10px 26px rgba(20, 22, 18, 0.1);
 }
 
-/* The custom-theme rule sets the row's height from a variable on a selector too
-   deep to out-match from here, so this feeds that rule a taller value instead
-   of fighting it: it reads --profile-link-height, so raising it here raises the
-   card without needing to win a contest we would only win by uglier selectors. */
+/* The custom-theme rule reads this variable into min-height, and a print is
+   sized by its contents, not by the row height every other link shares. */
+.public-template .link-card.link-card--image,
 .public-template.profile-theme-custom .link-card--image {
-  --profile-link-height: 208px;
+  --profile-link-height: auto;
 }
 
-.public-template .link-card--image:hover,
-.public-template .link-card--image:has(.link-card__hit:focus-visible) {
+.public-template .link-card.link-card--image:hover,
+.public-template .link-card.link-card--image:has(.link-card__hit:focus-visible) {
   border-color: transparent;
   background: var(--paper);
+  box-shadow: 0 16px 34px rgba(20, 22, 18, 0.17);
 }
 
-/* The photograph, full-bleed. Absolutely positioned so it does not take a grid
-   row, and behind the text, which sits over it. */
+/* The photograph, in its own frame. In flow (not absolute) so it sets the
+   card's height, and narrower than the card by the frame's padding. */
 .link-card__backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+  position: relative;
+  inset: auto;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 15px;
   background-size: cover;
-  background-position: center 32%;
-}
-
-/* The scrim, on a child rather than as a second background layer on the same
-   box: the photograph arrives as an inline background-image, and a rule in the
-   stylesheet setting background-image would simply win over it and the card
-   would come out as a plain gradient. */
-.link-card__backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(16, 18, 14, 0.88) 0,
-    rgba(16, 18, 14, 0.55) 40%,
-    rgba(16, 18, 14, 0.06) 74%
-  );
+  background-position: center;
+  z-index: 0;
 }
 
 /* The row's mark has no job in this shape and would sit over the photograph. */
@@ -338,49 +336,69 @@ a {
   display: none;
 }
 
-/* The title block, on the scrim, pinned to the foot of the card. The title is a
-   MUI Typography carrying its own colour, so it has to be named here. The
-   subtitle is a plain element -- see the note in profile-hub -- so this owns it
-   outright, with no !important anywhere. */
+/* The caption strip under the print. The title is centred like a caption, and
+   the heading names its own colour, so both are set here. The subtitle is a
+   plain element -- see the note in profile-hub -- so this owns it outright,
+   with no !important anywhere.
+
+   The side padding is the slot the share dots sit in: it keeps a long title
+   centred without letting it run under them. */
 .public-template .link-card--image .link-card__text {
-  position: absolute;
-  inset: auto 0 0 0;
-  z-index: 1;
-  padding: 18px 20px;
-  color: #fffef8;
+  position: static;
+  inset: auto;
+  padding: 13px 40px 11px;
+  color: inherit;
+  text-align: center;
+}
+
+.public-template .link-card--image .link-card__text > .MuiStack-root {
+  justify-content: center;
 }
 
 .public-template .link-card--image .link-card__text .MuiTypography-h3 {
   color: inherit;
+  font-family: var(--profile-display-font, inherit);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  text-wrap: balance;
 }
 
 .public-template .link-card--image .link-card__subtitle {
-  margin: 3px 0 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: color-mix(in srgb, #fffef8 80%, transparent);
+  margin: 5px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: inherit;
+  opacity: 0.66;
 }
 
+/* The dots sit in the caption strip's right-hand corner, on the card's surface
+   rather than over the picture -- the reference shape for this card. The arrow
+   is the row's mark and has no place in a print. */
 .link-card--image .link-card__trailing {
   position: absolute;
   z-index: 2;
-  top: 14px;
-  right: 14px;
+  top: auto;
+  bottom: 6px;
+  right: 6px;
 }
 
-.link-card--image .link-card__arrow {
-  background: rgba(16, 18, 14, 0.5);
-  color: #fffef8;
+.public-template .link-card--image .link-card__arrow {
+  display: none;
 }
 
 .link-card--image .MuiChip-root {
-  background: rgba(255, 255, 255, 0.24);
-  color: #fffef8;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
 }
 
 .link-card--image .link-card__more {
-  color: #fffef8;
+  color: inherit;
+  opacity: 0.55;
 }
+
 
 .perk-card {
   width: 250px;
