@@ -676,7 +676,11 @@ export function ProfileHub({
   const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
   const showContactForm = applyCustomTheme && customTheme.contactForm === true;
-  const showSearch = customTheme.search !== false;
+  // Off unless the creator turns it on, and even then only on a page long
+  // enough to need it: a search field above five links is furniture that sits
+  // between the visitor and the only thing they came to tap. The count is the
+  // page's own links, not everything that can appear on it.
+  const showSearch = customTheme.search === true && profile.links.length > 5;
   const avatarShape = customTheme.avatarShape;
   const avatarRing = customTheme.avatarRing === true;
   const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);

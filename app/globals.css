@@ -4147,6 +4147,103 @@ a {
   font-size: 0.67rem;
 }
 
+/* The pairings added after the first four. Each mirrors its stack in
+   lib/theme-config so the card shows the face it is selling rather than the
+   panel's own sans. */
+.workspace-type-choice--grotesk b {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.workspace-type-choice--book b {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-weight: 500;
+}
+
+.workspace-type-choice--typewriter b {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, "Courier New", monospace;
+  font-size: 0.67rem;
+}
+
+.workspace-type-choice--humanist b {
+  font-family: Optima, Candara, "Gill Sans", "Segoe UI", sans-serif;
+}
+
+.workspace-type-choice--slab b {
+  font-family: Rockwell, "Roboto Slab", "Courier New", Georgia, serif;
+}
+
+.workspace-type-choice--didone b {
+  font-family: Didot, "Bodoni MT", "Playfair Display", Georgia, serif;
+  font-weight: 500;
+}
+
+/* A rail of choices rather than a four-across grid. The grid set a ceiling on
+   the list: a fifth option became a second row and a ninth a third, so adding a
+   choice meant making the panel longer. A rail holds any number in one row and
+   lets the next card peek at the edge, which is what says "there is more". */
+.workspace-carousel {
+  margin-top: 10px;
+}
+
+.workspace-carousel__rail {
+  padding: 2px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.workspace-carousel__rail::-webkit-scrollbar {
+  display: none;
+}
+
+.workspace-carousel__rail:focus-visible {
+  outline: 2px solid #5c6f2c;
+  outline-offset: 2px;
+  border-radius: 14px;
+}
+
+/* The rail decides where a card ends, not the card itself: a fixed basis keeps
+   every option the same size whether there are four in the list or forty. */
+.workspace-carousel__rail > * {
+  flex: 0 0 clamp(150px, 27%, 208px);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.workspace-carousel__controls {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.workspace-carousel__controls .MuiIconButton-root {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d7d9d0;
+  border-radius: 10px;
+  color: #20221c;
+  background: #fff;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.workspace-carousel__controls .MuiIconButton-root:hover:not(.Mui-disabled),
+.workspace-carousel__controls .MuiIconButton-root:focus-visible {
+  border-color: #5c6f2c;
+  background: #f1f4e6;
+}
+
+.workspace-carousel__controls .MuiIconButton-root.Mui-disabled {
+  opacity: 0.35;
+}
+
 .workspace-design-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4918,6 +5015,48 @@ a {
 .workspace-phone.profile-theme-custom .workspace-phone__body > h3 em {
   color: var(--profile-accent);
   font-family: var(--profile-display-font);
+}
+
+/* The creator's typography controls, on the phone.
+
+   The page has had these since the controls shipped; the preview never did, so
+   choosing Extra Large, Bold or Italic moved the pill in the panel and changed
+   nothing on the screen you were deciding about. That reads as a broken control
+   even though the setting had been saved correctly all along.
+
+   Same three variables and the same three effects as the page, applied to the
+   phone's own base sizes rather than the page's -- the phone is a smaller
+   drawing of the same thing, not a different design. */
+.workspace-phone.profile-theme-custom .workspace-phone__body > h2 {
+  font-size: calc(1.42rem * var(--profile-font-scale, 1));
+  font-weight: var(--profile-font-weight, 800);
+  font-style: var(--profile-font-style, normal);
+}
+
+.workspace-phone.profile-theme-custom .workspace-phone__body > h3 {
+  font-size: calc(2rem * var(--profile-font-scale, 1));
+  font-weight: var(--profile-font-weight, 800);
+  font-style: var(--profile-font-style, normal);
+}
+
+.workspace-phone.profile-theme-custom .workspace-phone__handle {
+  font-size: calc(0.73rem * var(--profile-font-scale, 1)) !important;
+}
+
+.workspace-phone.profile-theme-custom .workspace-phone__bio {
+  font-size: calc(0.75rem * var(--profile-font-scale, 1)) !important;
+}
+
+.workspace-phone.profile-theme-custom .workspace-phone__link b {
+  font-size: calc(0.72rem * var(--profile-font-scale, 1));
+  font-weight: var(--profile-font-weight, 800);
+  font-style: var(--profile-font-style, normal);
+}
+
+.workspace-phone.profile-theme-custom
+  .workspace-phone__section-heading
+  .section-label {
+  font-size: calc(0.48rem * var(--profile-font-scale, 1));
 }
 
 .workspace-phone.profile-theme-custom .workspace-phone__avatar {

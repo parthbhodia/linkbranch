@@ -1,4 +1,14 @@
-export type ThemeFont = "studio" | "editorial" | "rounded" | "mono";
+export type ThemeFont =
+  | "studio"
+  | "editorial"
+  | "rounded"
+  | "mono"
+  | "grotesk"
+  | "book"
+  | "typewriter"
+  | "humanist"
+  | "slab"
+  | "didone";
 export type ThemeButtonShape = "soft" | "pill" | "sharp" | "glass" | "outline";
 export type ThemeBackground =
   | "solid"
@@ -49,8 +59,9 @@ export type ProfileThemeConfig = {
   /** Show the public contact/subscribe form on the profile. */
   contactForm?: boolean;
   /**
-   * Show the search box above the links. Absent means shown, so every page
-   * that predates this setting keeps the box it already had.
+   * Show the search box above the links. Off unless set, and only drawn on a
+   * page with more than five links even then. It used to be absent-means-shown,
+   * which put a search field above every five-link page in the product.
    */
   search?: boolean;
   /** Silhouette of the avatar. Absent means the circle every page started with. */
@@ -99,8 +110,39 @@ export const themeBackgroundOptions: Array<{
   { id: "grain", name: "Grain", note: "Film texture" },
 ];
 
+/** The type pairings a creator can pick from. Order is the order they appear in
+ *  the picker: the four the product shipped with first, then the wider set the
+ *  carousel made room for. */
+export const themeFontOptions: Array<{
+  id: ThemeFont;
+  name: string;
+  sample: string;
+}> = [
+  { id: "studio", name: "Studio", sample: "Useful things" },
+  { id: "editorial", name: "Editorial", sample: "Useful things" },
+  { id: "rounded", name: "Rounded", sample: "Useful things" },
+  { id: "mono", name: "Mono", sample: "USEFUL THINGS" },
+  { id: "grotesk", name: "Grotesk", sample: "Useful things" },
+  { id: "book", name: "Book", sample: "Useful things" },
+  { id: "typewriter", name: "Typewriter", sample: "useful_things" },
+  { id: "humanist", name: "Humanist", sample: "Useful things" },
+  { id: "slab", name: "Slab", sample: "Useful things" },
+  { id: "didone", name: "Didone", sample: "Useful things" },
+];
+
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-const fonts = new Set<ThemeFont>(["studio", "editorial", "rounded", "mono"]);
+const fonts = new Set<ThemeFont>([
+  "studio",
+  "editorial",
+  "rounded",
+  "mono",
+  "grotesk",
+  "book",
+  "typewriter",
+  "humanist",
+  "slab",
+  "didone",
+]);
 const shapes = new Set<ThemeButtonShape>([
   "soft",
   "pill",
@@ -443,7 +485,9 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
     fontWeight: theme.fontWeight ?? "regular",
     fontStyle: theme.fontStyle ?? "normal",
     contactForm: theme.contactForm ?? false,
-    search: theme.search ?? true,
+    // Off unless a creator turns it on: a short page does not need a search
+    // box above the five links it is searching.
+    search: theme.search ?? false,
     avatarRing: theme.avatarRing ?? false,
     avatarBackdrop: theme.avatarBackdrop ?? false,
     logoPath: theme.logoPath ?? null,
@@ -511,9 +555,10 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
       ? (candidate.fontStyle as ThemeFontStyle)
       : "normal",
     contactForm: candidate.contactForm === true,
-    // Not `=== true`: the box shipped before the setting did, so a theme that
-    // predates it means "shown" rather than "hidden".
-    search: candidate.search !== false,
+    // Off unless explicitly on. The box used to be shown by default because it
+    // was drawn unconditionally; that made every five-link page sit under a
+    // search field it had no use for.
+    search: candidate.search === true,
     // Left off entirely unless the creator picks one. A template is allowed to
     // give its own avatar a shape -- soft-studio rounds and tilts it -- and a
     // default of "circle" here would quietly straighten every one of them.
@@ -561,6 +606,33 @@ const fontStacks: Record<ThemeFont, { display: string; body: string }> = {
   },
   mono: {
     display: 'ui-monospace, "SFMono-Regular", Menlo, monospace',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  grotesk: {
+    display: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    body: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  },
+  // Serif on both sides: a reading page rather than a headline over sans copy.
+  book: {
+    display: 'Georgia, "Iowan Old Style", "Times New Roman", serif',
+    body: 'Georgia, "Iowan Old Style", "Times New Roman", serif',
+  },
+  // One monospaced voice throughout, which is a different idea from "mono",
+  // where the title is typed and the body is normal.
+  typewriter: {
+    display: 'ui-monospace, "SFMono-Regular", Menlo, "Courier New", monospace',
+    body: 'ui-monospace, "SFMono-Regular", Menlo, "Courier New", monospace',
+  },
+  humanist: {
+    display: 'Optima, Candara, "Gill Sans", "Segoe UI", sans-serif',
+    body: 'Candara, "Avenir Next", "Segoe UI", sans-serif',
+  },
+  slab: {
+    display: 'Rockwell, "Roboto Slab", "Courier New", Georgia, serif',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  didone: {
+    display: 'Didot, "Bodoni MT", "Playfair Display", Georgia, serif',
     body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
   },
 };
@@ -642,7 +714,9 @@ export function profileThemeStyle(
   theme: ProfileThemeConfig,
   options?: { wallpaperUrl?: string | null },
 ) {
-  const font = fontStacks[theme.font];
+  // A theme written by a newer build can name a pairing this one does not have
+  // yet, which happens during a deploy. Falling back beats rendering nothing.
+  const font = fontStacks[theme.font] ?? fontStacks.studio;
   const scale = { sm: 0.92, md: 1, lg: 1.08, xl: 1.18 }[theme.fontScale ?? "md"];
   const weight = { regular: 400, medium: 500, bold: 700 }[
     theme.fontWeight ?? "regular"

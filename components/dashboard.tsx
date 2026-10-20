@@ -139,6 +139,7 @@ import {
   resolveProfileTheme,
   themeAvatarShapeOptions,
   themeBackgroundOptions,
+  themeFontOptions,
   themeFontScaleOptions,
   themeFontStyleOptions,
   themeFontWeightOptions,
@@ -146,8 +147,9 @@ import {
   themeSocialSizeOptions,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
-import { useAvatarVeil } from "@/components/use-avatar-veil";
+import { ChoiceCarousel } from "@/components/choice-carousel";
 import { useAvatarBand } from "@/components/use-avatar-band";
+import { useAvatarVeil } from "@/components/use-avatar-veil";
 
 export type DashboardProfile = {
   id: string;
@@ -375,17 +377,6 @@ const templateOptions = [
     color: "#0f141c",
     accent: "#b9ff66",
   },
-];
-
-const themeFontOptions: Array<{
-  id: ProfileThemeConfig["font"];
-  name: string;
-  sample: string;
-}> = [
-  { id: "studio", name: "Studio", sample: "Useful things" },
-  { id: "editorial", name: "Editorial", sample: "Useful things" },
-  { id: "rounded", name: "Rounded", sample: "Useful things" },
-  { id: "mono", name: "Mono", sample: "USEFUL THINGS" },
 ];
 
 const themeColorFields: Array<{
@@ -2844,7 +2835,7 @@ export function Dashboard({
                     </Typography>
                   </Box>
                 </div>
-                <div className="workspace-choice-grid workspace-choice-grid--fonts">
+                <ChoiceCarousel label="Type pairing">
                   {themeFontOptions.map((font) => (
                     <ButtonBase
                       className={`workspace-type-choice workspace-type-choice--${font.id} ${
@@ -2860,7 +2851,7 @@ export function Dashboard({
                       <small>{font.name}</small>
                     </ButtonBase>
                   ))}
-                </div>
+                </ChoiceCarousel>
               </div>
 
               <div className="workspace-design-split">
@@ -4036,7 +4027,8 @@ export function Dashboard({
                   <Box>
                     <Typography fontWeight={850}>Search your page</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Show a search box so a visitor can find one link on a busy page.
+                      Shown only on pages with more than five links, where a
+                      visitor has to look for one. Off by default.
                     </Typography>
                   </Box>
                   <Switch
@@ -4325,10 +4317,16 @@ export function Dashboard({
               </div>
             )}
 
-            <div className="workspace-phone__search">
-              <SearchRounded />
-              <span>Search links and offers…</span>
-            </div>
+            {/* Same rule as the page: only when the creator has turned it on
+                and there are more than five links to search. The phone used to
+                draw this box unconditionally, so the preview promised a search
+                that the published page never showed. */}
+            {activeTheme.search === true && activeLinks.length > 5 && (
+              <div className="workspace-phone__search">
+                <SearchRounded />
+                <span>Search links and offers…</span>
+              </div>
+            )}
 
             {highlights.length > 0 && (
               <div className="workspace-phone__offers">
