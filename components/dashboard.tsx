@@ -108,6 +108,7 @@ import {
   DEFAULT_SOCIAL_IMAGE,
   publicProfileAddress,
   publicProfilePath,
+  publicProfileUrl,
 } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
 import {
@@ -4235,10 +4236,23 @@ export function Dashboard({
         aria-label="Live page preview"
       >
         <header className="workspace-preview__topbar">
-          <Chip
-            label={publicProfileAddress(draft.username || "username")}
-            variant="outlined"
-          />
+          {draft.username ? (
+            // The address is the page it names, so the chip is the link. Opened
+            // in a new tab on purpose: this is a check against the live page,
+            // not a navigation away from unsaved edits.
+            <Chip
+              component="a"
+              href={publicProfileUrl(draft.username)}
+              target="_blank"
+              rel="noreferrer"
+              clickable
+              label={publicProfileAddress(draft.username)}
+              variant="outlined"
+              title={`Open ${publicProfileAddress(draft.username)} in a new tab`}
+            />
+          ) : (
+            <Chip label={publicProfileAddress()} variant="outlined" />
+          )}
           <Typography variant="caption">LIVE PREVIEW</Typography>
         </header>
         <div

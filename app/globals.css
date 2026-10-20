@@ -6103,6 +6103,24 @@ a {
   backdrop-filter: blur(14px);
 }
 
+/* The address chip names a page, so the chip itself is the link there. Its
+   own max-width and label ellipsis stay as they were; the hover and focus
+   rings are what say it can be pressed. */
+.workspace-preview__topbar a.MuiChip-root {
+  color: #fff;
+  text-decoration: none;
+}
+
+.workspace-preview__topbar a.MuiChip-root:hover {
+  border-color: rgba(255, 255, 255, 0.62);
+  background: rgba(35, 32, 37, 0.66);
+}
+
+.workspace-preview__topbar a.MuiChip-root:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
 .workspace-preview__topbar .MuiChip-label {
   overflow: hidden;
   text-overflow: ellipsis;
