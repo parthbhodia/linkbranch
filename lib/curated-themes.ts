@@ -18,6 +18,11 @@ export type CuratedTheme = {
   font: ProfileThemeConfig["font"];
   buttonShape: ProfileThemeConfig["buttonShape"];
   density: ProfileThemeConfig["density"];
+  /**
+   * A bundled photograph behind the page, or null for a pure texture look.
+   * These are CC0 files under /public/themes, so no licence can lapse.
+   */
+  wallpaperPath: string | null;
 };
 
 export const curatedThemes: CuratedTheme[] = [
@@ -38,6 +43,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "poster",
     buttonShape: "pill",
     density: "relaxed",
+    wallpaperPath: "/themes/prism-pop.webp",
   },
   {
     id: "midnight-signal",
@@ -56,6 +62,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "grotesk",
     buttonShape: "soft",
     density: "relaxed",
+    wallpaperPath: "/themes/midnight.webp",
   },
   {
     id: "paper-ink",
@@ -74,6 +81,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "editorial",
     buttonShape: "sharp",
     density: "relaxed",
+    wallpaperPath: "/themes/paper-ink.webp",
   },
   {
     id: "cherry-soda",
@@ -92,6 +100,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "rounded",
     buttonShape: "pill",
     density: "relaxed",
+    wallpaperPath: "/themes/cherry-soda.webp",
   },
   {
     id: "moss-studio",
@@ -110,6 +119,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "book",
     buttonShape: "soft",
     density: "relaxed",
+    wallpaperPath: "/themes/moss-studio.webp",
   },
   {
     id: "cobalt-grid",
@@ -128,6 +138,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "grotesk",
     buttonShape: "sharp",
     density: "relaxed",
+    wallpaperPath: "/themes/cobalt-grid.webp",
   },
   {
     id: "lilac-haze",
@@ -146,6 +157,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "didone",
     buttonShape: "pill",
     density: "relaxed",
+    wallpaperPath: "/themes/lilac-haze.webp",
   },
   {
     id: "sunset-flare",
@@ -164,6 +176,7 @@ export const curatedThemes: CuratedTheme[] = [
     font: "poster",
     buttonShape: "pill",
     density: "relaxed",
+    wallpaperPath: "/themes/sunset.webp",
   },
 ];
 
@@ -172,10 +185,11 @@ export function isCuratedThemeActive(
   theme: Pick<
     ProfileThemeConfig,
     "colors" | "background" | "font" | "buttonShape" | "density"
-  >,
+  > & { wallpaperPath?: string | null },
   candidate: CuratedTheme,
 ) {
   return (
+    (theme.wallpaperPath ?? null) === candidate.wallpaperPath &&
     theme.background === candidate.background &&
     theme.font === candidate.font &&
     theme.buttonShape === candidate.buttonShape &&

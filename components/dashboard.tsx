@@ -2664,6 +2664,9 @@ export function Dashboard({
                             font: theme.font,
                             buttonShape: theme.buttonShape,
                             density: theme.density,
+                            // The photograph is part of the look, not a
+                            // leftover upload: picking a theme replaces both.
+                            wallpaperPath: theme.wallpaperPath,
                           }))
                         }
                         aria-label={`Use the ${theme.name} theme`}
@@ -2671,16 +2674,21 @@ export function Dashboard({
                         key={theme.id}
                       >
                         <span
-                          className={`workspace-curated__tile workspace-curated__tile--${theme.background}`}
+                          className={`workspace-curated__tile workspace-curated__tile--${theme.background}${
+                            theme.wallpaperPath ? " workspace-curated__tile--photo" : ""
+                          }`}
                           style={
-                            profileThemeStyle({
-                              version: 1,
-                              colors: theme.colors,
-                              font: theme.font,
-                              buttonShape: theme.buttonShape,
-                              background: theme.background,
-                              density: theme.density,
-                            }) as React.CSSProperties
+                            profileThemeStyle(
+                              {
+                                version: 1,
+                                colors: theme.colors,
+                                font: theme.font,
+                                buttonShape: theme.buttonShape,
+                                background: theme.background,
+                                density: theme.density,
+                              },
+                              { wallpaperUrl: theme.wallpaperPath },
+                            ) as React.CSSProperties
                           }
                         >
                           <b>Aa</b>
@@ -3114,10 +3122,18 @@ export function Dashboard({
                               .colors,
                           };
                           const colors = blockPalettes[background.id];
+                          const curatedPhoto = curatedThemes.some(
+                            (theme) =>
+                              theme.wallpaperPath !== null &&
+                              theme.wallpaperPath === current.wallpaperPath,
+                          );
                           return {
                             ...current,
                             background: background.id,
                             ...(colors ? { colors: { ...colors } } : {}),
+                            // Flat texture means the photo look is over --
+                            // but only the bundled one, never their upload.
+                            ...(curatedPhoto ? { wallpaperPath: null } : {}),
                           };
                         })
                       }

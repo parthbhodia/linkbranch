@@ -6206,6 +6206,19 @@ a {
   );
 }
 
+/* Photographic looks: the photograph carries the card, washed in the theme's
+   own colour just enough for the sample type to stay readable. */
+.workspace-curated__tile--photo {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-bg) 58%, transparent),
+      color-mix(in srgb, var(--profile-bg) 78%, transparent)
+    ),
+    var(--profile-wallpaper);
+  background-size: cover, cover;
+  background-position: center, center;
+}
+
 .workspace-template-card {
   min-height: 112px;
   padding: 12px;
