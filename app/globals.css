@@ -4838,22 +4838,36 @@ a {
   color: var(--profile-text);
   background: var(--profile-bg);
   font-family: var(--profile-body-font);
+  /* The veil is solved against the colour the text sits on, and for a creator
+     theme that is the surface -- the same colour the page's veil mixes from.
+     Without this the phone fell back to the light default and veiled a dark
+     theme with near-white. */
+  --preview-card-surface: var(--profile-surface);
 }
 
+/* The body is the card, so it paints the card's surface -- the same 94% the
+   page's .creator-card uses -- rather than being the page background itself.
+   It used to paint var(--profile-bg), which put the wallpaper *inside* the
+   card: the preview read as a green wash while the published page was a near
+   black card with the wallpaper only around it. */
 .workspace-phone.profile-theme-custom .workspace-phone__body {
   padding: 32px 18px 28px;
   color: var(--profile-text);
-  background-color: var(--profile-bg);
+  background-color: color-mix(
+    in srgb,
+    var(--profile-surface) 94%,
+    transparent
+  );
 }
 
-.workspace-phone.profile-theme-background--grid .workspace-phone__body {
+.workspace-phone.profile-theme-background--grid {
   background-image:
     linear-gradient(color-mix(in srgb, var(--profile-accent) 12%, transparent) 1px, transparent 1px),
     linear-gradient(90deg, color-mix(in srgb, var(--profile-accent) 12%, transparent) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
-.workspace-phone.profile-theme-background--dots .workspace-phone__body {
+.workspace-phone.profile-theme-background--dots {
   background-image: radial-gradient(
     color-mix(in srgb, var(--profile-accent) 35%, transparent) 1px,
     transparent 1px
@@ -4861,7 +4875,7 @@ a {
   background-size: 12px 12px;
 }
 
-.workspace-phone.profile-theme-background--bloom .workspace-phone__body {
+.workspace-phone.profile-theme-background--bloom {
   background-image: radial-gradient(
     circle at 50% 0,
     color-mix(in srgb, var(--profile-accent) 34%, transparent),
@@ -4869,13 +4883,13 @@ a {
   );
 }
 
-.workspace-phone.profile-theme-background--mesh .workspace-phone__body {
+.workspace-phone.profile-theme-background--mesh {
   background-image:
     radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--profile-accent) 28%, transparent), transparent 46%),
     radial-gradient(circle at 84% 10%, color-mix(in srgb, var(--profile-button) 30%, transparent), transparent 40%);
 }
 
-.workspace-phone.profile-theme-background--stripes .workspace-phone__body {
+.workspace-phone.profile-theme-background--stripes {
   background-image: repeating-linear-gradient(
     -28deg,
     color-mix(in srgb, var(--profile-accent) 12%, transparent) 0 8px,
@@ -4883,7 +4897,7 @@ a {
   );
 }
 
-.workspace-phone.profile-theme-background--paper .workspace-phone__body {
+.workspace-phone.profile-theme-background--paper {
   background-image: radial-gradient(
     color-mix(in srgb, var(--profile-text) 9%, transparent) 0.55px,
     transparent 0.65px
@@ -4891,13 +4905,13 @@ a {
   background-size: 3px 3px;
 }
 
-.workspace-phone.profile-theme-background--aurora .workspace-phone__body {
+.workspace-phone.profile-theme-background--aurora {
   background-image:
     radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--profile-accent) 38%, transparent), transparent 42%),
     radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--profile-button) 32%, transparent), transparent 36%);
 }
 
-.workspace-phone.profile-theme-background--grain .workspace-phone__body {
+.workspace-phone.profile-theme-background--grain {
   background-image: repeating-radial-gradient(
     circle at 0 0,
     color-mix(in srgb, var(--profile-text) 10%, transparent) 0 1px,
@@ -4906,7 +4920,7 @@ a {
   background-size: 5px 5px;
 }
 
-.workspace-phone.profile-theme-background--prism .workspace-phone__body {
+.workspace-phone.profile-theme-background--prism {
   background-color: color-mix(in srgb, var(--profile-bg) 55%, #1a1630);
   background-image:
     radial-gradient(
@@ -4931,7 +4945,7 @@ a {
     );
 }
 
-.workspace-phone.profile-theme-background--graph .workspace-phone__body {
+.workspace-phone.profile-theme-background--graph {
   background-color: color-mix(in srgb, var(--profile-bg) 88%, #d9f36a);
   background-image:
     linear-gradient(
@@ -4946,7 +4960,7 @@ a {
   background-size: 12px 12px;
 }
 
-.workspace-phone.profile-theme-background--flare .workspace-phone__body {
+.workspace-phone.profile-theme-background--flare {
   background-color: color-mix(in srgb, var(--profile-bg) 70%, #5f6b55);
   background-image: radial-gradient(
     circle at 50% 42%,
@@ -4957,22 +4971,22 @@ a {
   );
 }
 
-.workspace-phone.profile-theme-background--ink .workspace-phone__body {
+.workspace-phone.profile-theme-background--ink {
   background-color: #1c2330;
   background-image: none;
 }
 
-.workspace-phone.profile-theme-background--lagoon .workspace-phone__body {
+.workspace-phone.profile-theme-background--lagoon {
   background-color: #00a8a8;
   background-image: none;
 }
 
-.workspace-phone.profile-theme-background--lilac .workspace-phone__body {
+.workspace-phone.profile-theme-background--lilac {
   background-color: #efc8ef;
   background-image: none;
 }
 
-.workspace-phone.profile-theme-has-wallpaper .workspace-phone__body {
+.workspace-phone.profile-theme-has-wallpaper {
   background-image:
     linear-gradient(
       color-mix(in srgb, var(--profile-bg) 58%, transparent),
@@ -6171,6 +6185,23 @@ a {
 
 .workspace-phone__link svg {
   font-size: 0.95rem;
+}
+
+/* The page's eyebrow: the location, above the display name. */
+.workspace-phone__eyebrow {
+  margin-top: 12px !important;
+  font-size: 0.58rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+/* The page's closed-answer affordance on a FAQ card. */
+.workspace-phone__link-plus {
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1;
 }
 
 /* The preview draws every section the public page draws, so it needs the

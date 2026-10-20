@@ -4296,15 +4296,18 @@ export function Dashboard({
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
+            {/* Same place the page puts it: the location is the eyebrow above
+                the name, not a line under the bio. The preview used to draw it
+                below the bio, which is not where a visitor reads it. */}
+            {draft.show_location && draft.location && (
+              <Typography className="workspace-phone__eyebrow">
+                {draft.location}
+              </Typography>
+            )}
             <Typography component="h2" ref={previewTitleRef}>{draft.display_name}.</Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>
-            )}
-            {draft.show_location && draft.location && (
-              <Typography className="workspace-phone__location">
-                {draft.location}
-              </Typography>
             )}
 
             {connectedSocials.length > 0 && (
@@ -4434,7 +4437,11 @@ export function Dashboard({
                       )}
                       <span>
                         <b>{item.title}</b>
-                        {item.subtitle && <small>{item.subtitle}</small>}
+                        {/* The page fills an empty subtitle with this line, so
+                            a link that never had one still shows it there. The
+                            preview was showing nothing, which read as a
+                            difference between the two. */}
+                        <small>{item.subtitle || "Shared from my Cueful"}</small>
                       </span>
                       <ArrowOutwardRounded />
                     </div>
@@ -4469,9 +4476,13 @@ export function Dashboard({
                     <div className="workspace-phone__link" key={item.id}>
                       <span>
                         <b>{item.question}</b>
-                        <small>{item.answer}</small>
                       </span>
-                      <ChevronRightRounded />
+                      {/* The page starts every answer collapsed behind a "+",
+                          so the preview shows the same closed card rather than
+                          an answer a visitor would not see until they tap. */}
+                      <span className="workspace-phone__link-plus" aria-hidden="true">
+                        +
+                      </span>
                     </div>
                   ))}
                 </div>
