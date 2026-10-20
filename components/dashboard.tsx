@@ -615,22 +615,50 @@ export function Dashboard({
     window.scrollTo({ top: 0 });
   }, [section, mobileMode]);
 
-  const activeLinks = useMemo(
-    () => links.filter((item) => item.is_active),
-    [links],
-  );
   const activeReferrals = useMemo(
     () => referrals.filter((item) => item.is_active),
     [referrals],
   );
 
-  // The preview has to answer "did that save?", so everything it draws is
-  // filtered the way the public page filters it.
-  // The same grouping call the public page makes, so a heading that saved shows
-  // up here under its own name rather than folded into one flat run.
+  // Links are edited in their own draft, so the phone draws that draft rather
+  // than the last saved rows. Every other control moves the preview as you
+  // type; links waiting for Update made the preview disagree with the editor
+  // for as long as the edit took. Subtitle and order are the only fields the
+  // draft does not carry, so they come from the saved row with the same id.
+  const previewLinks = useMemo<DashboardLink[]>(() => {
+    const savedById = new Map(links.map((item) => [item.id, item]));
+    return linkDraft.map((item, index) => {
+      const saved = savedById.get(item.id);
+      return {
+        id: item.id,
+        title: item.title,
+        subtitle: saved?.subtitle ?? "",
+        url: item.url,
+        position: index,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name ?? "",
+        card_style: item.card_style ?? "row",
+      };
+    });
+  }, [linkDraft, links]);
+
+  const previewActiveLinks = useMemo(
+    () => previewLinks.filter((item) => item.is_active),
+    [previewLinks],
+  );
+
+  // The preview filters the way the public page filters it, and groups with the
+  // same call the public page makes, so a heading shows up here under its own
+  // name rather than folded into one flat run.
   const previewLinkSections = useMemo(
-    () => groupLinksBySection(activeLinks, (item) => item.group_name ?? ""),
-    [activeLinks],
+    () =>
+      groupLinksBySection(
+        previewActiveLinks,
+        (item) => item.group_name ?? "",
+      ),
+    [previewActiveLinks],
   );
   const activeFaqs = useMemo(
     () => faqs.filter((item) => item.is_active),
@@ -4338,7 +4366,7 @@ export function Dashboard({
                 and there are more than five links to search. The phone used to
                 draw this box unconditionally, so the preview promised a search
                 that the published page never showed. */}
-            {activeTheme.search === true && activeLinks.length > 5 && (
+            {activeTheme.search === true && previewActiveLinks.length > 5 && (
               <div className="workspace-phone__search">
                 <SearchRounded />
                 <span>Search links and offers…</span>
@@ -4463,7 +4491,7 @@ export function Dashboard({
                 </div>
               </div>
             ))}
-            {activeLinks.length === 0 && (
+            {previewActiveLinks.length === 0 && (
               <>
                 <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
                   <Typography className="section-label">MY LINKS</Typography>
