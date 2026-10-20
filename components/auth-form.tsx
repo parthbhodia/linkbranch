@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
+import { hasCompletedOnboarding } from "@/lib/onboarding-status";
 import { parseStarterPurpose } from "@/lib/starter-purposes";
 import {
   TEMPLATE_PICKER,
@@ -136,7 +137,10 @@ export function AuthForm() {
         router.push("/auth/check-email?type=confirmation");
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) {
         if (error.code === "email_not_confirmed") {
           stashPendingEmail(email);
@@ -152,15 +156,12 @@ export function AuthForm() {
           // Claim, import and starter-purpose all named somewhere specific.
           router.push(nextPath);
         } else {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed")
-            .single();
+          const onboardingCompleted = await hasCompletedOnboarding(
+            supabase,
+            data.user?.id,
+          );
           router.push(
-            postAuthDestination({
-              requested: nextPath,
-              onboardingCompleted: Boolean(profile?.onboarding_completed),
-            }),
+            postAuthDestination({ requested: nextPath, onboardingCompleted }),
           );
         }
         router.refresh();

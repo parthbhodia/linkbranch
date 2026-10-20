@@ -61,6 +61,14 @@ export default async function OnboardingPage({
     redirect("/auth?error=profile_missing");
   }
 
+  // A finished account belongs in the dashboard. The wizard ends by rewriting
+  // the whole link list, so someone who wandered back in through the template
+  // picker -- or through an old link to setup -- would be rebuilding a page
+  // that is already live. Changing a template is a dashboard control.
+  if (profile.onboarding_completed) {
+    redirect("/dashboard");
+  }
+
   const initialData: OnboardingInitialData = {
     profile,
     links: links ?? [],
