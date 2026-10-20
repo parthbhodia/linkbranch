@@ -272,12 +272,13 @@ const workspaceSections: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
+  // Page-building first: who you are → what you link → how it looks.
+  // People / shop / analytics sit after that so they stop interrupting the
+  // edit loop.
   { id: "profile", label: "Profile", icon: <PersonOutlineRounded /> },
-  { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
   { id: "content", label: "Links & referrals", icon: <InsertLinkRounded /> },
-  // Appearance sits directly under Links: it is the second thing a creator
-  // opens after adding a link, and Shop & media between them made it a hunt.
   { id: "appearance", label: "Appearance", icon: <ColorLensOutlined /> },
+  { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
   { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "analytics", label: "Analytics", icon: <AnalyticsOutlined /> },
   { id: "account", label: "Account", icon: <SettingsOutlined /> },
@@ -1111,14 +1112,42 @@ export function Dashboard({
     setSharePromptOpen(false);
   }
 
-  async function saveLinks() {
+  const linksDirty = useMemo(() => {
+    const shape = (
+      items: Array<{
+        id: number;
+        title: string;
+        url: string;
+        is_active: boolean;
+        is_featured: boolean;
+        thumbnail_path: string | null;
+        group_name?: string | null;
+        card_style?: string | null;
+      }>,
+    ) =>
+      JSON.stringify(
+        items.map((item) => [
+          item.id,
+          item.title,
+          item.url,
+          item.is_active,
+          item.is_featured,
+          item.thumbnail_path,
+          item.group_name ?? "",
+          item.card_style === "image" ? "image" : "row",
+        ]),
+      );
+    return shape(linkDraft) !== shape(links);
+  }, [linkDraft, links]);
+
+  async function saveLinks(options?: { quiet?: boolean }): Promise<boolean> {
     const cleaned = linkDraft
       .map((item) => ({ ...item, title: item.title.trim() }))
       .filter((item) => item.title || item.url.trim());
 
     if (cleaned.some((item) => !item.title)) {
       setNotice({ severity: "error", message: "Give every link a title." });
-      return;
+      return false;
     }
 
     const normalized = cleaned.map((item) => ({
@@ -1127,7 +1156,7 @@ export function Dashboard({
     }));
     if (normalized.some((item) => !item.url)) {
       setNotice({ severity: "error", message: "Enter a valid URL for every link." });
-      return;
+      return false;
     }
 
     setSavingLinks(true);
@@ -1145,10 +1174,13 @@ export function Dashboard({
       if (error) {
         setSavingLinks(false);
         setNotice({ severity: "error", message: error.message });
-        return;
+        return false;
       }
     }
 
+    // New rows get their real id back, so the draft matches the saved rows and
+    // a second save updates them instead of inserting them again.
+    const assignedIds = new Map<number, number>();
     for (const [index, item] of normalized.entries()) {
       const row = {
         title: item.title,
@@ -1160,14 +1192,36 @@ export function Dashboard({
         group_name: item.group_name ?? "",
         card_style: item.card_style === "image" ? "image" : "row",
       };
-      const { error } = existing.has(item.id)
-        ? await supabase.from("links").update(row).eq("id", item.id)
-        : await supabase.from("links").insert({ ...row, user_id: profile.id });
-      if (error) {
-        setSavingLinks(false);
-        setNotice({ severity: "error", message: error.message });
-        return;
+      if (existing.has(item.id)) {
+        const { error } = await supabase.from("links").update(row).eq("id", item.id);
+        if (error) {
+          setSavingLinks(false);
+          setNotice({ severity: "error", message: error.message });
+          return false;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from("links")
+          .insert({ ...row, user_id: profile.id })
+          .select("id")
+          .single();
+        if (error) {
+          setSavingLinks(false);
+          setNotice({ severity: "error", message: error.message });
+          return false;
+        }
+        assignedIds.set(item.id, data.id);
       }
+    }
+
+    if (assignedIds.size) {
+      setLinkDraft((current) =>
+        current.map((item) =>
+          assignedIds.has(item.id)
+            ? { ...item, id: assignedIds.get(item.id)! }
+            : item,
+        ),
+      );
     }
 
     // Safe to sweep only now that the new paths are the ones on record.
@@ -1178,8 +1232,11 @@ export function Dashboard({
     }
 
     setSavingLinks(false);
-    setNotice({ severity: "success", message: "Your links have been updated." });
-    router.refresh();
+    if (!options?.quiet) {
+      setNotice({ severity: "success", message: "Your links have been updated." });
+      router.refresh();
+    }
+    return true;
   }
 
   async function saveReferrals() {
@@ -1257,6 +1314,9 @@ export function Dashboard({
       setNotice({ severity: "error", message: canonicalError });
       return;
     }
+    // Update is the button people press after any edit, so it must not report
+    // success while link edits (sections, card style, new rows) sit unsaved.
+    if (linksDirty && !(await saveLinks({ quiet: true }))) return;
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase
@@ -1797,6 +1857,8 @@ export function Dashboard({
   // the appearance panel, so the panel it scrolls is already the one on screen.
   function jumpToAppearance(id: AppearanceJumpId) {
     setAppearanceJump(id);
+    const target = document.getElementById(id);
+    if (target instanceof HTMLDetailsElement) target.open = true;
     window.setTimeout(() => jumpToGroup(id), 40);
   }
 
@@ -2474,7 +2536,7 @@ export function Dashboard({
                 <Button
                   variant="contained"
                   disabled={savingLinks}
-                  onClick={saveLinks}
+                  onClick={() => saveLinks()}
                   startIcon={<InsertLinkRounded />}
                 >
                   {savingLinks ? "Saving…" : "Save links"}
@@ -2850,77 +2912,6 @@ export function Dashboard({
                 </div>
               </div>
 
-              <div className="workspace-design-group" id="appearance-colour">
-                <div className="workspace-design-heading">
-                  <Box>
-                    <Typography variant="h3">Color direction</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Curated combinations with accessible text contrast.
-                    </Typography>
-                  </Box>
-                </div>
-                <div className="workspace-palette-grid">
-                  {themePalettes.map((palette) => {
-                    const selected =
-                      palette.colors.background === activeTheme.colors.background &&
-                      palette.colors.accent === activeTheme.colors.accent &&
-                      palette.colors.button === activeTheme.colors.button;
-                    return (
-                      <ButtonBase
-                        className={`workspace-palette${selected ? " is-selected" : ""}`}
-                        onClick={() =>
-                          updateTheme((current) => ({
-                            ...current,
-                            colors: { ...palette.colors },
-                          }))
-                        }
-                        aria-label={`Use ${palette.name} colors`}
-                        key={palette.id}
-                      >
-                        <span className="workspace-palette__swatches">
-                          <i style={{ background: palette.colors.background }} />
-                          <i style={{ background: palette.colors.surface }} />
-                          <i style={{ background: palette.colors.accent }} />
-                          <i style={{ background: palette.colors.button }} />
-                        </span>
-                        <span>
-                          <b>{palette.name}</b>
-                          <small>{palette.note}</small>
-                        </span>
-                      </ButtonBase>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <details className="workspace-color-details">
-                <summary>Fine-tune individual colors</summary>
-                <div className="workspace-color-grid">
-                  {themeColorFields.map((field) => (
-                    <label className="workspace-color-control" key={field.key}>
-                      <span>{field.label}</span>
-                      <span>
-                        <input
-                          type="color"
-                          value={activeTheme.colors[field.key]}
-                          onChange={(event) =>
-                            updateTheme((current) => ({
-                              ...current,
-                              colors: {
-                                ...current.colors,
-                                [field.key]: event.target.value,
-                              },
-                            }))
-                          }
-                          aria-label={`${field.label} color`}
-                        />
-                        <code>{activeTheme.colors[field.key]}</code>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
               <div className="workspace-design-group" id="appearance-type">
                 <div className="workspace-design-heading">
                   <Box>
@@ -3263,6 +3254,79 @@ export function Dashboard({
                   </Box>
                 </div>
               </div>
+
+              <details className="workspace-advanced" id="appearance-colour">
+                <summary>
+                  <span>
+                    <b>Advanced: tune colors</b>
+                    <small>
+                      Optional. Themes above already set a full palette.
+                    </small>
+                  </span>
+                </summary>
+              <div className="workspace-design-group">
+                <div className="workspace-palette-grid">
+                  {themePalettes.map((palette) => {
+                    const selected =
+                      palette.colors.background === activeTheme.colors.background &&
+                      palette.colors.accent === activeTheme.colors.accent &&
+                      palette.colors.button === activeTheme.colors.button;
+                    return (
+                      <ButtonBase
+                        className={`workspace-palette${selected ? " is-selected" : ""}`}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            colors: { ...palette.colors },
+                          }))
+                        }
+                        aria-label={`Use ${palette.name} colors`}
+                        key={palette.id}
+                      >
+                        <span className="workspace-palette__swatches">
+                          <i style={{ background: palette.colors.background }} />
+                          <i style={{ background: palette.colors.surface }} />
+                          <i style={{ background: palette.colors.accent }} />
+                          <i style={{ background: palette.colors.button }} />
+                        </span>
+                        <span>
+                          <b>{palette.name}</b>
+                          <small>{palette.note}</small>
+                        </span>
+                      </ButtonBase>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <details className="workspace-color-details">
+                <summary>Fine-tune individual colors</summary>
+                <div className="workspace-color-grid">
+                  {themeColorFields.map((field) => (
+                    <label className="workspace-color-control" key={field.key}>
+                      <span>{field.label}</span>
+                      <span>
+                        <input
+                          type="color"
+                          value={activeTheme.colors[field.key]}
+                          onChange={(event) =>
+                            updateTheme((current) => ({
+                              ...current,
+                              colors: {
+                                ...current.colors,
+                                [field.key]: event.target.value,
+                              },
+                            }))
+                          }
+                          aria-label={`${field.label} color`}
+                        />
+                        <code>{activeTheme.colors[field.key]}</code>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+              </details>
 
               <Alert severity="info" variant="outlined">
                 Every appearance control is included. Saving changes updates the
@@ -4542,7 +4606,14 @@ export function Dashboard({
                 </div>
                 <div className="workspace-phone__links">
                   {group.links.slice(0, 4).map((item) => (
-                    <div className="workspace-phone__link" key={item.id}>
+                    <div
+                      className={`workspace-phone__link${
+                        item.card_style === "image" && item.thumbnail_path
+                          ? " workspace-phone__link--image"
+                          : ""
+                      }`}
+                      key={item.id}
+                    >
                       {item.thumbnail_path && (
                         <Box
                           component="img"

@@ -57,9 +57,6 @@ export function AuthForm() {
         ? `/onboarding?purpose=${encodeURIComponent(starterPurpose)}`
         : "/templates";
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [displayName, setDisplayName] = useState(
-    searchParams.get("display_name")?.trim() ?? "",
-  );
   const [username, setUsername] = useState(
     searchParams.get("username")?.trim().toLowerCase() ?? "",
   );
@@ -105,13 +102,15 @@ export function AuthForm() {
         return;
       }
 
+      // Display name is set in onboarding / the editor — keep signup to
+      // username + credentials. handle_new_user falls back to the email
+      // local-part until they pick a name.
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
           data: {
-            full_name: displayName.trim(),
             username: cleanUsername,
           },
         },
@@ -239,27 +238,17 @@ export function AuthForm() {
 
           <Stack component="form" spacing={2.25} sx={{ mt: 3 }} onSubmit={submit}>
             {mode === "signup" && (
-              <>
-                <TextField
-                  label="Display name"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  required
-                  autoComplete="name"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Username"
-                  value={username}
-                  onChange={(event) =>
-                    setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
-                  }
-                  required
-                  helperText={`Your public address will be ${publicProfileAddress(username || "username")}`}
-                  autoComplete="username"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </>
+              <TextField
+                label="Username"
+                value={username}
+                onChange={(event) =>
+                  setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
+                }
+                required
+                helperText={`Your public address will be ${publicProfileAddress(username || "username")}`}
+                autoComplete="username"
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
             )}
             <TextField
               label="Email"

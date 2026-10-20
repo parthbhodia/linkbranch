@@ -2254,13 +2254,13 @@ a {
   justify-content: center;
 }
 
-.public-template--after-dark.app-shell {
+.public-template--after-dark:not(.profile-theme-custom).app-shell {
   background:
     radial-gradient(circle at 50% 0, rgba(185, 255, 102, 0.16), transparent 28rem),
     #0f110d;
 }
 
-.public-template--after-dark .creator-card {
+.public-template--after-dark:not(.profile-theme-custom) .creator-card {
   border-color: #353b2e;
   background: #151712;
   box-shadow: 0 32px 100px rgba(0, 0, 0, 0.52);
@@ -2271,15 +2271,19 @@ a {
   background: linear-gradient(145deg, #b9ff66 0 52%, #eefed8 53% 100%);
 }
 
-.public-template--after-dark .social-rail .MuiIconButton-root,
-.public-template--after-dark .search-field .MuiOutlinedInput-root,
-.public-template--after-dark .link-card {
+.public-template--after-dark:not(.profile-theme-custom)
+  .social-rail
+  .MuiIconButton-root,
+.public-template--after-dark:not(.profile-theme-custom)
+  .search-field
+  .MuiOutlinedInput-root,
+.public-template--after-dark:not(.profile-theme-custom) .link-card {
   color: #eff8e6;
   border-color: #3d4437;
   background: #22251d;
 }
 
-.public-template--after-dark .link-card__arrow {
+.public-template--after-dark:not(.profile-theme-custom) .link-card__arrow {
   color: #10120e;
   border-color: transparent;
   background: #b9ff66;
@@ -2308,11 +2312,20 @@ a {
   border-color: #353b2e;
 }
 
-.public-template--after-dark .profile-handle,
-.public-template--after-dark .profile-bio,
-.public-template--after-dark .section-heading .MuiTypography-caption,
-.public-template--after-dark .link-card .MuiTypography-body2,
-.public-template--after-dark .hub-footer .MuiTypography-root {
+/* Skip when a custom palette is on the same page -- Prism Pop (and every
+   other light look) sits on after-dark as the layout, and these greys were
+   painting link titles and captions as pale lime on lilac. */
+.public-template--after-dark:not(.profile-theme-custom) .profile-handle,
+.public-template--after-dark:not(.profile-theme-custom) .profile-bio,
+.public-template--after-dark:not(.profile-theme-custom)
+  .section-heading
+  .MuiTypography-caption,
+.public-template--after-dark:not(.profile-theme-custom)
+  .link-card
+  .MuiTypography-body2,
+.public-template--after-dark:not(.profile-theme-custom)
+  .hub-footer
+  .MuiTypography-root {
   color: #bdc8b3 !important;
 }
 
@@ -4070,6 +4083,43 @@ a {
   border-bottom: 1px solid #e1e2db;
 }
 
+.workspace-advanced {
+  border: 1px solid #dedfd8;
+  border-radius: 14px;
+  background: #fbfbf8;
+}
+
+.workspace-advanced > summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.workspace-advanced > summary > span {
+  display: inline-grid;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.workspace-advanced > summary b {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.workspace-advanced > summary small {
+  color: #666a60;
+  font-size: 0.72rem;
+}
+
+.workspace-advanced[open] > summary {
+  border-bottom: 1px solid #e1e2db;
+}
+
+.workspace-advanced > .workspace-design-group,
+.workspace-advanced > .workspace-color-details {
+  margin: 12px;
+}
+
 .workspace-color-grid {
   padding: 12px;
   display: grid;
@@ -4692,11 +4742,16 @@ a {
   background-image: none;
 }
 
+/* Wallpaper wins over the procedural texture (prism/grid/…) and over the
+   fixed-template shell. Re-assert the theme background colour so a darkened
+   prism mix cannot sit under the photo and mute it. Wash is light enough that
+   the photograph still reads as the look. */
 .public-template.profile-theme-has-wallpaper.app-shell {
+  background-color: var(--profile-bg);
   background-image:
     linear-gradient(
-      color-mix(in srgb, var(--profile-bg) 62%, transparent),
-      color-mix(in srgb, var(--profile-bg) 78%, transparent)
+      color-mix(in srgb, var(--profile-bg) 38%, transparent),
+      color-mix(in srgb, var(--profile-bg) 55%, transparent)
     ),
     var(--profile-wallpaper);
   background-size: cover, cover;
@@ -4726,8 +4781,10 @@ a {
 
 .public-template.profile-theme-custom .profile-copy h1,
 .public-template.profile-theme-custom .profile-headline,
-.public-template.profile-theme-custom .link-card h3 {
-  color: var(--profile-text);
+.public-template.profile-theme-custom .link-card h3,
+.public-template.profile-theme-custom .link-card .MuiTypography-h3,
+.public-template.profile-theme-custom .section-heading .section-label {
+  color: var(--profile-text) !important;
   font-family: var(--profile-display-font);
 }
 
@@ -4787,7 +4844,7 @@ a {
 }
 
 .public-template.profile-theme-custom .headline-accent {
-  color: var(--profile-accent);
+  color: var(--profile-accent) !important;
   font-family: var(--profile-display-font);
 }
 
@@ -5046,14 +5103,16 @@ a {
 }
 
 .workspace-phone.profile-theme-has-wallpaper {
+  background-color: var(--profile-bg);
   background-image:
     linear-gradient(
-      color-mix(in srgb, var(--profile-bg) 58%, transparent),
-      color-mix(in srgb, var(--profile-bg) 76%, transparent)
+      color-mix(in srgb, var(--profile-bg) 38%, transparent),
+      color-mix(in srgb, var(--profile-bg) 55%, transparent)
     ),
     var(--profile-wallpaper);
   background-size: cover, cover;
   background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 
 .workspace-phone__brand-logo {
@@ -6535,6 +6594,24 @@ a {
   object-fit: cover;
 }
 
+/* Mirrors the public page's print-style card: photo on top, caption below. */
+.workspace-phone__link--image {
+  flex-wrap: wrap;
+}
+
+.workspace-phone__link--image .workspace-phone__link-image {
+  width: 100%;
+  height: auto;
+  flex: 1 0 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+}
+
+.workspace-phone__link--image > span {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .workspace-phone__offers {
   margin-top: 24px;
 }
@@ -6573,7 +6650,7 @@ a {
   font-weight: 900;
 }
 
-.workspace-phone--after-dark {
+.workspace-phone--after-dark:not(.profile-theme-custom) {
   color: #f4f4ef;
   border-color: #252720;
   background: #12130f;
@@ -6587,7 +6664,7 @@ a {
     linear-gradient(140deg, #353b25, #11130f);
 }
 
-.workspace-phone--after-dark .workspace-phone__body {
+.workspace-phone--after-dark:not(.profile-theme-custom) .workspace-phone__body {
   background: #12130f;
 }
 
@@ -6606,7 +6683,7 @@ a {
   color: #bfc3b3;
 }
 
-.workspace-phone--after-dark .workspace-phone__link {
+.workspace-phone--after-dark:not(.profile-theme-custom) .workspace-phone__link {
   color: #f3f5ec;
   border-color: #42463a;
   background: #20221c;
@@ -8090,21 +8167,25 @@ a {
   color: #11130f;
 }
 
-.public-template--after-dark .profile-copy h1,
-.public-template--after-dark .profile-headline,
-.public-template--after-dark .eyebrow,
-.public-template--after-dark .profile-tags li,
-.public-template--after-dark .section-heading .section-label,
-.public-template--after-dark .link-card .MuiTypography-h3,
-.public-template--after-dark .profile-handle {
+.public-template--after-dark:not(.profile-theme-custom) .profile-copy h1,
+.public-template--after-dark:not(.profile-theme-custom) .profile-headline,
+.public-template--after-dark:not(.profile-theme-custom) .eyebrow,
+.public-template--after-dark:not(.profile-theme-custom) .profile-tags li,
+.public-template--after-dark:not(.profile-theme-custom)
+  .section-heading
+  .section-label,
+.public-template--after-dark:not(.profile-theme-custom)
+  .link-card
+  .MuiTypography-h3,
+.public-template--after-dark:not(.profile-theme-custom) .profile-handle {
   color: #f4ffe4 !important;
 }
 
-.public-template--after-dark .headline-accent {
+.public-template--after-dark:not(.profile-theme-custom) .headline-accent {
   color: #b9ff66 !important;
 }
 
-.public-template--after-dark .profile-bio {
+.public-template--after-dark:not(.profile-theme-custom) .profile-bio {
   color: #bdc8b3 !important;
 }
 

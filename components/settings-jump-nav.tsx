@@ -157,13 +157,15 @@ export function SettingsJumpNav({
  */
 export const appearanceJumpTargets = [
   { id: "appearance-layout", label: "Layout" },
+  { id: "appearance-curated", label: "Themes" },
   { id: "appearance-photo", label: "Your photo" },
-  { id: "appearance-colour", label: "Colour" },
   { id: "appearance-type", label: "Type" },
   { id: "appearance-buttons", label: "Buttons" },
   { id: "appearance-social", label: "Social icons" },
   { id: "appearance-wallpapers", label: "Wallpapers" },
   { id: "appearance-branding", label: "Branding" },
+  // Optional remix after a curated pick -- not a first stop.
+  { id: "appearance-colour", label: "Advanced" },
 ] as const;
 
 export type AppearanceJumpId = (typeof appearanceJumpTargets)[number]["id"];
