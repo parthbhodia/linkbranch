@@ -1753,10 +1753,31 @@ a {
    still work untouched. It sits as the card's first child, behind the content. */
 .public-template .avatar-backdrop {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* A band across the top of the card, not a wash over the whole of it. At full
+     height the photograph stops reading as a picture and starts reading as
+     wallpaper, and the card has to remain a card with links on it. A quarter of
+     the screen is enough to carry the name that sits on it.
+
+     svh rather than a percentage of the card: the card grows with every link a
+     creator adds, and the band should not. It is a quarter of what you can see,
+     which is what it was asked for. --avatar-band lets the dashboard preview,
+     which draws its own phone, size the same band against its own screen. */
+  height: var(--avatar-band, 25svh);
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Dissolves into the card at the bottom, so the band has no hard edge across
+     the page. Behind the fade is the card's own surface, which is also what the
+     veil is mixed from, so the text stays legible the whole way down.
+
+     The fade is a fixed distance rather than a percentage: the band is measured
+     to end below the name, so a percentage would eat into the name on a short
+     band and leave a hard edge on a tall one. */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
+  mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
 }
 
 /* The photo, drawn slightly larger than the card and blurred lightly rather than
@@ -1782,8 +1803,15 @@ a {
 
 /* Lift the card's own content above the backdrop. Everything in the card is in
    normal flow, which paints beneath any positioned layer, so without this the
-   photo would cover the link list. */
-.public-template.profile-theme-avatar-backdrop .creator-card > * {
+   photo would cover the link list.
+
+   The backdrop itself is excluded by name. It is a positioned layer, not
+   content, and matching this rule turned it back into a relative block: the
+   photograph then sat in the flow at the top of the card with the profile
+   pushed below it, which is not a backdrop at all. */
+.public-template.profile-theme-avatar-backdrop
+  .creator-card
+  > *:not(.avatar-backdrop) {
   position: relative;
   z-index: 1;
 }
@@ -1820,24 +1848,53 @@ a {
    This is unavoidably stronger on a light template than a dark one. A near-white
    card cannot show a bright photograph strongly and keep dark text readable at
    the same time; the veil can only be as open as legibility allows. */
-.public-template.profile-theme-avatar-backdrop .creator-card {
-  background: linear-gradient(
-    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
-    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
-    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
-    color-mix(in srgb, var(--paper) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
+/* The veil paints over the photograph, inside the band, so it fades with it.
+   It used to be the card's own background, which put it *behind* the photo --
+   and since the photo is drawn at 0.72 opacity, the strongest veil possible that
+   way was 28% of what was asked for. A bright picture under light text stayed
+   unreadable no matter what the solver said.
+
+   One strength across the band rather than a gradient: the solver works out a
+   single figure for the photograph, so a gradient either over-veils one part or
+   under-veils another while claiming to have hit the target everywhere. */
+.public-template .avatar-backdrop__veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(
+    in srgb,
+    var(--paper) calc(var(--avatar-veil, 0.45) * 100%),
+    transparent
   );
-  box-shadow: none;
-  border-color: transparent;
 }
 
-.public-template.profile-theme-avatar-backdrop.profile-theme-custom .creator-card {
-  background: linear-gradient(
-    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
-    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
-    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
-    color-mix(in srgb, var(--profile-surface) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
+.public-template.profile-theme-custom .avatar-backdrop__veil {
+  background: color-mix(
+    in srgb,
+    var(--profile-surface) calc(var(--avatar-veil, 0.45) * 100%),
+    transparent
   );
+}
+
+.public-template.profile-theme-avatar-backdrop .creator-card {
+  /* The band is absolutely positioned and the card is otherwise static, so
+     without this the photograph anchors to whatever ancestor happens to be
+     positioned and drifts off the top of the card -- it was landing at the top
+     of the page, which is why it read as wallpaper rather than as part of the
+     card. Scoped to this setting so nothing else that positions against the
+     card's ancestors can shift with it. */
+  position: relative;
+}
+
+/* With the photograph carrying the identity, the page does not need the airy
+   top of a text-first card. The avatar is already gone; its top margin and the
+   panel's generous padding were still holding the name down, which pushed it
+   out of the band and back onto the plain card. */
+.public-template.profile-theme-avatar-backdrop .profile-panel {
+  padding-top: clamp(14px, 3vw, 24px);
+}
+
+.public-template.profile-theme-avatar-backdrop .profile-copy {
+  margin-top: 0;
 }
 
 /* Hero type has to survive two things the design didn't account for: long
@@ -16039,10 +16096,14 @@ a {
   top: 0;
   left: 0;
   right: 0;
-  height: 100%;
+  /* A quarter of the phone's screen, matching the page's band. */
+  height: var(--avatar-band, 25%);
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Same dissolve into the card as the page's band, over the same distance. */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
+  mask-image: linear-gradient(#000 calc(100% - 48px), transparent 100%);
 }
 
 /* The photograph, with the card's own numbers rather than the ones this used to
@@ -16063,9 +16124,9 @@ a {
   opacity: 0.72;
 }
 
-/* The veil over it, at the strength the page solved for -- the same four stops,
-   and absent entirely when the photograph can already carry the text. The
-   fallback matches the page's.
+/* The veil over it, at the strength the page solved for -- and nothing at all
+   when the photograph can already carry the text. One flat strength, as the page
+   does, for the same reason: there is one number, not a gradient of them.
 
    Painted as a sibling above the photo rather than as the frame's background:
    an element's background paints under its own children, so putting it on the
@@ -16073,10 +16134,9 @@ a {
 .workspace-phone__backdrop-veil {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 38%), transparent) 0,
-    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 100%), transparent) 28%,
-    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 100%), transparent) 72%,
-    color-mix(in srgb, var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 62%), transparent) 100%
+  background: color-mix(
+    in srgb,
+    var(--preview-card-surface, #fbfbf7) calc(var(--avatar-veil, 0.45) * 100%),
+    transparent
   );
 }

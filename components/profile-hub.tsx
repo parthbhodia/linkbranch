@@ -67,6 +67,7 @@ import {
 } from "@/lib/theme-config";
 import { groupLinksBySection } from "@/lib/link-groups";
 import { useAvatarVeil } from "@/components/use-avatar-veil";
+import { useAvatarBand } from "@/components/use-avatar-band";
 
 /**
  * How much taller than the card the backdrop photo is drawn, top and bottom.
@@ -709,6 +710,14 @@ export function ProfileHub({
     targetRef: cardRef,
     textRef: titleRef,
   });
+  // A quarter of the screen, or as far as the name needs. See use-avatar-band.
+  const bandFloor = useCallback(() => window.innerHeight * 0.25, []);
+  useAvatarBand({
+    enabled: avatarBackdrop,
+    containerRef: cardRef,
+    titleRef,
+    floorPx: bandFloor,
+  });
 
   useEffect(() => {
     if (!avatarBackdrop) return;
@@ -811,6 +820,7 @@ export function ProfileHub({
         {avatarBackdrop ? (
           <Box ref={washRef} className="avatar-backdrop" aria-hidden="true">
             <Box ref={photoRef} className="avatar-backdrop__photo" />
+            <Box className="avatar-backdrop__veil" />
           </Box>
         ) : null}
         <header className="profile-panel" aria-label="Creator profile">
@@ -882,28 +892,34 @@ export function ProfileHub({
                 aria-hidden="true"
               />
             ) : null}
-            <Box
-              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
-                avatarShape ? ` avatar--${avatarShape}` : ""
-              }${avatarRing ? " avatar--ring" : ""}`}
-              aria-label={
-                profile.avatarUrl
-                  ? `${profile.displayName} profile photo`
-                  : `${profile.displayName} initials`
-              }
-            >
-              {profile.avatarUrl ? (
-                <Box
-                  component="img"
-                  src={profile.avatarUrl}
-                  alt={`${profile.displayName} profile`}
-                />
-              ) : (
-                <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
-                  {profile.initials}
-                </Typography>
-              )}
-            </Box>
+            {/* With the photograph in place the avatar is gone: the picture is
+                doing that job, and a small copy of it in a circle on top of it
+                reads as a mistake. This is the one setting that replaces the
+                avatar rather than decorating it. */}
+            {!avatarBackdrop && (
+              <Box
+                className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
+                  avatarShape ? ` avatar--${avatarShape}` : ""
+                }${avatarRing ? " avatar--ring" : ""}`}
+                aria-label={
+                  profile.avatarUrl
+                    ? `${profile.displayName} profile photo`
+                    : `${profile.displayName} initials`
+                }
+              >
+                {profile.avatarUrl ? (
+                  <Box
+                    component="img"
+                    src={profile.avatarUrl}
+                    alt={`${profile.displayName} profile`}
+                  />
+                ) : (
+                  <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
+                    {profile.initials}
+                  </Typography>
+                )}
+              </Box>
+            )}
             <p className="eyebrow">{profile.eyebrow}</p>
             <Typography component="h1" variant="h1" ref={titleRef}>
               {profile.displayName}.

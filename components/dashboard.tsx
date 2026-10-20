@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
@@ -147,6 +147,7 @@ import {
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
 import { useAvatarVeil } from "@/components/use-avatar-veil";
+import { useAvatarBand } from "@/components/use-avatar-band";
 
 export type DashboardProfile = {
   id: string;
@@ -685,6 +686,25 @@ export function Dashboard({
     targetRef: previewPhoneRef,
     textRef: previewTitleRef,
     surfaceCss: "var(--preview-card-surface, #fbfbf7)",
+  });
+  // Same band as the page, measured against the phone rather than the viewport,
+  // since the phone is the screen the preview is showing. The smaller of the two
+  // matters because at phone widths the phone stops being a fixed frame and
+  // becomes the whole page: its own height is then the length of the profile,
+  // and a quarter of that would be a band several screens tall.
+  const bandFloor = useCallback(
+    () =>
+      Math.min(
+        previewPhoneRef.current?.offsetHeight ?? 0,
+        window.innerHeight,
+      ) * 0.25,
+    [],
+  );
+  useAvatarBand({
+    enabled: previewAvatarBackdrop,
+    containerRef: previewPhoneRef,
+    titleRef: previewTitleRef,
+    floorPx: bandFloor,
   });
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
@@ -4269,14 +4289,18 @@ export function Dashboard({
                 alt=""
               />
             )}
-            <Avatar
-              className={`workspace-phone__avatar${
-                previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
-              }${previewAvatarRing ? " avatar--ring" : ""}`}
-              src={previewAvatarUrl}
-            >
-              {initials}
-            </Avatar>
+            {/* No avatar when the photograph is on, for the same reason as the
+                page: the picture has taken its place. */}
+            {!previewAvatarBackdrop && (
+              <Avatar
+                className={`workspace-phone__avatar${
+                  previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
+                }${previewAvatarRing ? " avatar--ring" : ""}`}
+                src={previewAvatarUrl}
+              >
+                {initials}
+              </Avatar>
+            )}
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
