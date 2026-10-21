@@ -4759,6 +4759,32 @@ a {
   background-repeat: no-repeat, no-repeat;
 }
 
+/* On the published page the photo is pinned to the screen. Covering the whole
+   shell scaled it to the page's full scroll height, so a phone showed a
+   blown-up sliver of it -- usually the darkest edge -- behind the card.
+   Previews (the claim page) are boxed and keep the in-flow background. */
+.public-template.profile-theme-has-wallpaper.app-shell:not(.public-template--preview) {
+  isolation: isolate;
+  background-image: none;
+}
+
+.public-template.profile-theme-has-wallpaper.app-shell:not(.public-template--preview)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--profile-bg) 38%, transparent),
+      color-mix(in srgb, var(--profile-bg) 55%, transparent)
+    ),
+    var(--profile-wallpaper);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
 .profile-brand-logo {
   width: min(168px, 54%);
   max-height: 56px;
@@ -4777,6 +4803,16 @@ a {
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+/* On a phone the card is full-bleed, so a 94% surface hid the wallpaper from
+   nearly every visitor. With a photo behind it the card lets the photo through
+   and blurs it just enough that small detail never sits behind the text. */
+.public-template.profile-theme-custom.profile-theme-has-wallpaper:not(.public-template--signal-deck)
+  .creator-card {
+  background: color-mix(in srgb, var(--profile-surface) 58%, transparent);
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+  backdrop-filter: blur(8px) saturate(1.15);
 }
 
 .public-template.profile-theme-custom .profile-copy h1,
@@ -4974,6 +5010,17 @@ a {
     var(--profile-surface) 94%,
     transparent
   );
+}
+
+.workspace-phone.profile-theme-custom.profile-theme-has-wallpaper
+  .workspace-phone__body {
+  background-color: color-mix(
+    in srgb,
+    var(--profile-surface) 58%,
+    transparent
+  );
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+  backdrop-filter: blur(8px) saturate(1.15);
 }
 
 .workspace-phone.profile-theme-background--grid {
