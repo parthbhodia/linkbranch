@@ -2112,7 +2112,7 @@ a {
 .public-template.profile-theme-custom .MuiTypography-body2,
 .public-template.profile-theme-custom .MuiTypography-colorTextSecondary,
 .public-template.profile-theme-custom .MuiInputLabel-root,
-.public-template.profile-theme-custom .profile-copy > .MuiTypography-body1,
+.public-template.profile-theme-custom .profile-copy > .MuiTypography-body1:not(.profile-headline),
 .public-template.profile-theme-custom .profile-brand-row .MuiIconButton-root,
 .public-template.profile-theme-custom .profile-handle,
 .public-template.profile-theme-custom .hub-footer .MuiTypography-root {
@@ -6457,7 +6457,7 @@ a {
 }
 
 .workspace-phone__body {
-  height: calc(100% - 112px);
+  height: 100%;
   padding: 0 20px 28px;
   overflow-y: auto;
 }

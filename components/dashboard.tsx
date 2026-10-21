@@ -655,14 +655,45 @@ export function Dashboard({
 
   // The preview filters the way the public page filters it, and groups with the
   // same call the public page makes, so a heading shows up here under its own
-  // name rather than folded into one flat run.
+  // name rather than folded into one flat run. Featured links are pulled out
+  // first, as the page pulls them out, and the sections hold only the rest.
+  const previewFeaturedLinks = useMemo(
+    () => previewActiveLinks.filter((item) => item.is_featured),
+    [previewActiveLinks],
+  );
   const previewLinkSections = useMemo(
     () =>
       groupLinksBySection(
-        previewActiveLinks,
+        previewActiveLinks.filter((item) => !item.is_featured),
         (item) => item.group_name ?? "",
       ),
     [previewActiveLinks],
+  );
+  const renderPreviewLink = (item: DashboardLink) => (
+    <div
+      className={`workspace-phone__link${
+        item.card_style === "image" && item.thumbnail_path
+          ? " workspace-phone__link--image"
+          : ""
+      }`}
+      key={item.id}
+    >
+      {item.thumbnail_path && (
+        <Box
+          component="img"
+          className="workspace-phone__link-image"
+          src={publicAssetUrl(item.thumbnail_path)}
+          alt=""
+        />
+      )}
+      <span>
+        <b>{item.title}</b>
+        {/* The page fills an empty subtitle with this line, so a link that
+            never had one still shows it there. */}
+        <small>{item.subtitle || "Shared from my Cueful"}</small>
+      </span>
+      <ArrowOutwardRounded />
+    </div>
   );
   const activeFaqs = useMemo(
     () => faqs.filter((item) => item.is_active),
@@ -695,7 +726,7 @@ export function Dashboard({
   // disagrees with the page it is previewing. These three mirror
   // profile-hub.tsx exactly -- same fields, same class names.
   const previewAvatarUrl = publicAssetUrl(draft.avatar_path);
-  const previewAvatarShape = activeTheme.avatarShape;
+  const previewAvatarShape = activeTheme.avatarShape ?? "circle";
   const previewAvatarRing = activeTheme.avatarRing === true;
   const previewAvatarBackdrop =
     activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
@@ -4593,6 +4624,18 @@ export function Dashboard({
               </div>
             )}
 
+            {previewFeaturedLinks.length > 0 && (
+              <div>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">FEATURED</Typography>
+                  <small>CURATED, NOT CROWDED</small>
+                </div>
+                <div className="workspace-phone__links">
+                  {previewFeaturedLinks.slice(0, 4).map(renderPreviewLink)}
+                </div>
+              </div>
+            )}
+
             {previewLinkSections.map((group) => (
               <div key={group.name || "all-links"}>
                 <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
@@ -4605,34 +4648,7 @@ export function Dashboard({
                   </small>
                 </div>
                 <div className="workspace-phone__links">
-                  {group.links.slice(0, 4).map((item) => (
-                    <div
-                      className={`workspace-phone__link${
-                        item.card_style === "image" && item.thumbnail_path
-                          ? " workspace-phone__link--image"
-                          : ""
-                      }`}
-                      key={item.id}
-                    >
-                      {item.thumbnail_path && (
-                        <Box
-                          component="img"
-                          className="workspace-phone__link-image"
-                          src={publicAssetUrl(item.thumbnail_path)}
-                          alt=""
-                        />
-                      )}
-                      <span>
-                        <b>{item.title}</b>
-                        {/* The page fills an empty subtitle with this line, so
-                            a link that never had one still shows it there. The
-                            preview was showing nothing, which read as a
-                            difference between the two. */}
-                        <small>{item.subtitle || "Shared from my Cueful"}</small>
-                      </span>
-                      <ArrowOutwardRounded />
-                    </div>
-                  ))}
+                  {group.links.slice(0, 4).map(renderPreviewLink)}
                 </div>
               </div>
             ))}
