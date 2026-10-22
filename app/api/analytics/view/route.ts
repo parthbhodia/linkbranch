@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { parseShareSource } from "@/lib/share-source";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 function deviceType(userAgent: string) {
   const value = userAgent.toLowerCase();
@@ -18,11 +19,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  const profileId =
-    typeof body.profileId === "string" ? body.profileId.toLowerCase() : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(profileId)) {
+  if (!isUuid(body.profileId)) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
+  const profileId = body.profileId.toLowerCase();
 
   const countryHeader = request.headers.get("x-vercel-ip-country")?.toUpperCase();
   const countryCode = countryHeader?.match(/^[A-Z]{2}$/)?.[0] ?? null;

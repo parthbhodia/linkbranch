@@ -44,6 +44,23 @@ const APP_ROUTES = new Set([
   "what-does-link-in-bio-mean",
 ]);
 
+// Paths people type or paste because every other site has them. /signup was
+// getting real traffic and 404ing, because an unlisted single segment is read
+// as a handle: it rewrote to /u/signup and found nobody.
+//
+// Safe to claim because both names are already in public.reserved_usernames
+// (as 'future', since the table was created), so neither can be a creator's
+// handle -- which is exactly the hazard that table exists to prevent, and the
+// reason this list is short rather than every word a visitor might guess.
+//
+// auth-form.tsx reads ?mode, treating anything but "login" as signup, so the
+// mode is passed explicitly rather than relying on which way that default
+// happens to fall.
+const AUTH_ALIASES = new Map([
+  ["signup", "signup"],
+  ["login", "login"],
+]);
+
 // Case-insensitive: usernames are stored lowercase, so /MKTV and /mktv are the
 // same profile. Without the flag an uppercase link never matched, fell through
 // to the router, and 404'd on a path that has no route.
@@ -77,6 +94,22 @@ export async function proxy(request: NextRequest) {
 
   const segment = segments[0];
   if (APP_ROUTES.has(segment)) return sessionResponse;
+
+  // Before the handle rewrite, and a redirect rather than a rewrite so the
+  // address bar ends up on the canonical /auth. Existing query survives:
+  // ?ref= and the utm tags are the whole point of a shared link.
+  const mode = AUTH_ALIASES.get(segment.toLowerCase());
+  if (mode) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/auth";
+    redirectUrl.searchParams.set("mode", mode);
+    // 307, not the 308 used for /u/<name>. That one is a true canonicalisation
+    // and will never move. This is a convenience alias, and a permanent
+    // redirect is cached by the browser indefinitely -- it would outlive any
+    // later decision to give /signup a page of its own.
+    return withSession(NextResponse.redirect(redirectUrl, 307));
+  }
+
   // A dot means a generated file (robots.txt, sitemap.xml, manifest.webmanifest);
   // the username constraint disallows dots, so this can never be a profile.
   if (segment.includes(".")) return sessionResponse;
