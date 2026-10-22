@@ -12,7 +12,9 @@
 // network is gone, the offline page explains why rather than showing someone
 // else's card.
 
-const VERSION = "v1";
+// Bump this whenever the caching below has to be thrown away. It is the only
+// thing that clears a cache an installed copy is already holding.
+const VERSION = "v2";
 const STATIC_CACHE = `cueful-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
@@ -47,6 +49,11 @@ self.addEventListener("activate", (event) => {
 function isCacheableAsset(url) {
   // Hashed build output and the icons. Everything here is immutable and
   // contains nothing user-specific.
+  //
+  // Cache-first is only safe because production filenames carry a content
+  // hash -- change a file and the name changes with it. Development reuses the
+  // name across edits, which is why dev does not register this worker at all.
+  // See components/service-worker.tsx.
   return (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icon-") ||

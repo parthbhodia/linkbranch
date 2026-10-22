@@ -4,6 +4,7 @@ import { resolveProfileTheme } from "@/lib/theme-config";
 import { publicAssetUrl } from "@/lib/storage";
 import { BRAND_DOMAIN } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
+import { drawableCardText } from "@/lib/og-text";
 
 export const alt = "Creator profile on Cueful";
 export const size = { width: 1200, height: 630 };
@@ -65,6 +66,12 @@ export default async function ProfileOpenGraphImage({
       offerCount = offers ?? 0;
     }
   }
+
+  // Sanitise once, after either source, so the example and database paths
+  // cannot drift apart.
+  displayName = drawableCardText(displayName) || `@${handle}`;
+  bio = drawableCardText(bio);
+  tags = tags.map(drawableCardText).filter(Boolean);
 
   const counts = [
     linkCount ? `${linkCount} ${linkCount === 1 ? "link" : "links"}` : null,

@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { hasCompletedOnboarding } from "@/lib/onboarding-status";
 import {
   TEMPLATE_PICKER,
   isInternalPath,
@@ -24,26 +25,24 @@ export async function GET(request: NextRequest) {
    * The caller's `next` is decided before anyone is signed in, so for a plain
    * sign-in it is always the template picker -- which is why signing in with
    * Google used to show that picker to people who finished setup long ago.
-   * Now the question is asked at the only point it can be answered.
+   * Now the question is asked at the only point it can be answered, and it is
+   * asked about the account that just signed in rather than about whichever
+   * profile row the reader happened to return first.
    */
-  async function destination() {
+  async function destination(userId: string | null | undefined) {
     if (isInternalPath(requestedNext) && requestedNext !== TEMPLATE_PICKER) {
       return requestedNext;
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .single();
-    return postAuthDestination({
-      requested: requestedNext,
-      onboardingCompleted: Boolean(profile?.onboarding_completed),
-    });
+    const onboardingCompleted = await hasCompletedOnboarding(supabase, userId);
+    return postAuthDestination({ requested: requestedNext, onboardingCompleted });
   }
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(await destination(), requestUrl.origin));
+      return NextResponse.redirect(
+        new URL(await destination(data.user?.id), requestUrl.origin),
+      );
     }
 
     // The email can be confirmed successfully while the session exchange fails
@@ -60,9 +59,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
     if (!error) {
-      return NextResponse.redirect(new URL(await destination(), requestUrl.origin));
+      return NextResponse.redirect(
+        new URL(await destination(data.user?.id), requestUrl.origin),
+      );
     }
 
     return NextResponse.redirect(

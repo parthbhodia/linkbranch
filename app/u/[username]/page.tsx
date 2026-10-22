@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   ProfileHub,
   type PublicMediaEmbed,
@@ -6,6 +7,7 @@ import {
   type PublicFaq,
   type PublicHighlight,
 } from "@/components/profile-hub";
+import { ProfileSkeleton } from "@/components/profile-skeleton";
 import {
   BRAND_URL,
   DEFAULT_SOCIAL_IMAGE,
@@ -14,6 +16,7 @@ import {
 } from "@/lib/brand";
 import { exampleProfileBySlug } from "@/lib/example-profiles";
 import { publicAssetUrl } from "@/lib/storage";
+import { selectToleratingColumn } from "@/lib/optional-columns";
 import { createClient } from "@/lib/supabase/server";
 import { defaultProfileTheme } from "@/lib/theme-config";
 import type { CreatorProfile } from "@/lib/types";
@@ -21,6 +24,24 @@ import { publicMapLocation } from "@/lib/map-location";
 import type { TimelineEntry } from "@/lib/timeline";
 
 const linkColors = ["#c9ef69", "#ffb4d0", "#9ed6ff", "#ffd166"];
+
+/**
+ * The link columns this page reads. `card_style` arrives with a migration and
+ * may not be in the database yet, so it is allowed to be absent.
+ */
+type ProfileLinkRow = {
+  id: number;
+  title: string;
+  subtitle: string;
+  url: string;
+  thumbnail_path: string | null;
+  position: number;
+  is_featured: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+  group_name: string | null;
+  card_style?: string | null;
+};
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +206,8 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
   const { published } = await searchParams;
-  const example = exampleProfileBySlug.get(username.toLowerCase());
+  const handle = username.toLowerCase();
+  const example = exampleProfileBySlug.get(handle);
 
   if (example) {
     const canonicalUrl = publicProfileUrl(example.slug);
@@ -214,18 +236,54 @@ export default async function PublicProfilePage({
   }
 
   const supabase = await createClient();
+  // Existence only, cheap and indexed. It decides 404 versus render, so it has
+  // to resolve before anything streams: once the shell has flushed, the status
+  // code is fixed and a missing handle answers 200 with a 404 page inside it.
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", handle)
+    .maybeSingle();
+
+  if (!existing) {
+    // A name someone actually typed that this profile does not hold -- the
+    // brand spelling of a hyphenated handle, or a name left behind by a rename.
+    const { data: canonical } = await supabase.rpc("resolve_profile_alias", {
+      candidate: handle,
+    });
+    if (typeof canonical === "string" && canonical && canonical !== handle) {
+      permanentRedirect(publicProfilePath(canonical));
+    }
+    notFound();
+  }
+
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ProfileContent handle={handle} published={published === "1"} />
+    </Suspense>
+  );
+}
+
+async function ProfileContent({
+  handle,
+  published,
+}: {
+  handle: string;
+  published: boolean;
+}) {
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("username", username.toLowerCase())
-    .single();
+    .eq("username", handle)
+    .maybeSingle();
 
   if (!profile) {
     notFound();
   }
 
   const [
-    { data: links },
+    links,
     { data: referrals },
     { data: socials },
     { data: products },
@@ -235,14 +293,21 @@ export default async function PublicProfilePage({
     { data: timeline },
   ] =
     await Promise.all([
-      supabase
-        .from("links")
-        .select(
-          "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at",
-        )
-        .eq("user_id", profile.id)
-        .eq("is_active", true)
-        .order("position"),
+      // card_style is selected tolerantly: the public page must still show its
+      // links on a database where the card_style migration has not been run
+      // yet, rather than emptying the card because one requested column is
+      // unknown.
+      selectToleratingColumn<ProfileLinkRow>(
+        "id,title,subtitle,url,thumbnail_path,position,is_featured,starts_at,expires_at,group_name,card_style",
+        "card_style",
+        (columns) =>
+          supabase
+            .from("links")
+            .select(columns)
+            .eq("user_id", profile.id)
+            .eq("is_active", true)
+            .order("position"),
+      ),
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,color,position")
@@ -302,7 +367,6 @@ export default async function PublicProfilePage({
     username: profile.username,
     initials,
     displayName: profile.display_name,
-    greeting: profile.greeting,
     headline: profile.headline,
     headlineAccent: profile.headline_accent,
     eyebrow:
@@ -337,6 +401,12 @@ export default async function PublicProfilePage({
       color: linkColors[index % linkColors.length],
       featured: item.is_featured,
       thumbnailUrl: publicAssetUrl(item.thumbnail_path),
+      group: item.group_name || undefined,
+      // Absent means a row, the shape every link already had. An image card
+      // with no picture to show would render as an empty box, so it only counts
+      // when there is a thumbnail to fill it with.
+      cardStyle:
+        item.card_style === "image" && item.thumbnail_path ? "image" : "row",
     })),
     referrals: (referrals ?? []).map((item) => ({
       id: String(item.id),
@@ -370,7 +440,7 @@ export default async function PublicProfilePage({
         profile={creatorProfile}
         template={profile.template}
         databaseProfileId={profile.id}
-        published={published === "1"}
+        published={published}
         showBadge={Boolean(profile.show_cueful_badge)}
         themeConfig={profile.theme_config}
         products={(products ?? []) as PublicProduct[]}

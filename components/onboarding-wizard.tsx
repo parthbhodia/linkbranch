@@ -125,6 +125,8 @@ type LinkDraft = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  /** Carried through untouched so saving the wizard does not flatten sections. */
+  group_name?: string;
 };
 
 type ReferralDraft = {
@@ -273,7 +275,6 @@ export type OnboardingInitialData = {
     id: string;
     display_name: string;
     username: string;
-    greeting: string;
     headline: string;
     headline_accent: string;
     bio: string;
@@ -453,9 +454,6 @@ export function OnboardingWizard({
     url: "",
   });
   const [displayName, setDisplayName] = useState(initialData.profile.display_name);
-  const [greeting, setGreeting] = useState(
-    seedPlan?.greeting ?? initialData.profile.greeting,
-  );
   const [headline, setHeadline] = useState(
     seedPlan?.headline ?? initialData.profile.headline,
   );
@@ -586,7 +584,11 @@ export function OnboardingWizard({
     contentRef.current?.scrollTo({ top: 0 });
   }, [activeStep]);
 
-  function updateLink(id: number, field: "title" | "url", value: string) {
+  function updateLink(
+    id: number,
+    field: "title" | "url" | "card_style",
+    value: string,
+  ) {
     setLinks((current) =>
       current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
@@ -698,9 +700,6 @@ export function OnboardingWizard({
     // someone who comes back and re-picks must not lose wording they wrote.
     const plan = starterBlueprint(purpose);
     if (plan) {
-      setGreeting((current) =>
-        current === initialData.profile.greeting ? plan.greeting : current,
-      );
       setHeadline((current) =>
         current === initialData.profile.headline ? plan.headline : current,
       );
@@ -973,6 +972,18 @@ export function OnboardingWizard({
 
   async function next() {
     if (activeStep === 1) {
+      // Nudge, not a gate: a page with no social icons is still worth
+      // publishing, so continue but say what was skipped.
+      const hasSocial = socials.some(
+        (item) => item.platform.trim() && item.url.trim(),
+      );
+      if (!hasSocial) {
+        setNotice({
+          message:
+            "Add at least one social profile so people can reach you off-platform.",
+          severity: "warning",
+        });
+      }
       setActiveStep(2);
       return;
     }
@@ -1090,7 +1101,10 @@ export function OnboardingWizard({
       profile_data: {
         username,
         display_name: displayName,
-        greeting,
+        // save_profile_bundle assigns greeting straight from the payload, and
+        // the column is NOT NULL, so the key has to be present even though the
+        // header no longer has a greeting. Always cleared.
+        greeting: "",
         headline,
         headline_accent: headlineAccent,
         bio,
@@ -1720,22 +1734,14 @@ export function OnboardingWizard({
                     helperText="Letters, numbers, hyphens, and underscores."
                   />
                   <TextField
-                    label="Greeting"
-                    value={greeting}
-                    onChange={(event) => setGreeting(event.target.value)}
-                    fullWidth
-                    inputProps={{ maxLength: 32 }}
-                    helperText="Appears before your display name."
-                  />
-                  <TextField
-                    label="Headline"
+                    label="Headline line 1"
                     value={headline}
                     onChange={(event) => setHeadline(event.target.value)}
                     fullWidth
                     inputProps={{ maxLength: 48 }}
                   />
                   <TextField
-                    label="Accent text"
+                    label="Headline line 2"
                     value={headlineAccent}
                     onChange={(event) => setHeadlineAccent(event.target.value)}
                     fullWidth
@@ -1743,7 +1749,7 @@ export function OnboardingWizard({
                     helperText="Shown in the template’s accent style."
                   />
                   <TextField
-                    label="Supporting paragraph"
+                    label="About"
                     value={bio}
                     onChange={(event) => setBio(event.target.value)}
                     multiline
@@ -1796,6 +1802,9 @@ export function OnboardingWizard({
                   spacing={2}
                 >
                   <Box>
+                    <Typography className="section-label" sx={{ mb: 0.5 }}>
+                      ESSENTIAL
+                    </Typography>
                     <Typography component="h2" variant="h3">
                       Social profiles
                     </Typography>
@@ -1804,7 +1813,9 @@ export function OnboardingWizard({
                       color="text.secondary"
                       sx={{ mt: 0.75 }}
                     >
-                      Optional. Add the full URL for every profile you want to show.
+                      Add the profiles your audience already follows you on. They
+                      show as icons on your page, and they are one of the first
+                      things a visitor taps.
                     </Typography>
                   </Box>
                   <Button
@@ -2013,7 +2024,7 @@ export function OnboardingWizard({
               {initials}
             </Avatar>
             <Typography fontWeight={800} textAlign="center" sx={{ mt: 1.5 }}>
-              {greeting || "Hello, I’m"} {displayName || "Your name"}.
+              {displayName || "Your name"}.
             </Typography>
             <Typography variant="caption" color="inherit" sx={{ opacity: 0.72 }}>
               @{username || "username"}

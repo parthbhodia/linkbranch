@@ -42,7 +42,7 @@ export default async function OnboardingPage({
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase
         .from("links")
-        .select("id,title,url,thumbnail_path,is_active,is_featured")
+        .select("id,title,url,thumbnail_path,is_active,is_featured,group_name")
         .eq("user_id", user.id)
         .order("position"),
       supabase
@@ -59,6 +59,14 @@ export default async function OnboardingPage({
 
   if (!profile) {
     redirect("/auth?error=profile_missing");
+  }
+
+  // A finished account belongs in the dashboard. The wizard ends by rewriting
+  // the whole link list, so someone who wandered back in through the template
+  // picker -- or through an old link to setup -- would be rebuilding a page
+  // that is already live. Changing a template is a dashboard control.
+  if (profile.onboarding_completed) {
+    redirect("/dashboard");
   }
 
   const initialData: OnboardingInitialData = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsOutlined from "@mui/icons-material/AnalyticsOutlined";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
@@ -34,6 +34,7 @@ import LanguageRounded from "@mui/icons-material/LanguageRounded";
 import HubOutlined from "@mui/icons-material/HubOutlined";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
 import {
@@ -79,7 +80,7 @@ import {
 } from "@/components/highlights-editor";
 import { InstallApp } from "@/components/install-app";
 import { TimelinePanel } from "@/components/timeline-panel";
-import type { TimelineEntry } from "@/lib/timeline";
+import { formatRange, type TimelineEntry } from "@/lib/timeline";
 import { LinkHealthScanner } from "@/components/link-health-scanner";
 import {
   resolveSeoDescription,
@@ -88,11 +89,15 @@ import {
 } from "@/components/seo-preview";
 import { SettingsConnectEditor } from "@/components/settings-connect-editor";
 import {
+  AppearanceJumpNav,
   SettingsJumpNav,
+  jumpToGroup,
+  type AppearanceJumpId,
   type SettingsJumpId,
 } from "@/components/settings-jump-nav";
 import { ShareDialog } from "@/components/share-dialog";
 import { LinksEditor, type LinkDraft } from "@/components/links-editor";
+import { groupLinksBySection, sortLinksBySection } from "@/lib/link-groups";
 import {
   ReferralsEditor,
   type ReferralDraft,
@@ -103,8 +108,17 @@ import {
   DEFAULT_SOCIAL_IMAGE,
   publicProfileAddress,
   publicProfilePath,
+  publicProfileUrl,
 } from "@/lib/brand";
 import { creatorInviteUrl } from "@/lib/referrals";
+import { curatedThemes, isCuratedThemeActive } from "@/lib/curated-themes";
+import {
+  ALIAS_LIMIT,
+  aliasErrorMessage,
+  aliasFormatError,
+  aliasSuggestions,
+  normaliseAlias,
+} from "@/lib/aliases";
 import { useRouter } from "next/navigation";
 import { getSocialPlatformIcon } from "@/lib/social-platforms";
 import {
@@ -125,16 +139,24 @@ import {
   profileThemeClassName,
   profileThemeStyle,
   resolveProfileTheme,
+  themeAvatarShapeOptions,
   themeBackgroundOptions,
+  themeFontOptions,
+  themeFontScaleOptions,
+  themeFontStyleOptions,
+  themeFontWeightOptions,
   themePalettes,
+  themeSocialSizeOptions,
   type ProfileThemeConfig,
 } from "@/lib/theme-config";
+import { ChoiceCarousel } from "@/components/choice-carousel";
+import { useAvatarBand } from "@/components/use-avatar-band";
+import { useAvatarVeil } from "@/components/use-avatar-veil";
 
 export type DashboardProfile = {
   id: string;
   username: string;
   display_name: string;
-  greeting: string;
   headline: string;
   headline_accent: string;
   bio: string;
@@ -183,6 +205,8 @@ export type DashboardLink = {
   is_active: boolean;
   is_featured: boolean;
   thumbnail_path: string | null;
+  group_name: string;
+  card_style?: string;
 };
 
 export type DashboardReferral = {
@@ -248,11 +272,14 @@ const workspaceSections: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
+  // Page-building first: who you are → what you link → how it looks.
+  // People / shop / analytics sit after that so they stop interrupting the
+  // edit loop.
   { id: "profile", label: "Profile", icon: <PersonOutlineRounded /> },
-  { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
   { id: "content", label: "Links & referrals", icon: <InsertLinkRounded /> },
-  { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "appearance", label: "Appearance", icon: <ColorLensOutlined /> },
+  { id: "connections", label: "People you met", icon: <GroupsOutlined /> },
+  { id: "commerce", label: "Shop & media", icon: <StorefrontOutlined /> },
   { id: "analytics", label: "Analytics", icon: <AnalyticsOutlined /> },
   { id: "account", label: "Account", icon: <SettingsOutlined /> },
 ];
@@ -313,6 +340,23 @@ const sectionCopy: Record<
   },
 };
 
+// profile-hub splits embeds on this same set. Kept here rather than imported
+// so the preview does not reach into the public page's internals for one list.
+const PREVIEW_VIDEO_PROVIDERS = ["youtube", "vimeo", "twitch"];
+
+function formatPreviewPrice(amount: number | null, currency: string) {
+  if (amount === null || !Number.isFinite(amount)) return null;
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount}`;
+  }
+}
+
 const templateOptions = [
   {
     id: "field-notes",
@@ -338,17 +382,6 @@ const templateOptions = [
     color: "#0f141c",
     accent: "#b9ff66",
   },
-];
-
-const themeFontOptions: Array<{
-  id: ProfileThemeConfig["font"];
-  name: string;
-  sample: string;
-}> = [
-  { id: "studio", name: "Studio", sample: "Useful things" },
-  { id: "editorial", name: "Editorial", sample: "Useful things" },
-  { id: "rounded", name: "Rounded", sample: "Useful things" },
-  { id: "mono", name: "Mono", sample: "USEFUL THINGS" },
 ];
 
 const themeColorFields: Array<{
@@ -427,6 +460,7 @@ export function Dashboard({
   profile,
   email,
   isAdmin,
+  aliases,
   links,
   referrals,
   socials,
@@ -443,6 +477,8 @@ export function Dashboard({
   profile: DashboardProfile;
   email: string;
   isAdmin: boolean;
+  /** Extra names that resolve to this page. See addAlias/removeAlias. */
+  aliases: string[];
   links: DashboardLink[];
   referrals: DashboardReferral[];
   socials: DashboardSocial[];
@@ -463,14 +499,19 @@ export function Dashboard({
   // Links are edited here now rather than by bouncing into the setup wizard,
   // so the dashboard keeps its own draft of them alongside the profile draft.
   const [linkDraft, setLinkDraft] = useState<LinkDraft[]>(() =>
-    links.map((item) => ({
-      id: item.id,
-      title: item.title,
-      url: item.url,
-      is_active: item.is_active,
-      is_featured: item.is_featured,
-      thumbnail_path: item.thumbnail_path,
-    })),
+    sortLinksBySection(
+      links.map((item) => ({
+        id: item.id,
+        title: item.title,
+        url: item.url,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name,
+        card_style: item.card_style === "image" ? "image" : "row",
+      })),
+      (item) => item.group_name ?? "",
+    ),
   );
   const [savingLinks, setSavingLinks] = useState(false);
   const [referralDraft, setReferralDraft] = useState<ReferralDraft[]>(() =>
@@ -507,6 +548,9 @@ export function Dashboard({
   }));
   const [connectedSocials, setConnectedSocials] = useState(socials);
   const [settingsJump, setSettingsJump] = useState<SettingsJumpId | null>(null);
+  const [appearanceJump, setAppearanceJump] = useState<AppearanceJumpId | null>(
+    null,
+  );
   const [exportingData, setExportingData] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -514,6 +558,8 @@ export function Dashboard({
   const [section, setSection] = useState<WorkspaceSection>("profile");
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
   const editorScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewPhoneRef = useRef<HTMLDivElement | null>(null);
+  const previewTitleRef = useRef<HTMLHeadingElement | null>(null);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "all">(
     "30d",
   );
@@ -538,6 +584,22 @@ export function Dashboard({
     severity: "success" | "error";
     message: string;
   } | null>(null);
+  // Extra names pointing at this page. The database owns the namespace rules,
+  // so this mirrors what it accepted rather than deciding anything itself.
+  const [aliasList, setAliasList] = useState<string[]>(aliases);
+  const [aliasInput, setAliasInput] = useState("");
+  const [aliasBusy, setAliasBusy] = useState(false);
+  // Offered as the placeholder rather than as a fixed example: a brand and the
+  // handle it was given rarely match, and the brand is what visitors type.
+  const aliasSuggestion = useMemo(
+    () =>
+      aliasSuggestions({
+        displayName: draft.display_name,
+        username: draft.username,
+        taken: aliasList,
+      })[0] ?? "yourbrand",
+    [draft.display_name, draft.username, aliasList],
+  );
 
   useEffect(() => {
     const shareKey = `cueful:share-prompt:${profile.id}`;
@@ -557,18 +619,148 @@ export function Dashboard({
     window.scrollTo({ top: 0 });
   }, [section, mobileMode]);
 
-  const activeLinks = useMemo(
-    () => links.filter((item) => item.is_active),
-    [links],
-  );
   const activeReferrals = useMemo(
     () => referrals.filter((item) => item.is_active),
     [referrals],
+  );
+
+  // Links are edited in their own draft, so the phone draws that draft rather
+  // than the last saved rows. Every other control moves the preview as you
+  // type; links waiting for Update made the preview disagree with the editor
+  // for as long as the edit took. Subtitle and order are the only fields the
+  // draft does not carry, so they come from the saved row with the same id.
+  const previewLinks = useMemo<DashboardLink[]>(() => {
+    const savedById = new Map(links.map((item) => [item.id, item]));
+    return linkDraft.map((item, index) => {
+      const saved = savedById.get(item.id);
+      return {
+        id: item.id,
+        title: item.title,
+        subtitle: saved?.subtitle ?? "",
+        url: item.url,
+        position: index,
+        is_active: item.is_active,
+        is_featured: item.is_featured,
+        thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name ?? "",
+        card_style: item.card_style ?? "row",
+      };
+    });
+  }, [linkDraft, links]);
+
+  const previewActiveLinks = useMemo(
+    () => previewLinks.filter((item) => item.is_active),
+    [previewLinks],
+  );
+
+  // The preview filters the way the public page filters it, and groups with the
+  // same call the public page makes, so a heading shows up here under its own
+  // name rather than folded into one flat run. Featured links are pulled out
+  // first, as the page pulls them out, and the sections hold only the rest.
+  const previewFeaturedLinks = useMemo(
+    () => previewActiveLinks.filter((item) => item.is_featured),
+    [previewActiveLinks],
+  );
+  const previewLinkSections = useMemo(
+    () =>
+      groupLinksBySection(
+        previewActiveLinks.filter((item) => !item.is_featured),
+        (item) => item.group_name ?? "",
+      ),
+    [previewActiveLinks],
+  );
+  const renderPreviewLink = (item: DashboardLink) => (
+    <div
+      className={`workspace-phone__link${
+        item.card_style === "image" && item.thumbnail_path
+          ? " workspace-phone__link--image"
+          : ""
+      }`}
+      key={item.id}
+    >
+      {item.thumbnail_path && (
+        <Box
+          component="img"
+          className="workspace-phone__link-image"
+          src={publicAssetUrl(item.thumbnail_path)}
+          alt=""
+        />
+      )}
+      <span>
+        <b>{item.title}</b>
+        {/* The page fills an empty subtitle with this line, so a link that
+            never had one still shows it there. */}
+        <small>{item.subtitle || "Shared from my Cueful"}</small>
+      </span>
+      <ArrowOutwardRounded />
+    </div>
+  );
+  const activeFaqs = useMemo(
+    () => faqs.filter((item) => item.is_active),
+    [faqs],
+  );
+  const activeProducts = useMemo(
+    () => products.filter((item) => item.is_active),
+    [products],
+  );
+  const previewVideos = useMemo(
+    () =>
+      mediaEmbeds.filter(
+        (item) => item.is_active && PREVIEW_VIDEO_PROVIDERS.includes(item.provider),
+      ),
+    [mediaEmbeds],
+  );
+  const previewAudio = useMemo(
+    () =>
+      mediaEmbeds.filter(
+        (item) => item.is_active && !PREVIEW_VIDEO_PROVIDERS.includes(item.provider),
+      ),
+    [mediaEmbeds],
   );
   const activeTheme = resolveProfileTheme(draft.theme_config, draft.template);
   const brandingLogoUrl = publicAssetUrl(activeTheme.logoPath);
   const wallpaperUrl = publicAssetUrl(activeTheme.wallpaperPath);
   const previewWallpaperUrl = pendingWallpaper?.previewUrl ?? wallpaperUrl;
+  // The preview is a hand-built phone rather than a mounted ProfileHub, so
+  // every avatar setting has to be read here too or the preview quietly
+  // disagrees with the page it is previewing. These three mirror
+  // profile-hub.tsx exactly -- same fields, same class names.
+  const previewAvatarUrl = publicAssetUrl(draft.avatar_path);
+  const previewAvatarShape = activeTheme.avatarShape ?? "circle";
+  const previewAvatarRing = activeTheme.avatarRing === true;
+  const previewAvatarBackdrop =
+    activeTheme.avatarBackdrop === true && Boolean(previewAvatarUrl);
+
+  // Solved here with the same code the page runs, so the preview shows the
+  // veil the visitor will actually get rather than a fixed guess. The surface
+  // expression is the preview's own: this phone names its colours per template
+  // instead of carrying the page's --paper and --profile-surface.
+  useAvatarVeil({
+    enabled: previewAvatarBackdrop,
+    avatarUrl: previewAvatarUrl,
+    targetRef: previewPhoneRef,
+    textRef: previewTitleRef,
+    surfaceCss: "var(--preview-card-surface, #fbfbf7)",
+  });
+  // Same band as the page, measured against the phone rather than the viewport,
+  // since the phone is the screen the preview is showing. The smaller of the two
+  // matters because at phone widths the phone stops being a fixed frame and
+  // becomes the whole page: its own height is then the length of the profile,
+  // and a quarter of that would be a band several screens tall.
+  const bandFloor = useCallback(
+    () =>
+      Math.min(
+        previewPhoneRef.current?.offsetHeight ?? 0,
+        window.innerHeight,
+      ) * 0.25,
+    [],
+  );
+  useAvatarBand({
+    enabled: previewAvatarBackdrop,
+    containerRef: previewPhoneRef,
+    titleRef: previewTitleRef,
+    floorPx: bandFloor,
+  });
   const seoPreviewTitle = resolveSeoTitle({
     seoTitle: draft.seo_title,
     displayName: draft.display_name,
@@ -951,14 +1143,42 @@ export function Dashboard({
     setSharePromptOpen(false);
   }
 
-  async function saveLinks() {
+  const linksDirty = useMemo(() => {
+    const shape = (
+      items: Array<{
+        id: number;
+        title: string;
+        url: string;
+        is_active: boolean;
+        is_featured: boolean;
+        thumbnail_path: string | null;
+        group_name?: string | null;
+        card_style?: string | null;
+      }>,
+    ) =>
+      JSON.stringify(
+        items.map((item) => [
+          item.id,
+          item.title,
+          item.url,
+          item.is_active,
+          item.is_featured,
+          item.thumbnail_path,
+          item.group_name ?? "",
+          item.card_style === "image" ? "image" : "row",
+        ]),
+      );
+    return shape(linkDraft) !== shape(links);
+  }, [linkDraft, links]);
+
+  async function saveLinks(options?: { quiet?: boolean }): Promise<boolean> {
     const cleaned = linkDraft
       .map((item) => ({ ...item, title: item.title.trim() }))
       .filter((item) => item.title || item.url.trim());
 
     if (cleaned.some((item) => !item.title)) {
       setNotice({ severity: "error", message: "Give every link a title." });
-      return;
+      return false;
     }
 
     const normalized = cleaned.map((item) => ({
@@ -967,7 +1187,7 @@ export function Dashboard({
     }));
     if (normalized.some((item) => !item.url)) {
       setNotice({ severity: "error", message: "Enter a valid URL for every link." });
-      return;
+      return false;
     }
 
     setSavingLinks(true);
@@ -985,10 +1205,13 @@ export function Dashboard({
       if (error) {
         setSavingLinks(false);
         setNotice({ severity: "error", message: error.message });
-        return;
+        return false;
       }
     }
 
+    // New rows get their real id back, so the draft matches the saved rows and
+    // a second save updates them instead of inserting them again.
+    const assignedIds = new Map<number, number>();
     for (const [index, item] of normalized.entries()) {
       const row = {
         title: item.title,
@@ -997,15 +1220,39 @@ export function Dashboard({
         is_active: item.is_active,
         is_featured: item.is_featured,
         thumbnail_path: item.thumbnail_path,
+        group_name: item.group_name ?? "",
+        card_style: item.card_style === "image" ? "image" : "row",
       };
-      const { error } = existing.has(item.id)
-        ? await supabase.from("links").update(row).eq("id", item.id)
-        : await supabase.from("links").insert({ ...row, user_id: profile.id });
-      if (error) {
-        setSavingLinks(false);
-        setNotice({ severity: "error", message: error.message });
-        return;
+      if (existing.has(item.id)) {
+        const { error } = await supabase.from("links").update(row).eq("id", item.id);
+        if (error) {
+          setSavingLinks(false);
+          setNotice({ severity: "error", message: error.message });
+          return false;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from("links")
+          .insert({ ...row, user_id: profile.id })
+          .select("id")
+          .single();
+        if (error) {
+          setSavingLinks(false);
+          setNotice({ severity: "error", message: error.message });
+          return false;
+        }
+        assignedIds.set(item.id, data.id);
       }
+    }
+
+    if (assignedIds.size) {
+      setLinkDraft((current) =>
+        current.map((item) =>
+          assignedIds.has(item.id)
+            ? { ...item, id: assignedIds.get(item.id)! }
+            : item,
+        ),
+      );
     }
 
     // Safe to sweep only now that the new paths are the ones on record.
@@ -1016,8 +1263,11 @@ export function Dashboard({
     }
 
     setSavingLinks(false);
-    setNotice({ severity: "success", message: "Your links have been updated." });
-    router.refresh();
+    if (!options?.quiet) {
+      setNotice({ severity: "success", message: "Your links have been updated." });
+      router.refresh();
+    }
+    return true;
   }
 
   async function saveReferrals() {
@@ -1095,6 +1345,9 @@ export function Dashboard({
       setNotice({ severity: "error", message: canonicalError });
       return;
     }
+    // Update is the button people press after any edit, so it must not report
+    // success while link edits (sections, card style, new rows) sit unsaved.
+    if (linksDirty && !(await saveLinks({ quiet: true }))) return;
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase
@@ -1102,7 +1355,6 @@ export function Dashboard({
       .update({
         username: draft.username.trim().toLowerCase(),
         display_name: draft.display_name.trim(),
-        greeting: draft.greeting.trim(),
         headline: draft.headline.trim(),
         headline_accent: draft.headline_accent.trim(),
         bio: draft.bio.trim(),
@@ -1145,8 +1397,76 @@ export function Dashboard({
       return;
     }
 
-    setNotice({ severity: "success", message: "Your page has been updated." });
+    // A rename leaves the old name behind as an alias (the database trigger),
+    // so links already shared keep working. Say so, and show it in the list.
+    const previousHandle = profile.username;
+    const nextHandle = draft.username.trim().toLowerCase();
+    if (previousHandle !== nextHandle) {
+      setAliasList((current) => [...new Set([...current, previousHandle])].sort());
+      setNotice({
+        severity: "success",
+        message: `Saved. ${publicProfileAddress(previousHandle)} now redirects to ${publicProfileAddress(nextHandle)}.`,
+      });
+    } else {
+      setNotice({ severity: "success", message: "Your page has been updated." });
+    }
     router.refresh();
+  }
+
+  async function addAlias() {
+    const candidate = normaliseAlias(aliasInput);
+    const problem = aliasFormatError(candidate);
+    if (problem) {
+      setNotice({ severity: "error", message: problem });
+      return;
+    }
+    if (aliasList.includes(candidate)) {
+      setNotice({
+        severity: "error",
+        message: `${publicProfileAddress(candidate)} already points here.`,
+      });
+      return;
+    }
+
+    setAliasBusy(true);
+    const { data, error } = await createClient().rpc("add_profile_alias", {
+      candidate,
+    });
+    setAliasBusy(false);
+
+    if (error) {
+      setNotice({ severity: "error", message: aliasErrorMessage(error.message) });
+      return;
+    }
+
+    // The function returns the stored name, which is the one to trust.
+    const stored = typeof data === "string" && data ? data : candidate;
+    setAliasList((current) => [...new Set([...current, stored])].sort());
+    setAliasInput("");
+    setNotice({
+      severity: "success",
+      message: `${publicProfileAddress(stored)} now points here.`,
+    });
+    router.refresh();
+  }
+
+  async function removeAlias(alias: string) {
+    setAliasBusy(true);
+    const { error } = await createClient().rpc("remove_profile_alias", {
+      candidate: alias,
+    });
+    setAliasBusy(false);
+
+    if (error) {
+      setNotice({ severity: "error", message: aliasErrorMessage(error.message) });
+      return;
+    }
+
+    setAliasList((current) => current.filter((item) => item !== alias));
+    setNotice({
+      severity: "success",
+      message: `${publicProfileAddress(alias)} no longer points here.`,
+    });
   }
 
   async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1561,12 +1881,16 @@ export function Dashboard({
   function jumpToSettings(id: SettingsJumpId) {
     setSection("account");
     setSettingsJump(id);
-    window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 40);
+    window.setTimeout(() => jumpToGroup(id), 40);
+  }
+
+  // No section switch, unlike the account version: this one only exists inside
+  // the appearance panel, so the panel it scrolls is already the one on screen.
+  function jumpToAppearance(id: AppearanceJumpId) {
+    setAppearanceJump(id);
+    const target = document.getElementById(id);
+    if (target instanceof HTMLDetailsElement) target.open = true;
+    window.setTimeout(() => jumpToGroup(id), 40);
   }
 
   async function downloadAccountData() {
@@ -1913,28 +2237,75 @@ export function Dashboard({
                 helperText={`Public URL: ${publicProfileAddress(draft.username || "username")}`}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+              {/* Names that also resolve here. A brand and its handle often
+                  differ -- MKTV against mk-tv -- and the name people type is
+                  the brand, which is how cueful.bio/mktv ended up 404ing. */}
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <TextField
+                    label="Also reachable at"
+                    value={aliasInput}
+                    onChange={(event) =>
+                      setAliasInput(normaliseAlias(event.target.value))
+                    }
+                    placeholder={aliasSuggestion}
+                    helperText={
+                      aliasList.length >= ALIAS_LIMIT
+                        ? `Up to ${ALIAS_LIMIT} extra names. Remove one to add another.`
+                        : "Another name that redirects here, e.g. your brand without the dash."
+                    }
+                    fullWidth
+                    disabled={aliasList.length >= ALIAS_LIMIT}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addAlias}
+                    disabled={
+                      aliasBusy ||
+                      !aliasInput ||
+                      aliasList.length >= ALIAS_LIMIT
+                    }
+                    sx={{ mt: 0.5, flexShrink: 0 }}
+                  >
+                    Add name
+                  </Button>
+                </Stack>
+                {aliasList.length ? (
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                    {aliasList.map((alias) => (
+                      <Chip
+                        key={alias}
+                        label={publicProfileAddress(alias)}
+                        onDelete={() => removeAlias(alias)}
+                        disabled={aliasBusy}
+                        size="small"
+                      />
+                    ))}
+                  </Stack>
+                ) : null}
+              </Stack>
+              {/* One headline, two lines. These were "Headline" + "Accent text",
+                  which asked people to cut a sentence in half and guess which
+                  half got coloured; a third field, Greeting, was a template
+                  prefix that read as part of the name. */}
               <div className="workspace-form-pair">
                 <TextField
-                  label="Greeting"
-                  value={draft.greeting}
-                  onChange={(event) => update("greeting", event.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Headline"
+                  label="Headline line 1"
                   value={draft.headline}
                   onChange={(event) => update("headline", event.target.value)}
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
+                <TextField
+                  label="Headline line 2"
+                  value={draft.headline_accent}
+                  onChange={(event) => update("headline_accent", event.target.value)}
+                  helperText="Shown in your accent colour"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
               </div>
               <TextField
-                label="Accent text"
-                value={draft.headline_accent}
-                onChange={(event) => update("headline_accent", event.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Supporting paragraph"
+                label="About"
                 value={draft.bio}
                 onChange={(event) => update("bio", event.target.value)}
                 multiline
@@ -2155,6 +2526,37 @@ export function Dashboard({
 
           {section === "content" && (
             <Stack className="workspace-panel" spacing={2}>
+              {/* Social profiles belong with the links, not in Settings: they
+                  are part of what the page is, not an account preference. */}
+              <Paper
+                id="content-socials"
+                className="workspace-settings-card"
+                variant="outlined"
+              >
+                <div className="workspace-settings-card__heading">
+                  <HubOutlined />
+                  <Box>
+                    <Typography variant="h3">Social profiles</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The networks people can find you on. They show as icons on
+                      your public page.
+                    </Typography>
+                  </Box>
+                </div>
+                <SettingsConnectEditor
+                  profileId={profile.id}
+                  initialSocials={connectedSocials}
+                  onSaved={(next) => {
+                    setConnectedSocials(next);
+                    setNotice({
+                      severity: "success",
+                      message: "Social profiles updated.",
+                    });
+                    router.refresh();
+                  }}
+                />
+              </Paper>
+
               <div className="workspace-panel__heading">
                 <Box>
                   <Typography variant="h3">Links</Typography>
@@ -2165,7 +2567,7 @@ export function Dashboard({
                 <Button
                   variant="contained"
                   disabled={savingLinks}
-                  onClick={saveLinks}
+                  onClick={() => saveLinks()}
                   startIcon={<InsertLinkRounded />}
                 >
                   {savingLinks ? "Saving…" : "Save links"}
@@ -2285,7 +2687,11 @@ export function Dashboard({
 
           {section === "appearance" && (
             <Stack className="workspace-panel" spacing={3}>
-              <div className="workspace-design-group">
+              <AppearanceJumpNav
+                activeId={appearanceJump}
+                onJump={jumpToAppearance}
+              />
+              <div className="workspace-design-group" id="appearance-layout">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Start with a layout</Typography>
@@ -2325,79 +2731,219 @@ export function Dashboard({
                   ))}
                 </div>
               </div>
-
-              <div className="workspace-design-group">
+              <div className="workspace-design-group" id="appearance-curated">
                 <div className="workspace-design-heading">
                   <Box>
-                    <Typography variant="h3">Color direction</Typography>
+                    <Typography variant="h3">Curated themes</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Curated combinations with accessible text contrast.
+                      A whole direction in one tap -- colours, texture, type and
+                      spacing. Anything below can still be nudged afterwards.
                     </Typography>
                   </Box>
                 </div>
-                <div className="workspace-palette-grid">
-                  {themePalettes.map((palette) => {
-                    const selected =
-                      palette.colors.background === activeTheme.colors.background &&
-                      palette.colors.accent === activeTheme.colors.accent &&
-                      palette.colors.button === activeTheme.colors.button;
+                <div className="workspace-curated-grid">
+                  {curatedThemes.map((theme) => {
+                    const selected = isCuratedThemeActive(activeTheme, theme);
                     return (
                       <ButtonBase
-                        className={`workspace-palette${selected ? " is-selected" : ""}`}
+                        className={`workspace-curated${
+                          selected ? " is-selected" : ""
+                        }`}
                         onClick={() =>
                           updateTheme((current) => ({
                             ...current,
-                            colors: { ...palette.colors },
+                            colors: { ...theme.colors },
+                            background: theme.background,
+                            font: theme.font,
+                            buttonShape: theme.buttonShape,
+                            density: theme.density,
+                            // The photograph is part of the look, not a
+                            // leftover upload: picking a theme replaces both.
+                            wallpaperPath: theme.wallpaperPath,
                           }))
                         }
-                        aria-label={`Use ${palette.name} colors`}
-                        key={palette.id}
+                        aria-label={`Use the ${theme.name} theme`}
+                        title={theme.note}
+                        key={theme.id}
                       >
-                        <span className="workspace-palette__swatches">
-                          <i style={{ background: palette.colors.background }} />
-                          <i style={{ background: palette.colors.surface }} />
-                          <i style={{ background: palette.colors.accent }} />
-                          <i style={{ background: palette.colors.button }} />
+                        <span
+                          className={`workspace-curated__tile workspace-curated__tile--${theme.background}${
+                            theme.wallpaperPath ? " workspace-curated__tile--photo" : ""
+                          }`}
+                          style={
+                            profileThemeStyle(
+                              {
+                                version: 1,
+                                colors: theme.colors,
+                                font: theme.font,
+                                buttonShape: theme.buttonShape,
+                                background: theme.background,
+                                density: theme.density,
+                              },
+                              { wallpaperUrl: theme.wallpaperPath },
+                            ) as React.CSSProperties
+                          }
+                        >
+                          <b>Aa</b>
+                          <span className="workspace-curated__pill" />
+                          <span className="workspace-curated__line" />
                         </span>
-                        <span>
-                          <b>{palette.name}</b>
-                          <small>{palette.note}</small>
-                        </span>
+                        <small>{theme.name}</small>
                       </ButtonBase>
                     );
                   })}
                 </div>
               </div>
-
-              <details className="workspace-color-details">
-                <summary>Fine-tune individual colors</summary>
-                <div className="workspace-color-grid">
-                  {themeColorFields.map((field) => (
-                    <label className="workspace-color-control" key={field.key}>
-                      <span>{field.label}</span>
-                      <span>
+              <div className="workspace-design-group" id="appearance-photo">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Your photo</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The picture at the top of your page, and how it sits there.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-branding-row">
+                  <span className="workspace-branding-row__preview workspace-branding-row__preview--avatar">
+                    {draft.avatar_path ? (
+                      <Box
+                        component="img"
+                        src={publicAssetUrl(draft.avatar_path)}
+                        alt=""
+                      />
+                    ) : (
+                      <Typography variant="caption">{initials}</Typography>
+                    )}
+                  </span>
+                  <Box>
+                    <Typography fontWeight={850}>Profile photo</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      A square photo works best. Keep it under 5 MB.
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 1.25 }}
+                    >
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        disabled={avatarUploading}
+                        startIcon={
+                          avatarUploading ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <PhotoCameraOutlined />
+                          )
+                        }
+                      >
+                        {draft.avatar_path ? "Replace photo" : "Upload photo"}
                         <input
-                          type="color"
-                          value={activeTheme.colors[field.key]}
-                          onChange={(event) =>
+                          hidden
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={uploadAvatar}
+                        />
+                      </Button>
+                      {draft.avatar_path && (
+                        <Button
+                          color="inherit"
+                          onClick={removeAvatar}
+                          disabled={avatarUploading}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </div>
+
+                <div className="workspace-design-split" style={{ marginTop: 18 }}>
+                  <div className="workspace-design-group">
+                    <Typography variant="h3">Shape</Typography>
+                    <div className="workspace-segmented">
+                      {themeAvatarShapeOptions.map((option) => (
+                        <ButtonBase
+                          className={
+                            (activeTheme.avatarShape ?? "circle") === option.id
+                              ? "is-selected"
+                              : ""
+                          }
+                          onClick={() =>
                             updateTheme((current) => ({
                               ...current,
-                              colors: {
-                                ...current.colors,
-                                [field.key]: event.target.value,
-                              },
+                              avatarShape: option.id,
                             }))
                           }
-                          aria-label={`${field.label} color`}
-                        />
-                        <code>{activeTheme.colors[field.key]}</code>
-                      </span>
-                    </label>
-                  ))}
+                          aria-label={`Use a ${option.name.toLowerCase()} avatar`}
+                          title={option.note}
+                          key={option.id}
+                        >
+                          {option.name}
+                        </ButtonBase>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="workspace-design-group">
+                    <Typography variant="h3">Frame</Typography>
+                    <div className="workspace-segmented">
+                      {([true, false] as const).map((enabled) => (
+                        <ButtonBase
+                          className={
+                            Boolean(activeTheme.avatarRing) === enabled
+                              ? "is-selected"
+                              : ""
+                          }
+                          onClick={() =>
+                            updateTheme((current) => ({
+                              ...current,
+                              avatarRing: enabled,
+                            }))
+                          }
+                          key={String(enabled)}
+                        >
+                          {enabled ? "On" : "Off"}
+                        </ButtonBase>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </details>
 
-              <div className="workspace-design-group">
+                <div className="workspace-design-group" style={{ marginTop: 18 }}>
+                  <Typography variant="h3">Faded backdrop</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.25 }}
+                  >
+                    Blow the photo up behind your name, blurred and faded.
+                  </Typography>
+                  <div className="workspace-segmented">
+                    {([true, false] as const).map((enabled) => (
+                      <ButtonBase
+                        className={
+                          Boolean(activeTheme.avatarBackdrop) === enabled
+                            ? "is-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            avatarBackdrop: enabled,
+                          }))
+                        }
+                        key={String(enabled)}
+                      >
+                        {enabled ? "On" : "Off"}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group" id="appearance-type">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Type pairing</Typography>
@@ -2406,7 +2952,7 @@ export function Dashboard({
                     </Typography>
                   </Box>
                 </div>
-                <div className="workspace-choice-grid workspace-choice-grid--fonts">
+                <ChoiceCarousel label="Type pairing">
                   {themeFontOptions.map((font) => (
                     <ButtonBase
                       className={`workspace-type-choice workspace-type-choice--${font.id} ${
@@ -2422,10 +2968,81 @@ export function Dashboard({
                       <small>{font.name}</small>
                     </ButtonBase>
                   ))}
-                </div>
+                </ChoiceCarousel>
               </div>
 
               <div className="workspace-design-split">
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Type size</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontScaleOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontScale === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontScale: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} type size`}
+                        title={option.note}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+                <div className="workspace-design-group">
+                  <Typography variant="h3">Boldness</Typography>
+                  <div className="workspace-segmented">
+                    {themeFontWeightOptions.map((option) => (
+                      <ButtonBase
+                        className={
+                          activeTheme.fontWeight === option.id ? "is-selected" : ""
+                        }
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            fontWeight: option.id,
+                          }))
+                        }
+                        aria-label={`Use ${option.name} text weight`}
+                        key={option.id}
+                      >
+                        {option.name}
+                      </ButtonBase>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="workspace-design-group">
+                <Typography variant="h3">Style</Typography>
+                <div className="workspace-segmented">
+                  {themeFontStyleOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        activeTheme.fontStyle === option.id ? "is-selected" : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          fontStyle: option.id,
+                        }))
+                      }
+                      aria-label={`Use ${option.name} text style`}
+                      key={option.id}
+                    >
+                      {option.name}
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-split" id="appearance-buttons">
                 <div className="workspace-design-group">
                   <Typography variant="h3">Button shape</Typography>
                   <div className="workspace-segmented">
@@ -2464,7 +3081,39 @@ export function Dashboard({
                 </div>
               </div>
 
-              <div className="workspace-design-group">
+              <div className="workspace-design-group" id="appearance-social">
+                <div className="workspace-design-heading">
+                  <Box>
+                    <Typography variant="h3">Social icons</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      How large the row of icons under your name sits.
+                    </Typography>
+                  </Box>
+                </div>
+                <div className="workspace-segmented">
+                  {themeSocialSizeOptions.map((option) => (
+                    <ButtonBase
+                      className={
+                        (activeTheme.socialSize ?? "md") === option.id
+                          ? "is-selected"
+                          : ""
+                      }
+                      onClick={() =>
+                        updateTheme((current) => ({
+                          ...current,
+                          socialSize: option.id,
+                        }))
+                      }
+                      title={option.note}
+                      key={option.id}
+                    >
+                      {option.name}
+                    </ButtonBase>
+                  ))}
+                </div>
+              </div>
+
+              <div className="workspace-design-group" id="appearance-wallpapers">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Wallpapers</Typography>
@@ -2495,10 +3144,18 @@ export function Dashboard({
                               .colors,
                           };
                           const colors = blockPalettes[background.id];
+                          const curatedPhoto = curatedThemes.some(
+                            (theme) =>
+                              theme.wallpaperPath !== null &&
+                              theme.wallpaperPath === current.wallpaperPath,
+                          );
                           return {
                             ...current,
                             background: background.id,
                             ...(colors ? { colors: { ...colors } } : {}),
+                            // Flat texture means the photo look is over --
+                            // but only the bundled one, never their upload.
+                            ...(curatedPhoto ? { wallpaperPath: null } : {}),
                           };
                         })
                       }
@@ -2561,7 +3218,8 @@ export function Dashboard({
                 </div>
               </div>
 
-              <div className="workspace-design-group">
+
+              <div className="workspace-design-group" id="appearance-branding">
                 <div className="workspace-design-heading">
                   <Box>
                     <Typography variant="h3">Your branding</Typography>
@@ -2627,6 +3285,79 @@ export function Dashboard({
                   </Box>
                 </div>
               </div>
+
+              <details className="workspace-advanced" id="appearance-colour">
+                <summary>
+                  <span>
+                    <b>Advanced: tune colors</b>
+                    <small>
+                      Optional. Themes above already set a full palette.
+                    </small>
+                  </span>
+                </summary>
+              <div className="workspace-design-group">
+                <div className="workspace-palette-grid">
+                  {themePalettes.map((palette) => {
+                    const selected =
+                      palette.colors.background === activeTheme.colors.background &&
+                      palette.colors.accent === activeTheme.colors.accent &&
+                      palette.colors.button === activeTheme.colors.button;
+                    return (
+                      <ButtonBase
+                        className={`workspace-palette${selected ? " is-selected" : ""}`}
+                        onClick={() =>
+                          updateTheme((current) => ({
+                            ...current,
+                            colors: { ...palette.colors },
+                          }))
+                        }
+                        aria-label={`Use ${palette.name} colors`}
+                        key={palette.id}
+                      >
+                        <span className="workspace-palette__swatches">
+                          <i style={{ background: palette.colors.background }} />
+                          <i style={{ background: palette.colors.surface }} />
+                          <i style={{ background: palette.colors.accent }} />
+                          <i style={{ background: palette.colors.button }} />
+                        </span>
+                        <span>
+                          <b>{palette.name}</b>
+                          <small>{palette.note}</small>
+                        </span>
+                      </ButtonBase>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <details className="workspace-color-details">
+                <summary>Fine-tune individual colors</summary>
+                <div className="workspace-color-grid">
+                  {themeColorFields.map((field) => (
+                    <label className="workspace-color-control" key={field.key}>
+                      <span>{field.label}</span>
+                      <span>
+                        <input
+                          type="color"
+                          value={activeTheme.colors[field.key]}
+                          onChange={(event) =>
+                            updateTheme((current) => ({
+                              ...current,
+                              colors: {
+                                ...current.colors,
+                                [field.key]: event.target.value,
+                              },
+                            }))
+                          }
+                          aria-label={`${field.label} color`}
+                        />
+                        <code>{activeTheme.colors[field.key]}</code>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+              </details>
 
               <Alert severity="info" variant="outlined">
                 Every appearance control is included. Saving changes updates the
@@ -3454,34 +4185,6 @@ export function Dashboard({
                 <InstallApp requested />
               </Paper>
 
-              <Paper
-                id="settings-connect"
-                className="workspace-settings-card"
-                variant="outlined"
-              >
-                <div className="workspace-settings-card__heading">
-                  <HubOutlined />
-                  <Box>
-                    <Typography variant="h3">Connect</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Social profiles shown as icons on your public page.
-                    </Typography>
-                  </Box>
-                </div>
-                <SettingsConnectEditor
-                  profileId={profile.id}
-                  initialSocials={connectedSocials}
-                  onSaved={(next) => {
-                    setConnectedSocials(next);
-                    setNotice({
-                      severity: "success",
-                      message: "Social profiles updated.",
-                    });
-                    router.refresh();
-                  }}
-                />
-              </Paper>
-
               <Paper className="workspace-settings-card" variant="outlined">
                 <div className="workspace-settings-card__heading">
                   <SettingsOutlined />
@@ -3516,6 +4219,27 @@ export function Dashboard({
                       update("is_published", event.target.checked)
                     }
                     inputProps={{ "aria-label": "Publish public page" }}
+                  />
+                </div>
+                <div className="workspace-settings-switch">
+                  <Box>
+                    <Typography fontWeight={850}>Search your page</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Shown only on pages with more than five links, where a
+                      visitor has to look for one. Off by default.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={activeTheme.search !== false}
+                    onChange={(event) =>
+                      updateTheme((current) => ({
+                        ...current,
+                        search: event.target.checked,
+                      }))
+                    }
+                    inputProps={{
+                      "aria-label": "Show the search box on the public page",
+                    }}
                   />
                 </div>
                 <div className="workspace-settings-switch">
@@ -3709,10 +4433,23 @@ export function Dashboard({
         aria-label="Live page preview"
       >
         <header className="workspace-preview__topbar">
-          <Chip
-            label={publicProfileAddress(draft.username || "username")}
-            variant="outlined"
-          />
+          {draft.username ? (
+            // The address is the page it names, so the chip is the link. Opened
+            // in a new tab on purpose: this is a check against the live page,
+            // not a navigation away from unsaved edits.
+            <Chip
+              component="a"
+              href={publicProfileUrl(draft.username)}
+              target="_blank"
+              rel="noreferrer"
+              clickable
+              label={publicProfileAddress(draft.username)}
+              variant="outlined"
+              title={`Open ${publicProfileAddress(draft.username)} in a new tab`}
+            />
+          ) : (
+            <Chip label={publicProfileAddress()} variant="outlined" />
+          )}
           <Typography variant="caption">LIVE PREVIEW</Typography>
         </header>
         <div
@@ -3721,12 +4458,32 @@ export function Dashboard({
             { wallpaperUrl: previewWallpaperUrl },
           )}`}
           style={
-            profileThemeStyle(activeTheme, {
-              wallpaperUrl: previewWallpaperUrl,
-            }) as React.CSSProperties
+            {
+              ...profileThemeStyle(activeTheme, {
+                wallpaperUrl: previewWallpaperUrl,
+              }),
+              // Handed down as a custom property so only the blurred layer
+              // paints it -- a background here would draw a second, sharp copy.
+              ...(previewAvatarBackdrop
+                ? { "--avatar-backdrop": `url("${previewAvatarUrl}")` }
+                : {}),
+            } as React.CSSProperties
           }
+          data-avatar-backdrop={previewAvatarBackdrop ? "on" : undefined}
+          ref={previewPhoneRef}
         >
           <div className="workspace-phone__body">
+            {/* Two layers, in the order the card paints them: the photograph,
+                then the veil solved for it. The preview used to show a blurred
+                62% band here, which was the page treatment two designs ago and
+                disagreed with the page about the one thing the creator switches
+                on this setting to look at. */}
+            {previewAvatarBackdrop ? (
+              <div className="workspace-phone__backdrop" aria-hidden="true">
+                <div className="workspace-phone__backdrop-photo" />
+                <div className="workspace-phone__backdrop-veil" />
+              </div>
+            ) : null}
             {brandingLogoUrl && (
               <Box
                 component="img"
@@ -3735,24 +4492,33 @@ export function Dashboard({
                 alt=""
               />
             )}
-            <Avatar
-              className="workspace-phone__avatar"
-              src={publicAssetUrl(draft.avatar_path)}
-            >
-              {initials}
-            </Avatar>
+            {/* No avatar when the photograph is on, for the same reason as the
+                page: the picture has taken its place. */}
+            {!previewAvatarBackdrop && (
+              <Avatar
+                className={`workspace-phone__avatar${
+                  previewAvatarShape ? ` avatar--${previewAvatarShape}` : ""
+                }${previewAvatarRing ? " avatar--ring" : ""}`}
+                src={previewAvatarUrl}
+              >
+                {initials}
+              </Avatar>
+            )}
             <Typography className="workspace-phone__handle">
               @{draft.username || "username"}
             </Typography>
-            <Typography component="h2">{draft.greeting} {draft.display_name}.</Typography>
+            {/* Same place the page puts it: the location is the eyebrow above
+                the name, not a line under the bio. The preview used to draw it
+                below the bio, which is not where a visitor reads it. */}
+            {draft.show_location && draft.location && (
+              <Typography className="workspace-phone__eyebrow">
+                {draft.location}
+              </Typography>
+            )}
+            <Typography component="h2" ref={previewTitleRef}>{draft.display_name}.</Typography>
             <Typography component="h3">{draft.headline} <em>{draft.headline_accent}</em></Typography>
             {draft.bio && (
               <Typography className="workspace-phone__bio">{draft.bio}</Typography>
-            )}
-            {draft.show_location && draft.location && (
-              <Typography className="workspace-phone__location">
-                {draft.location}
-              </Typography>
             )}
 
             {connectedSocials.length > 0 && (
@@ -3765,10 +4531,76 @@ export function Dashboard({
               </div>
             )}
 
-            <div className="workspace-phone__search">
-              <SearchRounded />
-              <span>Search links and offers…</span>
-            </div>
+            {/* Same rule as the page: only when the creator has turned it on
+                and there are more than five links to search. The phone used to
+                draw this box unconditionally, so the preview promised a search
+                that the published page never showed. */}
+            {activeTheme.search === true && previewActiveLinks.length > 5 && (
+              <div className="workspace-phone__search">
+                <SearchRounded />
+                <span>Search links and offers…</span>
+              </div>
+            )}
+
+            {highlights.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">RIGHT NOW</Typography>
+                  <small>{highlights.length}</small>
+                </div>
+                <div className="workspace-phone__highlight-rail">
+                  {highlights.slice(0, 4).map((item) => (
+                    <Box
+                      component="img"
+                      className="workspace-phone__highlight"
+                      src={publicAssetUrl(item.image_path)}
+                      alt=""
+                      key={item.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {previewVideos.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">WATCH</Typography>
+                  <small>{previewVideos.length}</small>
+                </div>
+                <div className="workspace-phone__links">
+                  {previewVideos.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>{item.provider}</small>
+                      </span>
+                      <PlayArrowRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {previewAudio.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">LISTEN</Typography>
+                  <small>{previewAudio.length}</small>
+                </div>
+                <div className="workspace-phone__links">
+                  {previewAudio.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>{item.provider}</small>
+                      </span>
+                      <PlayArrowRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {activeReferrals.length > 0 && (
               <div className="workspace-phone__offers">
@@ -3792,41 +4624,153 @@ export function Dashboard({
               </div>
             )}
 
-            <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
-              <Typography className="section-label">MY LINKS</Typography>
-              <small>{activeLinks.length || 2} DESTINATIONS</small>
-            </div>
-            <div className="workspace-phone__links">
-              {activeLinks.slice(0, 4).map((item) => (
-                <div className="workspace-phone__link" key={item.id}>
-                  {item.thumbnail_path && (
-                    <Box
-                      component="img"
-                      className="workspace-phone__link-image"
-                      src={publicAssetUrl(item.thumbnail_path)}
-                      alt=""
-                    />
-                  )}
-                  <span>
-                    <b>{item.title}</b>
-                    {item.subtitle && <small>{item.subtitle}</small>}
-                  </span>
-                  <ArrowOutwardRounded />
+            {previewFeaturedLinks.length > 0 && (
+              <div>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">FEATURED</Typography>
+                  <small>CURATED, NOT CROWDED</small>
                 </div>
-              ))}
-              {activeLinks.length === 0 && (
-                <>
+                <div className="workspace-phone__links">
+                  {previewFeaturedLinks.slice(0, 4).map(renderPreviewLink)}
+                </div>
+              </div>
+            )}
+
+            {previewLinkSections.map((group) => (
+              <div key={group.name || "all-links"}>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">
+                    {(group.name || "My links").toUpperCase()}
+                  </Typography>
+                  <small>
+                    {group.links.length}{" "}
+                    {group.links.length === 1 ? "DESTINATION" : "DESTINATIONS"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {group.links.slice(0, 4).map(renderPreviewLink)}
+                </div>
+              </div>
+            ))}
+            {previewActiveLinks.length === 0 && (
+              <>
+                <div className="workspace-phone__section-heading workspace-phone__section-heading--links">
+                  <Typography className="section-label">MY LINKS</Typography>
+                  <small>0 DESTINATIONS</small>
+                </div>
+                <div className="workspace-phone__links">
+                  <p className="workspace-phone__empty">
+                    No links yet — add one and it appears here.
+                  </p>
+                </div>
+              </>
+            )}
+            {activeFaqs.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">GOOD TO KNOW</Typography>
+                  <small>
+                    {activeFaqs.length}{" "}
+                    {activeFaqs.length === 1 ? "ANSWER" : "ANSWERS"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {activeFaqs.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.question}</b>
+                      </span>
+                      {/* The page starts every answer collapsed behind a "+",
+                          so the preview shows the same closed card rather than
+                          an answer a visitor would not see until they tap. */}
+                      <span className="workspace-phone__link-plus" aria-hidden="true">
+                        +
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeProducts.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">SHOP</Typography>
+                  <small>
+                    {activeProducts.length}{" "}
+                    {activeProducts.length === 1 ? "ITEM" : "ITEMS"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {activeProducts.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      {item.image_path && (
+                        <Box
+                          component="img"
+                          className="workspace-phone__link-image"
+                          src={publicAssetUrl(item.image_path)}
+                          alt=""
+                        />
+                      )}
+                      <span>
+                        <b>{item.title}</b>
+                        {item.price_amount !== null && (
+                          <small>
+                            {formatPreviewPrice(item.price_amount, item.currency)}
+                          </small>
+                        )}
+                      </span>
+                      <ArrowOutwardRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {timeline.length > 0 && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">BACKGROUND</Typography>
+                  <small>
+                    {timeline.length}{" "}
+                    {timeline.length === 1 ? "ENTRY" : "ENTRIES"}
+                  </small>
+                </div>
+                <div className="workspace-phone__links">
+                  {timeline.slice(0, 2).map((item) => (
+                    <div className="workspace-phone__link" key={item.id}>
+                      <span>
+                        <b>{item.title}</b>
+                        <small>
+                          {[item.organisation, formatRange(item)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </small>
+                      </span>
+                      <ChevronRightRounded />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {draft.show_map && (draft.map_address ?? "").trim() !== "" && (
+              <div className="workspace-phone__offers">
+                <div className="workspace-phone__section-heading">
+                  <Typography className="section-label">FIND US</Typography>
+                </div>
+                <div className="workspace-phone__links">
                   <div className="workspace-phone__link">
-                    <span><b>Your first project</b><small>Share something worth opening</small></span>
-                    <ArrowOutwardRounded />
+                    <span>
+                      <b>Get directions</b>
+                      <small>{draft.map_address}</small>
+                    </span>
+                    <MapRounded />
                   </div>
-                  <div className="workspace-phone__link">
-                    <span><b>A useful resource</b><small>Give it a little context</small></span>
-                    <ArrowOutwardRounded />
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
+
             {draft.show_cueful_badge && (
               <div className="workspace-phone__supporter-badge">
                 Create your Cueful

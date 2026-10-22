@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import {
   Dashboard,
@@ -8,6 +9,7 @@ import {
   type DashboardSocial,
   type DashboardView,
 } from "@/components/dashboard";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 import {
   type DashboardMediaEmbed,
   type DashboardProduct,
@@ -16,6 +18,7 @@ import { type DashboardConnection } from "@/components/connections-inbox";
 import { type DashboardFaq } from "@/components/faq-editor";
 import { type DashboardHighlight } from "@/components/highlights-editor";
 import { isAdminEmail } from "@/lib/admin-access";
+import { selectToleratingColumn } from "@/lib/optional-columns";
 import { createClient } from "@/lib/supabase/server";
 import type { TimelineEntry } from "@/lib/timeline";
 
@@ -40,9 +43,53 @@ export default async function DashboardPage() {
     redirect("/auth");
   }
 
+  // Auth and the profile row resolve before anything streams. Behind the
+  // Suspense boundary below, both redirects would land after the response had
+  // already begun -- answered 200 and completed only once React hydrates.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    redirect("/auth?error=profile_missing");
+  }
+
+  // Fetched here rather than in the workspace so a missing table (before the
+  // alias migration lands) cannot fail the dashboard's data block.
+  const { data: aliases } = await supabase
+    .from("profile_aliases")
+    .select("alias")
+    .eq("user_id", user.id)
+    .order("alias");
+
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardWorkspace
+        profile={profile as DashboardProfile}
+        email={user.email ?? ""}
+        isAdmin={isAdminEmail(user.email)}
+        aliases={(aliases ?? []).map((item) => item.alias)}
+      />
+    </Suspense>
+  );
+}
+
+async function DashboardWorkspace({
+  profile,
+  email,
+  isAdmin,
+  aliases,
+}: {
+  profile: DashboardProfile;
+  email: string;
+  isAdmin: boolean;
+  aliases: string[];
+}) {
+  const supabase = await createClient();
   const [
-    { data: profile },
-    { data: links },
+    links,
     { data: referrals },
     { data: socials },
     { data: events },
@@ -56,34 +103,41 @@ export default async function DashboardPage() {
     { count: referralCount },
   ] =
     await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase
-        .from("links")
-        .select("id,title,subtitle,url,thumbnail_path,position,is_active,is_featured")
-        .eq("user_id", user.id)
-        .order("position"),
+      // Tolerated, so the editor still shows its links on a database where the
+      // card_style migration has not been run: an empty editor looks like the
+      // creator has no links, and saving it would then delete them.
+      selectToleratingColumn<DashboardLink>(
+        "id,title,subtitle,url,thumbnail_path,position,is_active,is_featured,group_name,card_style",
+        "card_style",
+        (columns) =>
+          supabase
+            .from("links")
+            .select(columns)
+            .eq("user_id", profile.id)
+            .order("position"),
+      ),
       supabase
         .from("referrals")
         .select("id,provider,offer,url,code,color,position,is_active")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("social_links")
         .select("platform,url,position")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("click_events")
         .select(
           "event_type,link_id,referral_id,product_id,media_embed_id,occurred_at,device_type,country_code,referrer",
         )
-        .eq("profile_id", user.id)
+        .eq("profile_id", profile.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
       supabase
         .from("profile_views")
         .select("occurred_at,device_type,country_code,referrer,event_tag,source")
-        .eq("profile_id", user.id)
+        .eq("profile_id", profile.id)
         .order("occurred_at", { ascending: false })
         .limit(5000),
       supabase
@@ -91,29 +145,29 @@ export default async function DashboardPage() {
         .select(
           "id,kind,title,organisation,location,started_on,ended_on,is_current,description",
         )
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("products")
         .select(
           "id,title,description,price_amount,currency,category,badge,image_path,destination_url,cta_label,position,is_active,is_featured",
         )
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("media_embeds")
         .select("id,title,provider,url,layout,position,is_active")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("profile_faqs")
         .select("id,question,answer,position,is_active")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("position"),
       supabase
         .from("profile_highlights")
         .select("id,image_path,title,destination_url,position,expires_at")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .gt("expires_at", new Date().toISOString())
         .order("position"),
       supabase
@@ -121,25 +175,22 @@ export default async function DashboardPage() {
         .select(
           "id,name,email,phone,company,job_title,note,event_tag,status,source,met_at,connected_at",
         )
-        .eq("profile_id", user.id)
+        .eq("profile_id", profile.id)
         .order("met_at", { ascending: false })
         .limit(2000),
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("referred_by", user.id)
+        .eq("referred_by", profile.id)
         .eq("is_published", true),
     ]);
 
-  if (!profile) {
-    redirect("/auth?error=profile_missing");
-  }
-
   return (
     <Dashboard
-      profile={profile as DashboardProfile}
-      email={user.email ?? ""}
-      isAdmin={isAdminEmail(user.email)}
+      profile={profile}
+      email={email}
+      isAdmin={isAdmin}
+      aliases={aliases}
       links={(links ?? []) as DashboardLink[]}
       referrals={(referrals ?? []) as DashboardReferral[]}
       socials={(socials ?? []) as DashboardSocial[]}

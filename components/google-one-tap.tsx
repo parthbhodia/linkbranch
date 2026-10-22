@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { hasCompletedOnboarding } from "@/lib/onboarding-status";
 import { TEMPLATE_PICKER, postAuthDestination } from "@/lib/post-auth-destination";
 
 /**
@@ -117,7 +118,7 @@ export function GoogleOneTap({ next = TEMPLATE_PICKER }: { next?: string }) {
         callback: async (response: CredentialResponse) => {
           if (!response.credential) return;
 
-          const { error } = await supabase.auth.signInWithIdToken({
+          const { data, error } = await supabase.auth.signInWithIdToken({
             provider: "google",
             token: response.credential,
             nonce: raw,
@@ -127,16 +128,13 @@ export function GoogleOneTap({ next = TEMPLATE_PICKER }: { next?: string }) {
           // Same rule the callback route and the password form use, so a
           // returning user lands on their dashboard rather than on the
           // template picker they worked through months ago.
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed")
-            .single();
+          const onboardingCompleted = await hasCompletedOnboarding(
+            supabase,
+            data.user?.id,
+          );
 
           router.push(
-            postAuthDestination({
-              requested: next,
-              onboardingCompleted: Boolean(profile?.onboarding_completed),
-            }),
+            postAuthDestination({ requested: next, onboardingCompleted }),
           );
           router.refresh();
         },

@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { readImportedProfileDraft } from "@/lib/import-draft";
 
@@ -236,15 +236,21 @@ function MiniProfile({ template }: { template: Template }) {
   );
 }
 
-export function TemplatePicker() {
+export function TemplatePicker({
+  requestedTemplate,
+  importFlow = false,
+}: {
+  /** `?template=` -- preselects a card, e.g. a returning visitor's last pick. */
+  requestedTemplate?: string;
+  /** `?import=1` -- the import path signs up rather than continuing in-app. */
+  importFlow?: boolean;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const requested = searchParams.get("template");
-  const initialId = templates.some((item) => item.id === requested)
-    ? (requested as TemplateId)
+  const initialId = templates.some((item) => item.id === requestedTemplate)
+    ? (requestedTemplate as TemplateId)
     : "field-notes";
   const [selectedId, setSelectedId] = useState<TemplateId>(initialId);
-  const isImportFlow = searchParams.get("import") === "1";
+  const isImportFlow = importFlow;
 
   const selected = useMemo(
     () => templates.find((template) => template.id === selectedId) ?? templates[0],

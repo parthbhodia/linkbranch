@@ -1,4 +1,15 @@
-export type ThemeFont = "studio" | "editorial" | "rounded" | "mono";
+export type ThemeFont =
+  | "studio"
+  | "editorial"
+  | "rounded"
+  | "mono"
+  | "grotesk"
+  | "book"
+  | "typewriter"
+  | "humanist"
+  | "slab"
+  | "didone"
+  | "poster";
 export type ThemeButtonShape = "soft" | "pill" | "sharp" | "glass" | "outline";
 export type ThemeBackground =
   | "solid"
@@ -17,6 +28,13 @@ export type ThemeBackground =
   | "lagoon"
   | "lilac";
 export type ThemeDensity = "relaxed" | "compact";
+export type ThemeFontScale = "sm" | "md" | "lg" | "xl";
+export type ThemeFontWeight = "regular" | "medium" | "bold";
+export type ThemeFontStyle = "normal" | "italic";
+/** Silhouette of the avatar on the public page. */
+export type ThemeAvatarShape = "circle" | "rounded" | "square";
+/** Size step for the row of social icons. */
+export type ThemeSocialSize = "sm" | "md" | "lg" | "xl";
 
 export type ProfileThemeConfig = {
   version: 1;
@@ -30,11 +48,34 @@ export type ProfileThemeConfig = {
     buttonText: string;
   };
   font: ThemeFont;
+  /** Size step for the profile's own text; a multiplier over the base sizes. */
+  fontScale?: ThemeFontScale;
+  /** Weight applied to the display text (name and headline). */
+  fontWeight?: ThemeFontWeight;
+  /** Slant applied to the display text. */
+  fontStyle?: ThemeFontStyle;
   buttonShape: ThemeButtonShape;
   background: ThemeBackground;
   density: ThemeDensity;
   /** Show the public contact/subscribe form on the profile. */
   contactForm?: boolean;
+  /**
+   * Show the search box above the links. Off unless set, and only drawn on a
+   * page with more than five links even then. It used to be absent-means-shown,
+   * which put a search field above every five-link page in the product.
+   */
+  search?: boolean;
+  /** Silhouette of the avatar. Absent means the circle every page started with. */
+  avatarShape?: ThemeAvatarShape;
+  /** A solid ring around the avatar, as a frame against a busy backdrop. */
+  avatarRing?: boolean;
+  /** Blow the avatar up, blurred and faded, behind the name and headline. */
+  avatarBackdrop?: boolean;
+  /**
+   * Size step for the row of social icons. Absent means the size the page
+   * already had, so a template that sizes its own row keeps it.
+   */
+  socialSize?: ThemeSocialSize;
   /** Optional custom brand mark shown above the profile intro. */
   logoPath?: string | null;
   /** Optional full-bleed wallpaper image layered under the page. */
@@ -70,8 +111,43 @@ export const themeBackgroundOptions: Array<{
   { id: "grain", name: "Grain", note: "Film texture" },
 ];
 
+/** The type pairings a creator can pick from. Order is the order they appear in
+ *  the picker: the four the product shipped with first, then the wider set the
+ *  carousel made room for. */
+export const themeFontOptions: Array<{
+  id: ThemeFont;
+  name: string;
+  sample: string;
+}> = [
+  { id: "studio", name: "Studio", sample: "Useful things" },
+  { id: "editorial", name: "Editorial", sample: "Useful things" },
+  { id: "rounded", name: "Rounded", sample: "Useful things" },
+  { id: "mono", name: "Mono", sample: "USEFUL THINGS" },
+  { id: "grotesk", name: "Grotesk", sample: "Useful things" },
+  { id: "book", name: "Book", sample: "Useful things" },
+  { id: "typewriter", name: "Typewriter", sample: "useful_things" },
+  { id: "humanist", name: "Humanist", sample: "Useful things" },
+  { id: "slab", name: "Slab", sample: "Useful things" },
+  { id: "didone", name: "Didone", sample: "Useful things" },
+  // A poster face: one heavy condensed cut, no light weights to fall back on.
+  // The sample is uppercased by the card's own rule, the way the face is used.
+  { id: "poster", name: "Poster", sample: "Big energy" },
+];
+
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-const fonts = new Set<ThemeFont>(["studio", "editorial", "rounded", "mono"]);
+const fonts = new Set<ThemeFont>([
+  "studio",
+  "editorial",
+  "rounded",
+  "mono",
+  "grotesk",
+  "book",
+  "typewriter",
+  "humanist",
+  "slab",
+  "didone",
+  "poster",
+]);
 const shapes = new Set<ThemeButtonShape>([
   "soft",
   "pill",
@@ -83,6 +159,60 @@ const backgrounds = new Set<ThemeBackground>(
   themeBackgroundOptions.map((item) => item.id),
 );
 const densities = new Set<ThemeDensity>(["relaxed", "compact"]);
+const fontScales = new Set<ThemeFontScale>(["sm", "md", "lg", "xl"]);
+const fontWeights = new Set<ThemeFontWeight>(["regular", "medium", "bold"]);
+const fontStyles = new Set<ThemeFontStyle>(["normal", "italic"]);
+const avatarShapes = new Set<ThemeAvatarShape>(["circle", "rounded", "square"]);
+const socialSizes = new Set<ThemeSocialSize>(["sm", "md", "lg", "xl"]);
+
+export const themeFontScaleOptions: Array<{
+  id: ThemeFontScale;
+  name: string;
+  note: string;
+}> = [
+  { id: "sm", name: "Small", note: "Tighter type" },
+  { id: "md", name: "Default", note: "Balanced" },
+  { id: "lg", name: "Large", note: "Easier to read" },
+  { id: "xl", name: "Extra large", note: "Loud and clear" },
+];
+
+export const themeFontWeightOptions: Array<{
+  id: ThemeFontWeight;
+  name: string;
+}> = [
+  { id: "regular", name: "Regular" },
+  { id: "medium", name: "Medium" },
+  { id: "bold", name: "Bold" },
+];
+
+export const themeFontStyleOptions: Array<{
+  id: ThemeFontStyle;
+  name: string;
+}> = [
+  { id: "normal", name: "Upright" },
+  { id: "italic", name: "Italic" },
+];
+
+export const themeAvatarShapeOptions: Array<{
+  id: ThemeAvatarShape;
+  name: string;
+  note: string;
+}> = [
+  { id: "circle", name: "Circle", note: "The default round photo" },
+  { id: "rounded", name: "Rounded", note: "A squircle, like an app icon" },
+  { id: "square", name: "Square", note: "A hard-edged tile" },
+];
+
+export const themeSocialSizeOptions: Array<{
+  id: ThemeSocialSize;
+  name: string;
+  note: string;
+}> = [
+  { id: "sm", name: "Small", note: "Tucked in" },
+  { id: "md", name: "Default", note: "The size the row ships at" },
+  { id: "lg", name: "Large", note: "Easier to hit" },
+  { id: "xl", name: "Extra large", note: "The loudest the row gets" },
+];
 
 export const themePalettes: ThemePalette[] = [
   {
@@ -356,7 +486,15 @@ function copyTheme(theme: ProfileThemeConfig): ProfileThemeConfig {
   return {
     ...theme,
     colors: { ...theme.colors },
+    fontScale: theme.fontScale ?? "md",
+    fontWeight: theme.fontWeight ?? "regular",
+    fontStyle: theme.fontStyle ?? "normal",
     contactForm: theme.contactForm ?? false,
+    // Off unless a creator turns it on: a short page does not need a search
+    // box above the five links it is searching.
+    search: theme.search ?? false,
+    avatarRing: theme.avatarRing ?? false,
+    avatarBackdrop: theme.avatarBackdrop ?? false,
     logoPath: theme.logoPath ?? null,
     wallpaperPath: theme.wallpaperPath ?? null,
   };
@@ -410,7 +548,35 @@ export function parseProfileTheme(raw: unknown): ProfileThemeConfig | null {
     buttonShape: candidate.buttonShape as ThemeButtonShape,
     background: candidate.background as ThemeBackground,
     density: candidate.density as ThemeDensity,
+    // Added after the first themes shipped, so a stored theme without them is
+    // valid and simply takes the default rather than falling back wholesale.
+    fontScale: fontScales.has(candidate.fontScale as ThemeFontScale)
+      ? (candidate.fontScale as ThemeFontScale)
+      : "md",
+    fontWeight: fontWeights.has(candidate.fontWeight as ThemeFontWeight)
+      ? (candidate.fontWeight as ThemeFontWeight)
+      : "regular",
+    fontStyle: fontStyles.has(candidate.fontStyle as ThemeFontStyle)
+      ? (candidate.fontStyle as ThemeFontStyle)
+      : "normal",
     contactForm: candidate.contactForm === true,
+    // Off unless explicitly on. The box used to be shown by default because it
+    // was drawn unconditionally; that made every five-link page sit under a
+    // search field it had no use for.
+    search: candidate.search === true,
+    // Left off entirely unless the creator picks one. A template is allowed to
+    // give its own avatar a shape -- soft-studio rounds and tilts it -- and a
+    // default of "circle" here would quietly straighten every one of them.
+    ...(avatarShapes.has(candidate.avatarShape as ThemeAvatarShape)
+      ? { avatarShape: candidate.avatarShape as ThemeAvatarShape }
+      : {}),
+    avatarRing: candidate.avatarRing === true,
+    avatarBackdrop: candidate.avatarBackdrop === true,
+    // Left off unless picked, for the same reason as the shape above: a
+    // template is allowed to size its own row.
+    ...(socialSizes.has(candidate.socialSize as ThemeSocialSize)
+      ? { socialSize: candidate.socialSize as ThemeSocialSize }
+      : {}),
     logoPath:
       typeof (candidate as { logoPath?: unknown }).logoPath === "string"
         ? ((candidate as { logoPath: string }).logoPath.slice(0, 512) || null)
@@ -445,6 +611,40 @@ const fontStacks: Record<ThemeFont, { display: string; body: string }> = {
   },
   mono: {
     display: 'ui-monospace, "SFMono-Regular", Menlo, monospace',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  grotesk: {
+    display: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    body: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  },
+  // Serif on both sides: a reading page rather than a headline over sans copy.
+  book: {
+    display: 'Georgia, "Iowan Old Style", "Times New Roman", serif',
+    body: 'Georgia, "Iowan Old Style", "Times New Roman", serif',
+  },
+  // One monospaced voice throughout, which is a different idea from "mono",
+  // where the title is typed and the body is normal.
+  typewriter: {
+    display: 'ui-monospace, "SFMono-Regular", Menlo, "Courier New", monospace',
+    body: 'ui-monospace, "SFMono-Regular", Menlo, "Courier New", monospace',
+  },
+  humanist: {
+    display: 'Optima, Candara, "Gill Sans", "Segoe UI", sans-serif',
+    body: 'Candara, "Avenir Next", "Segoe UI", sans-serif',
+  },
+  slab: {
+    display: 'Rockwell, "Roboto Slab", "Courier New", Georgia, serif',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  didone: {
+    display: 'Didot, "Bodoni MT", "Playfair Display", Georgia, serif',
+    body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
+  },
+  // Self-hosted by next/font (see app/layout.tsx); the fallbacks are the heavy
+  // condensed faces machines already have, so the first paint is not a
+  // sentence-case sans that reflows into a different shape.
+  poster: {
+    display: 'var(--font-poster), Impact, Haettenschweiler, "Arial Narrow", sans-serif',
     body: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
   },
 };
@@ -526,7 +726,13 @@ export function profileThemeStyle(
   theme: ProfileThemeConfig,
   options?: { wallpaperUrl?: string | null },
 ) {
-  const font = fontStacks[theme.font];
+  // A theme written by a newer build can name a pairing this one does not have
+  // yet, which happens during a deploy. Falling back beats rendering nothing.
+  const font = fontStacks[theme.font] ?? fontStacks.studio;
+  const scale = { sm: 0.92, md: 1, lg: 1.08, xl: 1.18 }[theme.fontScale ?? "md"];
+  const weight = { regular: 400, medium: 500, bold: 700 }[
+    theme.fontWeight ?? "regular"
+  ];
   return {
     "--profile-bg": theme.colors.background,
     "--profile-surface": theme.colors.surface,
@@ -540,6 +746,10 @@ export function profileThemeStyle(
     "--profile-button-text": theme.colors.buttonText,
     "--profile-display-font": font.display,
     "--profile-body-font": font.body,
+    // Creator typography controls; the CSS multiplies its base sizes by these.
+    "--profile-font-scale": String(scale),
+    "--profile-font-weight": String(weight),
+    "--profile-font-style": theme.fontStyle ?? "normal",
     ...(options?.wallpaperUrl
       ? { "--profile-wallpaper": `url("${options.wallpaperUrl}")` }
       : {}),

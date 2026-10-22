@@ -21,6 +21,7 @@ const socialHosts: Array<[string, string]> = [
   ["pinterest.com", "Pinterest"],
   ["twitch.tv", "Twitch"],
   ["bsky.app", "Bluesky"],
+  ["partiful.com", "Partiful"],
 ];
 
 function parseAttributes(tag: string) {

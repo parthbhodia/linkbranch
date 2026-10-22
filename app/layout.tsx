@@ -5,7 +5,25 @@ import { ServiceWorkerRegistrar } from "@/components/service-worker";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND_NAME, BRAND_URL, DEFAULT_SOCIAL_IMAGE } from "@/lib/brand";
+import { Anton } from "next/font/google";
 import "./globals.css";
+
+/**
+ * The one webfont in the product: the heavy condensed poster face offered as a
+ * type pairing. next/font downloads and self-hosts it at build time, so the
+ * page makes no request to Google and the file is served from our own origin.
+ * Everything else is a system stack; this face has no system equivalent worth
+ * shipping.
+ */
+const poster = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  // Not preloaded: only a page whose creator picked this pairing draws a glyph
+  // with it, and preloading would make every visitor download it first.
+  preload: false,
+  variable: "--font-poster",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND_URL),
@@ -102,7 +120,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={poster.variable}>
       <head>
         {/* Next emits only the modern mobile-web-app-capable, which iOS before
             16.4 ignores. Those versions read this spelling and nothing else,

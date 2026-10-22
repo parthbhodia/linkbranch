@@ -1,3 +1,6 @@
+/** How a link is drawn on the public page. */
+export type LinkCardStyle = "row" | "image";
+
 export type LinkItem = {
   id: string;
   index: string;
@@ -9,6 +12,13 @@ export type LinkItem = {
   color: string;
   featured?: boolean;
   thumbnailUrl?: string;
+  /** Optional section heading; empty/absent keeps the flat list. */
+  group?: string;
+  /**
+   * Per-link choice of shape. Absent is a row, the shape every link has always
+   * had, so nothing that never asks changes.
+   */
+  cardStyle?: LinkCardStyle;
 };
 
 export type Referral = {
@@ -32,7 +42,6 @@ export type CreatorProfile = {
   /** Public URL of the uploaded avatar. Falls back to initials when absent. */
   avatarUrl?: string | null;
   displayName: string;
-  greeting: string;
   headline: string;
   headlineAccent: string;
   eyebrow: string;

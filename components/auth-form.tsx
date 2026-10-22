@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { createClient } from "@/lib/supabase/client";
+import { hasCompletedOnboarding } from "@/lib/onboarding-status";
 import { parseStarterPurpose } from "@/lib/starter-purposes";
 import {
   TEMPLATE_PICKER,
@@ -56,9 +57,6 @@ export function AuthForm() {
         ? `/onboarding?purpose=${encodeURIComponent(starterPurpose)}`
         : "/templates";
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [displayName, setDisplayName] = useState(
-    searchParams.get("display_name")?.trim() ?? "",
-  );
   const [username, setUsername] = useState(
     searchParams.get("username")?.trim().toLowerCase() ?? "",
   );
@@ -104,13 +102,15 @@ export function AuthForm() {
         return;
       }
 
+      // Display name is set in onboarding / the editor — keep signup to
+      // username + credentials. handle_new_user falls back to the email
+      // local-part until they pick a name.
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
           data: {
-            full_name: displayName.trim(),
             username: cleanUsername,
           },
         },
@@ -136,7 +136,10 @@ export function AuthForm() {
         router.push("/auth/check-email?type=confirmation");
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) {
         if (error.code === "email_not_confirmed") {
           stashPendingEmail(email);
@@ -152,15 +155,12 @@ export function AuthForm() {
           // Claim, import and starter-purpose all named somewhere specific.
           router.push(nextPath);
         } else {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed")
-            .single();
+          const onboardingCompleted = await hasCompletedOnboarding(
+            supabase,
+            data.user?.id,
+          );
           router.push(
-            postAuthDestination({
-              requested: nextPath,
-              onboardingCompleted: Boolean(profile?.onboarding_completed),
-            }),
+            postAuthDestination({ requested: nextPath, onboardingCompleted }),
           );
         }
         router.refresh();
@@ -238,27 +238,17 @@ export function AuthForm() {
 
           <Stack component="form" spacing={2.25} sx={{ mt: 3 }} onSubmit={submit}>
             {mode === "signup" && (
-              <>
-                <TextField
-                  label="Display name"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  required
-                  autoComplete="name"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-                <TextField
-                  label="Username"
-                  value={username}
-                  onChange={(event) =>
-                    setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
-                  }
-                  required
-                  helperText={`Your public address will be ${publicProfileAddress(username || "username")}`}
-                  autoComplete="username"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </>
+              <TextField
+                label="Username"
+                value={username}
+                onChange={(event) =>
+                  setUsername(event.target.value.replace(/\s/g, "").toLowerCase())
+                }
+                required
+                helperText={`Your public address will be ${publicProfileAddress(username || "username")}`}
+                autoComplete="username"
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
             )}
             <TextField
               label="Email"

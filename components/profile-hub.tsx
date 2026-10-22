@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FindUs } from "@/components/find-us";
 import type { PublicMapLocation } from "@/lib/map-location";
 import ArrowOutwardRounded from "@mui/icons-material/ArrowOutwardRounded";
-import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import EditRounded from "@mui/icons-material/EditRounded";
@@ -40,6 +39,11 @@ import {
 import { ContactExchange } from "@/components/contact-exchange";
 import { ProfileContactForm } from "@/components/profile-contact-form";
 import {
+  LinkShareSheet,
+  ShareLinkButton,
+} from "@/components/link-share-sheet";
+import { detectLinkBrand } from "@/lib/link-brands";
+import {
   detectMusicProvider,
   isLikelyCompleteMusicUrl,
   musicEmbedHeight,
@@ -61,6 +65,18 @@ import {
   readableForeground,
   resolveProfileTheme,
 } from "@/lib/theme-config";
+import { groupLinksBySection } from "@/lib/link-groups";
+import { useAvatarVeil } from "@/components/use-avatar-veil";
+import { useAvatarBand } from "@/components/use-avatar-band";
+
+/**
+ * How much taller than the card the backdrop photo is drawn, top and bottom.
+ * The scroll drift slides it by at most this much before it reaches the limit,
+ * which is what stops a long page dragging an edge into view.
+ *
+ * Must match the photo's vertical inset in globals.css.
+ */
+const PHOTO_SLACK = 0.14;
 
 type TrackTarget = {
   eventType:
@@ -142,13 +158,17 @@ function searchable(values: Array<string | null | undefined>) {
 const LinkCard = memo(function LinkCard({
   link,
   onOpen,
+  onShare,
 }: {
   link: LinkItem;
   onOpen: (label: string, target: TrackTarget) => void;
+  onShare: (link: LinkItem) => void;
 }) {
   const [showEmbed, setShowEmbed] = useState(false);
   const music = detectMusicProvider(link.url);
   const booking = music ? null : detectBookingProvider(link.url);
+  const brand =
+    music || booking ? null : detectLinkBrand(link.url);
   const musicEmbedSrc =
     music?.embeddable && isLikelyCompleteMusicUrl(link.url)
       ? musicPlayerUrl(link.url, music.id, {
@@ -161,45 +181,59 @@ const LinkCard = memo(function LinkCard({
       ? bookingEmbedUrl(link.url, booking.id)
       : null;
   const embedSrc = musicEmbedSrc || bookingEmbedSrc;
+  const imageCard = link.cardStyle === "image" && Boolean(link.thumbnailUrl);
   const subtitle =
     link.subtitle ||
     (music ? music.subtitle : null) ||
     (booking ? booking.subtitle : null) ||
+    (brand ? brand.subtitle : null) ||
     "";
 
   return (
     <div
       className={`link-card-wrap${music ? " link-card-wrap--music" : ""}${
         booking ? " link-card-wrap--booking" : ""
-      }`}
+      }${brand ? " link-card-wrap--brand" : ""}`}
     >
-      <Box
-        component="a"
+      {/* A div with the anchor stretched across it, rather than an anchor
+          wrapping the whole card. The card needs a real share button in it, and
+          a button inside a link is neither valid HTML nor reachable by
+          keyboard. The anchor stays the only thing that opens the link. */}
+      <div
         className={`link-card${link.featured ? " link-card--featured" : ""}${
           music ? " link-card--music" : ""
-        }${booking ? " link-card--booking" : ""}`}
-        href={link.url}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() =>
-          onOpen(`Opened ${link.title}`, {
-            eventType: "link_open",
-            linkId: Number(link.id),
-          })
-        }
+        }${booking ? " link-card--booking" : ""}${
+          brand ? " link-card--brand" : ""
+        }${imageCard ? " link-card--image" : ""}`}
       >
+        {/* Drawn from the thumbnail as a full-bleed background rather than as
+            the 44px mark a row gets, because the picture is the point of this
+            shape. The title sits on a scrim at the foot of it, so it stays
+            readable over any photograph. */}
+        {imageCard ? (
+          <span
+            className="link-card__backdrop"
+            aria-hidden="true"
+            style={{ backgroundImage: `url("${link.thumbnailUrl}")` }}
+          />
+        ) : null}
         <span
           className={`link-index${
-            link.thumbnailUrl
-              ? " link-index--image"
-              : music
-                ? " link-index--music"
-                : booking
-                  ? " link-index--booking"
-                  : " link-index--icon"
+            imageCard
+              ? " link-index--hidden"
+              : link.thumbnailUrl
+                ? " link-index--image"
+                : music
+                  ? " link-index--music"
+                  : booking
+                    ? " link-index--booking"
+                    : brand
+                      ? " link-index--brand"
+                      : " link-index--icon"
           }`}
           style={{
-            background: music || booking ? undefined : link.color,
+            background: music || booking ? undefined : brand?.color ?? link.color,
+            color: brand && !link.thumbnailUrl ? brand.ink : undefined,
           }}
         >
           {link.thumbnailUrl ? (
@@ -212,14 +246,16 @@ const LinkCard = memo(function LinkCard({
           ) : music ? (
             <MusicNoteRounded fontSize="small" />
           ) : booking ? (
-            <CalendarMonthRounded fontSize="small" />
+            booking.icon
+          ) : brand ? (
+            brand.icon
           ) : link.featured ? (
             <StarRounded fontSize="small" />
           ) : (
             <LinkRounded fontSize="small" />
           )}
         </span>
-        <span>
+        <span className="link-card__text">
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="h3">{link.title}</Typography>
             {music && (
@@ -232,7 +268,10 @@ const LinkCard = memo(function LinkCard({
                 size="small"
               />
             )}
-            {link.featured && !music && !booking && (
+            {brand && (
+              <Chip className="brand-chip" label={brand.label} size="small" />
+            )}
+            {link.featured && !music && !booking && !brand && (
               <Chip
                 className="featured-chip"
                 icon={<StarRounded />}
@@ -242,15 +281,41 @@ const LinkCard = memo(function LinkCard({
             )}
           </Stack>
           {subtitle ? (
-            <Typography variant="body2" color="text.secondary">
-              {subtitle}
-            </Typography>
+            imageCard ? (
+              /* A plain element on purpose. As a Typography this line would
+                  inherit the theme's muted body2 colour, which two rules in
+                  globals.css force on with !important, and nothing short of
+                  out-ranking both would keep it light enough to read on the
+                  scrim. A card that draws its own title over its own picture
+                  draws its own subtitle too. */
+              <p className="link-card__subtitle">{subtitle}</p>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {subtitle}
+              </Typography>
+            )
           ) : null}
         </span>
-        <span className="link-card__arrow" aria-hidden="true">
-          <ArrowOutwardRounded fontSize="small" />
+        <span className="link-card__trailing">
+          <span className="link-card__arrow" aria-hidden="true">
+            <ArrowOutwardRounded fontSize="small" />
+          </span>
+          <ShareLinkButton label={link.title} onShare={() => onShare(link)} />
         </span>
-      </Box>
+        <a
+          className="link-card__hit"
+          href={link.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open ${link.title}`}
+          onClick={() =>
+            onOpen(`Opened ${link.title}`, {
+              eventType: "link_open",
+              linkId: Number(link.id),
+            })
+          }
+        />
+      </div>
       {embedSrc ? (
         <div className={music ? "music-embed" : "booking-embed"}>
           <Button
@@ -393,6 +458,7 @@ export function ProfileHub({
   resumeHref = null,
   mapLocation = null,
   timeline = [],
+  preview = false,
 }: {
   profile: CreatorProfile;
   template?: string;
@@ -420,6 +486,8 @@ export function ProfileHub({
   mapLocation?: PublicMapLocation | null;
   /** Education and experience, for a student or anyone with a background worth showing. */
   timeline?: TimelineEntry[];
+  /** Claim / outreach previews: phone-width, no search chrome. */
+  preview?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [publicView, setPublicView] = useState<"links" | "shop">("links");
@@ -486,6 +554,9 @@ export function ProfileHub({
   }, [databaseProfileId]);
 
   const [qrOpen, setQrOpen] = useState(false);
+  // The link whose share sheet is open. Held as the whole link rather than an
+  // id so the sheet has its title and thumbnail without another lookup.
+  const [shareLink, setShareLink] = useState<LinkItem | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
   // Generated on first open rather than on mount: most visitors never ask for
@@ -625,12 +696,97 @@ export function ProfileHub({
     filtered.faqs.length;
   const spotlightLinks = filtered.links.filter((link) => link.featured);
   const standardLinks = filtered.links.filter((link) => !link.featured);
+  const linkSections = groupLinksBySection(standardLinks, (link) => link.group ?? "");
   const customTheme = resolveProfileTheme(themeConfig, template);
-  const brandingLogoUrl = publicAssetUrl(customTheme.logoPath);
-  const wallpaperUrl = publicAssetUrl(customTheme.wallpaperPath);
+  const applyCustomTheme = Boolean(themeConfig) || !preview;
+  const brandingLogoUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.logoPath : null,
+  );
+  const wallpaperUrl = publicAssetUrl(
+    applyCustomTheme ? customTheme.wallpaperPath : null,
+  );
   const coverUrl = template === "signal-deck" ? wallpaperUrl : null;
   const pageWallpaperUrl = template === "signal-deck" ? null : wallpaperUrl;
-  const showContactForm = customTheme.contactForm === true;
+  const showContactForm = applyCustomTheme && customTheme.contactForm === true;
+  // Off unless the creator turns it on, and even then only on a page long
+  // enough to need it: a search field above five links is furniture that sits
+  // between the visitor and the only thing they came to tap. The count is the
+  // page's own links, not everything that can appear on it.
+  const showSearch = customTheme.search === true && profile.links.length > 5;
+  const avatarShape = customTheme.avatarShape;
+  const avatarRing = customTheme.avatarRing === true;
+  const avatarBackdrop = customTheme.avatarBackdrop === true && Boolean(profile.avatarUrl);
+  const socialSize = customTheme.socialSize;
+
+  // The photo drifts down as the page scrolls, which in the viewport reads as it
+  // rising slower than everything else -- so the backdrop sits behind the card
+  // rather than being printed on it.
+  //
+  // The drift is written to the photo, not to the frame around it. The frame is
+  // the card and must not move: it is absolutely positioned inside a card that
+  // clips, so moving the frame itself would slide the backdrop out from under
+  // the rounded corners. Sliding the photo inside a fixed frame is also the
+  // honest version of the effect -- a background moving slower than the content
+  // in front of it.
+  //
+  // It stops at the slack the photo carries, so a long page can never drag an
+  // edge into view.
+  const washRef = useRef<HTMLDivElement | null>(null);
+  const photoRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<HTMLElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+
+  // How hard to veil the photo is solved for rather than fixed, so a bright
+  // photograph can sit under the text with nothing in the way and a dark one
+  // still gets covered. Shared with the dashboard preview, which draws its own
+  // phone and would otherwise disagree with this page.
+  useAvatarVeil({
+    enabled: avatarBackdrop,
+    avatarUrl: profile.avatarUrl,
+    targetRef: cardRef,
+    textRef: titleRef,
+  });
+  // A quarter of the screen, or as far as the name needs. See use-avatar-band.
+  const bandFloor = useCallback(() => window.innerHeight * 0.25, []);
+  useAvatarBand({
+    enabled: avatarBackdrop,
+    containerRef: cardRef,
+    titleRef,
+    floorPx: bandFloor,
+  });
+
+  useEffect(() => {
+    if (!avatarBackdrop) return;
+    const frame = washRef.current;
+    const photo = photoRef.current;
+    if (!frame || !photo) return;
+    // Someone who asked their machine not to animate things gets the photo
+    // exactly where it always was, not a slower version of the drift.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame2 = 0;
+    const place = () => {
+      frame2 = 0;
+      // Must match the photo's vertical inset in CSS.
+      const slack = frame.offsetHeight * PHOTO_SLACK;
+      const drift = Math.min(window.scrollY * 0.4, slack);
+      photo.style.transform = `translate3d(0, ${drift}px, 0)`;
+    };
+    const onScroll = () => {
+      // One write per frame at most; scroll fires far more often than that.
+      if (frame2) return;
+      frame2 = window.requestAnimationFrame(place);
+    };
+
+    place();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", place);
+      if (frame2) window.cancelAnimationFrame(frame2);
+    };
+  }, [avatarBackdrop]);
   const videoProviders = new Set(["youtube", "vimeo", "twitch"]);
   const videoEmbeds = mediaEmbeds.filter((item) =>
     videoProviders.has(item.provider),
@@ -664,16 +820,25 @@ export function ProfileHub({
   return (
     <main
       className={`app-shell public-template public-template--${template}${
-        customTheme
+        preview ? " public-template--preview" : ""
+      }${
+        applyCustomTheme
           ? ` ${profileThemeClassName(customTheme, { wallpaperUrl: pageWallpaperUrl })}`
           : ""
-      }`}
+      }${avatarBackdrop ? " profile-theme-avatar-backdrop" : ""}`}
       style={
-        customTheme
-          ? (profileThemeStyle(customTheme, {
-              wallpaperUrl: pageWallpaperUrl,
-            }) as React.CSSProperties)
-          : undefined
+        {
+          ...(applyCustomTheme
+            ? profileThemeStyle(customTheme, {
+                wallpaperUrl: pageWallpaperUrl,
+              })
+            : {}),
+          // Handed down as a custom property rather than painted here, so the
+          // blurred layer is the only thing that draws it.
+          ...(avatarBackdrop
+            ? { "--avatar-backdrop": `url("${profile.avatarUrl}")` }
+            : {}),
+        } as React.CSSProperties
       }
     >
       {template === "signal-deck" ? (
@@ -683,7 +848,17 @@ export function ProfileHub({
           aria-hidden="true"
         />
       ) : null}
-      <article className="creator-card">
+      <article className="creator-card" ref={cardRef}>
+        {/* The photo, washed, as this card's own backdrop. Inside the card
+            rather than on the page, so it fills the card and inherits its
+            radius and clip instead of having to reproduce them -- and so it
+            reads as the card's surface, not as a wallpaper behind it. */}
+        {avatarBackdrop ? (
+          <Box ref={washRef} className="avatar-backdrop" aria-hidden="true">
+            <Box ref={photoRef} className="avatar-backdrop__photo" />
+            <Box className="avatar-backdrop__veil" />
+          </Box>
+        ) : null}
         <header className="profile-panel" aria-label="Creator profile">
           <div className="profile-brand-row">
             <Stack direction="row" spacing={0.5} alignItems="center">
@@ -753,29 +928,37 @@ export function ProfileHub({
                 aria-hidden="true"
               />
             ) : null}
-            <Box
-              className={`avatar${profile.avatarUrl ? " avatar--image" : ""}`}
-              aria-label={
-                profile.avatarUrl
-                  ? `${profile.displayName} profile photo`
-                  : `${profile.displayName} initials`
-              }
-            >
-              {profile.avatarUrl ? (
-                <Box
-                  component="img"
-                  src={profile.avatarUrl}
-                  alt={`${profile.displayName} profile`}
-                />
-              ) : (
-                <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
-                  {profile.initials}
-                </Typography>
-              )}
-            </Box>
+            {/* With the photograph in place the avatar is gone: the picture is
+                doing that job, and a small copy of it in a circle on top of it
+                reads as a mistake. This is the one setting that replaces the
+                avatar rather than decorating it. */}
+            {!avatarBackdrop && (
+              <Box
+                className={`avatar${profile.avatarUrl ? " avatar--image" : ""}${
+                  avatarShape ? ` avatar--${avatarShape}` : ""
+                }${avatarRing ? " avatar--ring" : ""}`}
+                aria-label={
+                  profile.avatarUrl
+                    ? `${profile.displayName} profile photo`
+                    : `${profile.displayName} initials`
+                }
+              >
+                {profile.avatarUrl ? (
+                  <Box
+                    component="img"
+                    src={profile.avatarUrl}
+                    alt={`${profile.displayName} profile`}
+                  />
+                ) : (
+                  <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem" }}>
+                    {profile.initials}
+                  </Typography>
+                )}
+              </Box>
+            )}
             <p className="eyebrow">{profile.eyebrow}</p>
-            <Typography component="h1" variant="h1">
-              {profile.greeting} {profile.displayName}.
+            <Typography component="h1" variant="h1" ref={titleRef}>
+              {profile.displayName}.
             </Typography>
             <Typography component="h2" className="profile-headline">
               {profile.headline}{" "}
@@ -794,7 +977,12 @@ export function ProfileHub({
           </Box>
 
           {profile.socials.length > 0 && (
-            <nav className="social-rail" aria-label="Social profiles">
+            <nav
+              className={`social-rail${
+                socialSize ? ` social-rail--${socialSize}` : ""
+              }`}
+              aria-label="Social profiles"
+            >
             {profile.socials.map((social) => (
                 <Tooltip title={social.platform} arrow key={social.platform}>
                   <IconButton
@@ -895,8 +1083,9 @@ export function ProfileHub({
             </section>
           )}
           {/* A search box over nothing is furniture, and it invites exactly the
-              dead end this page used to show. */}
-          {totalContentCount > 0 && (
+              dead end this page used to show. Owners can also switch it off
+              entirely when their page is short enough to read. */}
+          {totalContentCount > 0 && !preview && showSearch && (
             <div className="profile-search">
               <TextField
                 className="search-field"
@@ -1118,34 +1307,64 @@ export function ProfileHub({
                   </div>
                   <div className="link-list">
                     {spotlightLinks.map((link) => (
-                      <LinkCard key={link.id} link={link} onOpen={track} />
+                      <LinkCard
+                        key={link.id}
+                        link={link}
+                        onOpen={track}
+                        onShare={setShareLink}
+                      />
                     ))}
                   </div>
                 </section>
               )}
 
               {standardLinks.length > 0 && (
-                <section className="content-section" aria-labelledby="all-links">
-                  <div className="section-heading">
-                    <Typography
-                      id="all-links"
-                      component="h2"
-                      className="section-label"
-                    >
-                      My links
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {query
-                        ? `${totalResults} results`
-                        : `${standardLinks.length} destinations`}
-                    </Typography>
-                  </div>
-                  <div className="link-list">
-                    {standardLinks.map((link) => (
-                      <LinkCard key={link.id} link={link} onOpen={track} />
-                    ))}
-                  </div>
-                </section>
+                <>
+                  {linkSections.map((section, index) => {
+                    // The unsectioned run keeps the original "My links" anchor;
+                    // named sections get their own, unique, heading id.
+                    const headingId =
+                      section.name === "" ? "all-links" : `links-section-${index}`;
+                    return (
+                      <section
+                        className="content-section"
+                        aria-labelledby={headingId}
+                        key={section.name || "all-links"}
+                      >
+                        <div className="section-heading">
+                          <Typography
+                            id={headingId}
+                            component="h2"
+                            className="section-label"
+                          >
+                            {section.name || "My links"}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {query && index === 0
+                              ? `${totalResults} ${
+                                  totalResults === 1 ? "result" : "results"
+                                }`
+                              : `${section.links.length} ${
+                                  section.links.length === 1
+                                    ? "destination"
+                                    : "destinations"
+                                }`}
+                          </Typography>
+                        </div>
+                        <div className="link-list">
+                          {section.links.map((link) => (
+                            <LinkCard
+                              key={link.id}
+                              link={link}
+                              onOpen={track}
+                              onShare={setShareLink}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </>
               )}
 
               {showContactForm && (
@@ -1416,6 +1635,27 @@ export function ProfileHub({
           </Stack>
         </DialogContent>
       </Dialog>
+
+      {shareLink ? (
+        <LinkShareSheet
+          // Keyed by link so opening another one starts collapsed rather than
+          // inheriting the last sheet's expanded description.
+          key={shareLink.id}
+          link={{
+            id: shareLink.id,
+            title: shareLink.title,
+            url: shareLink.url,
+            subtitle: shareLink.subtitle,
+            thumbnailUrl: shareLink.thumbnailUrl,
+            // The card's own colour and Spotlight flag, so the preview wears
+            // the same fill and mark as the row the visitor just tapped.
+            color: shareLink.color,
+            featured: shareLink.featured,
+          }}
+          onClose={() => setShareLink(null)}
+          onNotice={setNotice}
+        />
+      ) : null}
 
       <Dialog
         open={showCardOffer}
