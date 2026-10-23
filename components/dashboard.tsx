@@ -619,9 +619,16 @@ export function Dashboard({
     window.scrollTo({ top: 0 });
   }, [section, mobileMode]);
 
-  const activeReferrals = useMemo(
-    () => referrals.filter((item) => item.is_active),
-    [referrals],
+  // The phone draws the referral draft, not the saved rows -- the same reason
+  // links come from previewLinks. Flipping an offer to Hidden used to leave it
+  // sitting in the preview until Save, which read as a broken switch.
+  const previewReferrals = useMemo(
+    () =>
+      referralDraft.filter(
+        (item) =>
+          item.is_active && (item.provider.trim() || item.offer.trim()),
+      ),
+    [referralDraft],
   );
 
   // Links are edited in their own draft, so the phone draws that draft rather
@@ -4602,14 +4609,14 @@ export function Dashboard({
               </div>
             )}
 
-            {activeReferrals.length > 0 && (
+            {previewReferrals.length > 0 && (
               <div className="workspace-phone__offers">
                 <div className="workspace-phone__section-heading">
                   <Typography className="section-label">PERKS & REFERRALS</Typography>
                   <small>SWIPE →</small>
                 </div>
                 <div className="workspace-phone__offer-rail">
-                  {activeReferrals.slice(0, 2).map((item) => (
+                  {previewReferrals.slice(0, 2).map((item) => (
                     <div
                       className="workspace-phone__offer"
                       style={{ background: item.color }}
