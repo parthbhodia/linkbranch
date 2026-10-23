@@ -6317,8 +6317,8 @@ a {
 .workspace-curated__tile--photo {
   background-image:
     linear-gradient(
-      color-mix(in srgb, var(--profile-bg) 58%, transparent),
-      color-mix(in srgb, var(--profile-bg) 78%, transparent)
+      color-mix(in srgb, var(--profile-bg) 32%, transparent),
+      color-mix(in srgb, var(--profile-bg) 52%, transparent)
     ),
     var(--profile-wallpaper);
   background-size: cover, cover;
