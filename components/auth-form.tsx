@@ -55,7 +55,7 @@ export function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState<{
-    severity: "success" | "error";
+    severity: "success" | "error" | "info";
     text: string;
   } | null>(() => {
     if (initialNotice === "confirmed_sign_in") {
@@ -109,6 +109,15 @@ export function AuthForm() {
       } else if (data.session) {
         router.push(nextPath);
         router.refresh();
+      } else if (data.user?.identities?.length === 0) {
+        // Supabase returns no error here to avoid leaking account existence,
+        // but a confirmed account's identities array comes back empty on a
+        // repeat signup. That's the only client-side signal we get.
+        setMode("login");
+        setMessage({
+          severity: "info",
+          text: "An account with this email already exists. Sign in below.",
+        });
       } else {
         router.push("/auth/check-email?type=confirmation");
       }
